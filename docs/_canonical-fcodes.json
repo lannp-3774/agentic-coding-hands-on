@@ -1,0 +1,24 @@
+{
+  "generated_at": "2026-10-07T07:58:12Z",
+  "plan": "261007-1352-login-page-google-oauth",
+  "features": [
+    {
+      "fcode": "F001",
+      "name": "Login with Google",
+      "slug": "F001_LoginWithGoogle",
+      "priority": "P1",
+      "type": "mixed",
+      "related": {
+        "screens": [
+          "SCR001_Login",
+          "SCR002_Todo"
+        ],
+        "user_stories": [],
+        "routes": [],
+        "models": [],
+        "bl": [],
+        "perms": []
+      }
+    }
+  ]
+}
