@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-10-07T07:58:12Z",
-  "plan": "261007-1352-login-page-google-oauth",
+  "generated_at": "2026-10-08T04:13:50Z",
+  "plan": "261008-1014-homepage-saa",
   "features": [
     {
       "fcode": "F001",
@@ -13,6 +13,38 @@
           "SCR001_Login",
           "SCR002_Todo"
         ],
+        "user_stories": [],
+        "routes": [],
+        "models": [],
+        "bl": [],
+        "perms": []
+      }
+    },
+    {
+      "fcode": "F002",
+      "name": "Homepage SAA",
+      "slug": "F002_HomepageSaa",
+      "priority": "P0",
+      "type": "ui",
+      "related": {
+        "screens": [
+          "SCR003_Homepage"
+        ],
+        "user_stories": [],
+        "routes": [],
+        "models": [],
+        "bl": [],
+        "perms": []
+      }
+    },
+    {
+      "fcode": "F003",
+      "name": "Account Menu & Admin Role",
+      "slug": "F003_AccountMenuAdminRole",
+      "priority": "P1",
+      "type": "ui",
+      "related": {
+        "screens": [],
         "user_stories": [],
         "routes": [],
         "models": [],

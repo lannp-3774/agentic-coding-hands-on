@@ -1,5 +1,7 @@
 ---
-status: draft
+status: removed
+removed: 2026-10-08
+removed_by: F001 update, plan 261008-1014-homepage-saa (route /todo deleted)
 fcode: F001
 authored_by: takumi
 created: 2026-10-07

@@ -1,11 +1,31 @@
 {
+  "doc_shas": {
+    "api-map.md": "b6da71e8ebb5f9b1b997f43f540f5a40331c62a5edad7dcd89d7dc654e840f2a",
+    "behavior-logic.md": "d8e133245bb64c0d5e3579ac9f7f3cc5a1dd3531398591f4b3b2a7987fb0e824",
+    "data-model.md": "5f083b6f09b53dc25019cd7c355f15c49fb8297b6f247ac7ee9140b97b371cac",
+    "feature-list.md": "5038389fdd2091634e6283c588608b414fdc98d7318374304449f3c140fcdf26",
+    "permissions.md": "e7d4536339db33a970eca2a0bf6f7f0cda28764aaffe72ea9bdd75ad3acb211e",
+    "route-list.md": "da60c65100b8ac38d9590c7072abb2e78422a129ec6f6d0b4d97e21909f13cc3",
+    "screen-flow.md": "38c08aa2ac66ff5d20957dc558716551de64e10fe149ab71754b5d9eb87e2f5e",
+    "screen-list.md": "036ebb047d70e6a9fd6ea47a6b2e871383eb87c87d2e37df817af0e0345a107e",
+    "system-overview.md": "90d0f8274acb03592bbd24ba27bb80ef451c738f756a552f7796e77b3bd2b553",
+    "user-stories.md": "f47648b9de18559ef56b70bb9ecefd698c3feaf1273edb3878afb0b0528fe3ea"
+  },
+  "fcode_index_sha": "8e4b4014a79014e88b7a600b902c3639b09d9e091fc5624b0dde91737a582a06",
+  "last_api_contracts_run_sha": "",
+  "last_feature_spec_run_sha": "4c651f1a70c86ea76cf5657a8235dde3b9c81f18",
+  "last_flows_run_sha": "",
+  "last_glossary_run_sha": "",
+  "last_rebuild_sha": "4c651f1a70c86ea76cf5657a8235dde3b9c81f18",
+  "last_test_cases_run_sha": "",
+  "mode": "full",
   "primary_lang": "vi",
-  "last_rebuild_sha": "",
-  "last_feature_spec_run_sha": "4a4382df36a4e100fd2fd13e75df2a3161a5c491",
-  "fcode_index_sha": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
-  "doc_shas": {},
+  "rebuilt_at": "2026-10-08T11:52:17Z",
+  "schema_version": "22.1.0",
   "screen_spec_shas": {
-    "SCR001": "c8f45be0a6ba72f94f6bc895576e14ae0dd4ff4ab395b4ecc0b91216fa13f312",
-    "SCR002": "5f76ec687bf0e4b91dc79eef4ad765cac9f27b123e967910c0d781a7bbd89114"
-  }
+    "SCR001": "91bb4c50e90be9dd949112a33051aedcf01c872b97f396285376765407e3665c",
+    "SCR002": "23ac84c178819ec59a31c96793adb5f8c32def0a23ebffda932bc840be8274d9",
+    "SCR003": "31330849acadf04b1c1af3cf441f578b2b31f303000cdb5da829f1b6ffe61ac0"
+  },
+  "translations": {}
 }

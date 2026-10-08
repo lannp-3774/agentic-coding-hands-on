@@ -1,4 +1,80 @@
 {
-  "generated_at": "2026-10-07T07:58:12Z",
-  "index": {}
+  "generated_at": "2026-10-08T11:52:17Z",
+  "index": {
+    "app/_components/header-behaviour/account-region.tsx": [
+      "F003"
+    ],
+    "app/_components/home/home-content.tsx": [
+      "F002"
+    ],
+    "app/_components/home/home-content.tsx:31,47": [
+      "F002"
+    ],
+    "app/_components/home/home-content.tsx:50-54,63-67": [
+      "F002"
+    ],
+    "app/_components/site/account-menu-view.tsx": [
+      "F003"
+    ],
+    "app/_components/site/language-selector.tsx": [
+      "F001"
+    ],
+    "app/_components/site/site-header.tsx:36,40": [
+      "F002"
+    ],
+    "app/auth/callback/route.ts": [
+      "F001"
+    ],
+    "app/auth/callback/route.ts:4,26-29": [
+      "F001"
+    ],
+    "app/auth/callback/route.ts:8,26-29": [
+      "F001"
+    ],
+    "app/login/_components/google-button.tsx": [
+      "F001"
+    ],
+    "app/login/actions.ts": [
+      "F001"
+    ],
+    "app/login/page.tsx": [
+      "F001"
+    ],
+    "app/page.tsx": [
+      "F002"
+    ],
+    "lib/awards/award-card-mapping.ts:27-31,34-44,52-69": [
+      "F002"
+    ],
+    "lib/awards/get-awards.ts": [
+      "F002"
+    ],
+    "lib/countdown/countdown-math.ts": [
+      "F002"
+    ],
+    "lib/countdown/parse-countdown-target.ts:7-8,26-41": [
+      "F002"
+    ],
+    "lib/i18n/home-copy.ts:31-52,54-105": [
+      "F002"
+    ],
+    "lib/i18n/locales.ts": [
+      "F001"
+    ],
+    "lib/supabase/current-user.ts": [
+      "F003"
+    ],
+    "lib/supabase/session-cookie-options.ts": [
+      "F001"
+    ],
+    "lib/ui/use-menu-disclosure.ts": [
+      "F003"
+    ],
+    "proxy.ts": [
+      "F001"
+    ],
+    "supabase/migrations/20261008045415_create_profiles.sql": [
+      "F003"
+    ]
+  }
 }
