@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { GoogleButton } from "./google-button";
-import { LanguageSelector } from "./language-selector";
+import { LanguageSelector } from "@/app/_components/site/language-selector";
 import { montserrat, montserratAlternates } from "@/app/_components/saa-fonts";
 import type { Locale } from "@/lib/i18n/locales";
 import type {

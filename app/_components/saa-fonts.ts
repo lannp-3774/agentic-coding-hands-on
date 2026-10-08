@@ -1,10 +1,11 @@
 import { Montserrat, Montserrat_Alternates } from "next/font/google";
 
-// Figma: all copy uses Montserrat 700; the footer uses Montserrat Alternates 700.
+// Figma: copy uses Montserrat 700 (award titles/descriptions use 400);
+// the footer uses Montserrat Alternates 700.
 export const montserrat = Montserrat({
   variable: "--font-login-montserrat",
   subsets: ["latin", "vietnamese"],
-  weight: ["700"],
+  weight: ["400", "700"],
   display: "swap",
 });
 

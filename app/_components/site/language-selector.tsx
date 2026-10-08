@@ -3,11 +3,11 @@
 import Image from "next/image";
 import { startTransition, useEffect, useRef, useState } from "react";
 import type { Locale } from "@/lib/i18n/locales";
-import type { SelectLocaleAction } from "./login-types";
+import type { SelectLocale } from "./site-types";
 
 type LanguageSelectorProps = {
   currentLocale: Locale;
-  onSelect: SelectLocaleAction;
+  onSelect: SelectLocale;
 };
 
 const OPTIONS: { locale: Locale; code: string; flag: string }[] = [
@@ -52,7 +52,7 @@ export function LanguageSelector({
         await onSelect(locale);
       } catch (error) {
         // Keep the current locale; never let a failed switch reach the error boundary.
-        console.error("[login] language switch failed", error);
+        console.error("[language] switch failed", error);
       }
     });
   };
@@ -93,6 +93,7 @@ export function LanguageSelector({
       >
         <span className="flex items-center gap-1">
           {/* mm:I662:14391;186:1696;186:1821;186:1709 */}
+          {/* mm:I2167:9091;186:1696;186:1821;186:1709;178:1010 */}
           <Image src={current.flag} alt="" width={24} height={24} />
           {/* mm:I662:14391;186:1696;186:1821;186:1439 */}
           <span className="text-base leading-6 font-bold tracking-[0.15px]">
@@ -100,6 +101,7 @@ export function LanguageSelector({
           </span>
         </span>
         {/* mm:I662:14391;186:1696;186:1821;186:1441 */}
+        {/* mm:I2167:9091;186:1696;186:1821;186:1441 */}
         <svg
           aria-hidden="true"
           width="24"

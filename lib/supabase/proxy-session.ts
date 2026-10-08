@@ -4,17 +4,21 @@ import { SESSION_COOKIE_OPTIONS } from "./session-cookie-options";
 import { getSupabaseEnv } from "./supabase-env";
 
 const LOGIN_PATH = "/login";
-const HOME_PATH = "/todo";
+// Where a signed-in user belongs (BR-002, DEC-001). Only a redirect target:
+// it is NOT a protected-route prefix — "/" is the public homepage, so guests
+// on it must never be redirected.
+const POST_LOGIN_PATH = "/";
 
 type PendingCookie = { name: string; value: string; options: CookieOptions };
 type PendingWrites = { cookies: PendingCookie[]; headers: Record<string, string> };
 
 /**
- * Refreshes the Supabase session for this request and applies the
- * session-based redirects (BR-005, DEC-001, DEC-002):
- *   GET|HEAD /login   + valid claims -> 307 /todo
- *   GET|HEAD /todo/*  + no claims    -> 307 /login (no error param)
- * Every other request continues with the refreshed cookies attached.
+ * Refreshes the Supabase session for this request and applies the one
+ * session-based redirect (BR-005, DEC-001):
+ *   GET|HEAD /login + valid claims -> 307 /
+ * Every other request — including guests on the public homepage `/` —
+ * continues with the refreshed cookies attached. No route is guest-guarded
+ * here; a future protected page must check the session itself.
  *
  * Only GET/HEAD are redirected: Server Actions POST to the page route, and
  * 307-ing an expired-session `signOut` POST into /login would break the
@@ -51,7 +55,7 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
  * BR-005: absent claims, a verification error or a network failure all mean
  * "guest". Missing or invalid Supabase env is read inside the try on purpose
  * and also means "guest" (logged, never a 500): this fails safe because a
- * guest is granted nothing — /todo still redirects to /login.
+ * guest is granted nothing — the request just continues unredirected.
  */
 async function hasVerifiedSession(
   request: NextRequest,
@@ -95,11 +99,7 @@ async function hasVerifiedSession(
 function redirectTarget(request: NextRequest, isAuthenticated: boolean): string | null {
   if (request.method !== "GET" && request.method !== "HEAD") return null;
 
-  const { pathname } = request.nextUrl;
-  if (isAuthenticated && pathname === LOGIN_PATH) return HOME_PATH;
-
-  const isHomeRoute = pathname === HOME_PATH || pathname.startsWith(`${HOME_PATH}/`);
-  if (!isAuthenticated && isHomeRoute) return LOGIN_PATH;
+  if (isAuthenticated && request.nextUrl.pathname === LOGIN_PATH) return POST_LOGIN_PATH;
 
   return null;
 }

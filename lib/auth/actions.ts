@@ -4,7 +4,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 /**
- * Logs the user out (A7: FR-406, INT-001, US007), then always lands on /login.
+ * Logs the user out (F003 A3: FR-405, BR-006, INT-001), then always lands on
+ * /login. Called from the account menu's `<form action={signOut}>`.
  *
  * Acts only on the caller's own session cookies, so no separate session
  * check is needed first: without a session there is nothing to revoke and
@@ -20,11 +21,11 @@ export async function signOut(): Promise<void> {
     const supabase = await createClient();
     const { error } = await supabase.auth.signOut({ scope: "local" });
     if (error) {
-      console.warn(`[todo] signOut reported: ${error.name}: ${error.message}`);
+      console.warn(`[auth] signOut reported: ${error.name}: ${error.message}`);
     }
   } catch (cause) {
     const message = cause instanceof Error ? cause.message : String(cause);
-    console.error(`[todo] signOut threw: ${message}`);
+    console.error(`[auth] signOut threw: ${message}`);
   }
 
   // Outside try/catch: redirect() throws Next's control-flow error.

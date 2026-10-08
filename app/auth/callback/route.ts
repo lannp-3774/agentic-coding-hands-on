@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
-const SUCCESS_PATH = "/todo";
+const SUCCESS_PATH = "/";
 const LOGIN_PATH = "/login";
 const CANCELLED_BY_USER = "access_denied";
 
@@ -11,7 +11,7 @@ type CallbackOutcome = "success" | "cancelled" | "failed";
  * OAuth (PKCE) return point for Login with Google (A3: FR-402, FR-403,
  * FR-601, BR-002, BR-003, DEC-003).
  *
- *   ?code=…                    -> exchange for a session -> 302 /todo
+ *   ?code=…                    -> exchange for a session -> 302 / (homepage)
  *   ?error=access_denied, none -> 302 /login?error=cancelled
  *   other ?error=…, failed or
  *   throwing exchange          -> 302 /login?error=failed
