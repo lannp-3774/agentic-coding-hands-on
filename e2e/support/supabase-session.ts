@@ -7,10 +7,16 @@ const SUPABASE_SECRET_KEY = process.env.SUPABASE_SECRET_KEY || '';
 
 /**
  * Seed a user in local Supabase (idempotent: ignores existing emails).
+ * Optionally set the user's role in profiles.role after creation.
  * Requires SUPABASE_SECRET_KEY and local supabase to be running.
  * Uses admin client to bypass RLS and auth constraints.
+ * Handles concurrent race conditions when multiple workers create the same email.
  */
-export async function ensureUser(email: string, password: string) {
+export async function ensureUser(
+  email: string,
+  password: string,
+  role: 'user' | 'admin' = 'user'
+) {
   if (!SUPABASE_URL || !SUPABASE_SECRET_KEY) {
     throw new Error(
       'SUPABASE_URL and SUPABASE_SECRET_KEY required for ensureUser()'
@@ -25,28 +31,87 @@ export async function ensureUser(email: string, password: string) {
     },
   });
 
-  const { error } = await admin.auth.admin.createUser({
+  const { data: userData, error } = await admin.auth.admin.createUser({
     email,
     password,
     email_confirm: true,
   });
 
-  // Handle idempotency: email_exists or user_already_exists (idempotent)
-  if (
+  // Handle idempotency: email_exists or user_already_exists; also catch
+  // concurrent race on HTTP 500 "Database error creating new user" when multiple
+  // workers call createUser concurrently with the same email (losers get 500).
+  // The 23505 constraint violation never reaches the client in this case.
+  let userId: string | undefined;
+  const isRaceCondition =
     error &&
     (error.code === 'email_exists' ||
       error.code === 'user_already_exists' ||
-      error.message?.includes('already exists'))
-  ) {
-    console.log(`User ${email} already exists (idempotent)`);
-    return;
+      error.message?.includes('already exists') ||
+      (error.status === 500 &&
+        error.message?.includes('Database error creating new user')));
+
+  if (isRaceCondition) {
+    console.log(
+      `User ${email} already exists or lost race (status=${error?.status}, code=${error.code})`
+    );
+    // Poll for user ID with pagination. Retry up to 20 times over ~2s.
+    // Use page-based iteration to handle large user lists.
+    let userId_found: string | undefined;
+    for (let attempt = 0; attempt < 20; attempt++) {
+      let allFound = false;
+      let page = 0;
+      while (!allFound && !userId_found) {
+        const { data, error: listErr } = await admin.auth.admin.listUsers({
+          page,
+          perPage: 1000,
+        });
+        if (listErr) {
+          console.log(
+            `listUsers page ${page} failed (attempt ${attempt}): ${listErr.message}`
+          );
+          break;
+        }
+        if (data?.users) {
+          const user = data.users.find((u) => u.email === email);
+          if (user) {
+            userId_found = user.id;
+            break;
+          }
+          // If we got fewer users than perPage, we've reached the end
+          if (data.users.length < 1000) {
+            allFound = true;
+          }
+        }
+        page++;
+      }
+      if (userId_found) break;
+      // Wait 100ms before retrying
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    userId = userId_found;
+  } else if (error) {
+    throw new Error(
+      `Failed to create user ${email}: status=${error.status}, code=${error.code}, message=${error.message}`
+    );
+  } else {
+    userId = userData?.user?.id;
+    console.log(`Created user ${email}`);
   }
 
-  if (error) {
-    throw new Error(`Failed to create user ${email}: ${error.message}`);
+  // Update role in profiles if needed
+  if (!userId) {
+    throw new Error(`Could not resolve user id for ${email} after ${20} attempts`);
   }
 
-  console.log(`Created user ${email}`);
+  const { error: roleError } = await admin
+    .from('profiles')
+    .update({ role })
+    .eq('id', userId);
+  if (roleError) {
+    // Fail loudly: a user seeded without the requested role would make
+    // role-dependent assertions meaningless.
+    throw new Error(`Failed to set role "${role}" for ${email}: ${roleError.message}`);
+  }
 }
 
 /**

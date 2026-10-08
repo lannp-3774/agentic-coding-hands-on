@@ -6,7 +6,7 @@ const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY || '';
 const MAILPIT_API = 'http://127.0.0.1:54324';
 
 test.describe('OAuth Callback — Success Path', () => {
-  test('callback success: real PKCE code exchange leads to /todo with email', async ({
+  test('callback success: real PKCE code exchange leads to / with authenticated header', async ({
     page,
     context,
   }) => {
@@ -112,11 +112,12 @@ test.describe('OAuth Callback — Success Path', () => {
     // Navigate to callback with the code
     await page.goto(`/auth/callback?code=${code}`);
 
-    // Should redirect to /todo
-    await page.waitForURL('**/todo', { timeout: 5000 });
-    expect(page.url()).toContain('/todo');
+    // Should redirect to homepage (/) exactly
+    await page.waitForURL('http://localhost:3000/', { timeout: 5000 });
+    await expect(page).toHaveURL('http://localhost:3000/');
 
-    // Should display the user's email
-    await expect(page.locator(`text=${testEmail}`)).toBeVisible();
+    // Should display authenticated header with account button
+    const accountBtn = page.getByRole('button', { name: /^(Tài khoản|Account)$/ });
+    await expect(accountBtn).toBeVisible({ timeout: 5000 });
   });
 });

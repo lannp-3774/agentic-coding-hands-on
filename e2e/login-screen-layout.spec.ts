@@ -73,12 +73,12 @@ test.describe('Login Screen — Layout & Structure', () => {
     expect(position).toBe('fixed');
   });
 
-  test('unauthenticated /todo redirects to /login', async ({ page }) => {
-    // Navigate to /todo without session
-    await page.goto('/todo', { waitUntil: 'networkidle' });
+  test('unauthenticated /todo returns 404 not found', async ({ page }) => {
+    // Navigate to /todo without session; /todo route was removed in phase 05
+    const response = await page.goto('/todo', { waitUntil: 'networkidle' });
 
-    // Should redirect to /login
-    expect(page.url()).toContain('/login');
+    // Should be 404 not found
+    expect(response?.status()).toBe(404);
   });
 
   test('descriptions have user-select: none', async ({ page }) => {

@@ -54,59 +54,42 @@ test.describe('@supabase Authenticated Flows', () => {
     );
   });
 
-  test('authenticated user visiting /login is redirected to /todo', async ({
+  test('authenticated user visiting /login is redirected to /', async ({
     page,
   }) => {
     await page.goto('/login', { waitUntil: 'networkidle' });
 
-    // Should redirect to /todo
-    expect(page.url()).toContain('/todo');
+    // Should redirect to homepage (/) exactly
+    await expect(page).toHaveURL('http://localhost:3000/');
   });
 
-  test('/todo displays user email and logout button', async ({ page }) => {
-    await page.goto('/todo', { waitUntil: 'networkidle' });
+  test('/ displays authenticated header with account button', async ({
+    page,
+  }) => {
+    await page.goto('/', { waitUntil: 'networkidle' });
 
-    // Should show user's email
-    await expect(page.locator(`text=${TEST_EMAIL}`)).toBeVisible();
+    // Should show account button (notification bell or account button)
+    const accountBtn = page.getByRole('button', { name: /^(Tài khoản|Account)$/ });
+    await expect(accountBtn).toBeVisible({ timeout: 5000 });
 
-    // Should have logout button
-    const logoutBtn = page.getByRole('button', {
-      name: /Đăng xuất|Log out/i,
+    // Should have logout accessible via account menu
+    await accountBtn.click();
+
+    const logoutBtn = page.getByRole('menuitem', {
+      name: /Đăng xuất|Sign out/i,
     });
-    await expect(logoutBtn).toBeVisible();
+    await expect(logoutBtn).toBeVisible({ timeout: 3000 });
   });
 
-  test('clicking logout redirects to /login', async ({ page }) => {
-    await page.goto('/todo');
+  test('/todo returns 404 not found', async ({ page }) => {
+    // After homepage replaces boilerplate, /todo should not exist
+    const response = await page.goto('/todo', { waitUntil: 'networkidle' });
 
-    const logoutBtn = page.getByRole('button', {
-      name: /Đăng xuất|Log out/i,
-    });
-    await logoutBtn.click();
-
-    // Should redirect to /login
-    await page.waitForURL('**/login', { timeout: 5000 });
-    expect(page.url()).toContain('/login');
+    // Should get 404
+    expect(response?.status()).toBe(404);
   });
 
-  test('after logout, /todo redirects back to /login', async ({ page }) => {
-    await page.goto('/todo');
-
-    // Log out
-    const logoutBtn = page.getByRole('button', {
-      name: /Đăng xuất|Log out/i,
-    });
-    await logoutBtn.click();
-
-    // Wait for redirect to /login
-    await page.waitForURL('**/login', { timeout: 5000 });
-
-    // Now try to access /todo again — should redirect to /login
-    await page.goto('/todo', { waitUntil: 'networkidle' });
-    expect(page.url()).toContain('/login');
-  });
-
-  test('with NEXT_LOCALE=en cookie, logout button reads "Log out"', async ({
+  test('with NEXT_LOCALE=en cookie, account menu shows English', async ({
     page,
     context,
   }) => {
@@ -119,9 +102,14 @@ test.describe('@supabase Authenticated Flows', () => {
       },
     ]);
 
-    await page.goto('/todo', { waitUntil: 'networkidle' });
+    await page.goto('/', { waitUntil: 'networkidle' });
 
-    const logoutBtn = page.getByRole('button', { name: /Log out/i });
-    await expect(logoutBtn).toBeVisible();
+    // Account menu should have "Sign out" in English
+    const accountBtn = page.getByRole('button', { name: /^(Tài khoản|Account)$/ });
+    await expect(accountBtn).toBeVisible({ timeout: 5000 });
+    await accountBtn.click();
+
+    const signOutBtn = page.getByRole('menuitem', { name: /Sign out/i });
+    await expect(signOutBtn).toBeVisible({ timeout: 3000 });
   });
 });
