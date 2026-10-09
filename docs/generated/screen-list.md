@@ -2,7 +2,7 @@
 
 **Project**: my-app (SAA 2025 — Sun* Annual Awards 2025)
 **Generated**: 2026-10-08
-**Analysis Scope**: `app/` (page, layout, route handler, `_components/`), `lib/` (auth, awards, countdown, i18n, supabase, ui), `proxy.ts`. Nguồn màn hình: `route-view` (Next.js 16.4 App Router) — mỗi file `page.tsx` phục vụ một URL riêng là một ứng viên SCR, đối chiếu `route-list.md` (ROUTE001..009). SCR004_AwardsInformation (F004) thêm 2026-10-09.
+**Analysis Scope**: `app/` (page, layout, route handler, `_components/`), `lib/` (auth, awards, countdown, i18n, supabase, ui), `proxy.ts`. Nguồn màn hình: `route-view` (Next.js 16.4 App Router) — mỗi file `page.tsx` phục vụ một URL riêng là một ứng viên SCR, đối chiếu `route-list.md` (ROUTE001..009). SCR004_AwardsInformation (F004) thêm 2026-10-09. SCR005_CountdownPrelaunch (F005, bản nháp trước khi có mã) thêm 2026-10-09.
 
 **Code Format**: All codes MUST follow `SCR###_NameSlug` format (e.g., SCR001_LoginForm, SCR002_Dashboard) | `SCR###/REG###` for region-scoped references within a composite screen
 
@@ -16,7 +16,7 @@
 
 **Region Deprecation**: Regions table MAY include a `status` column with values `active` | `deprecated`. Deprecated regions keep their REG### number reserved (no renumbering); downstream refs remain valid; reviewer emits WARNING (not critical) until spec-wide cleanup.
 
-> Ghi chú về mã màn hình: SCR001_Login, SCR002_Todo, SCR003_Homepage, SCR004_AwardsInformation là mã chuẩn, ổn định, không đánh số lại. SCR002_Todo đã bị gỡ ngày 2026-10-08 (xoá `app/todo/**`) và được giữ làm bản ghi đã gỡ (tombstone) để dãy mã liền mạch; nó không tính vào số màn hình đang hoạt động và không có route, không có file nguồn.
+> Ghi chú về mã màn hình: SCR001_Login, SCR002_Todo, SCR003_Homepage, SCR004_AwardsInformation, SCR005_CountdownPrelaunch là mã chuẩn, ổn định, không đánh số lại. SCR002_Todo đã bị gỡ ngày 2026-10-08 (xoá `app/todo/**`) và được giữ làm bản ghi đã gỡ (tombstone) để dãy mã liền mạch; nó không tính vào số màn hình đang hoạt động và không có route, không có file nguồn.
 
 <!-- ANTI-COMPRESSION RULE: One SCR per distinct view/page file. Do NOT collapse a namespace or
      wildcard route (e.g. /admin/system/*) into a single composite SCR. ≥2 view files under one
@@ -31,6 +31,7 @@
 | SCR002_Todo | Todo | removed (2026-10-08) | 0 | 0 |
 | SCR003_Homepage | Homepage | composite | 14 | 5 |
 | SCR004_AwardsInformation | Awards Information | composite | 17 | 4 |
+| SCR005_CountdownPrelaunch | Countdown Prelaunch | atomic | 5 | 4 |
 
 ---
 
@@ -46,7 +47,7 @@ Luồng dữ liệu và lời gọi dịch vụ (đầu vào cho BehaviorLogic):
 - Nút Google gọi Server Action `signInWithGoogle` (`app/login/actions.ts:29`, ROUTE005): dựng origin từ header, gọi `supabase.auth.signInWithOAuth` qua `createClient` (BL001_SupabaseServerClient), rồi `redirect` sang URL authorize của Google. Lỗi nào cũng trả `{ error: "failed" }`.
 - Bộ chọn ngôn ngữ gọi Server Action `setLocale` (`lib/i18n/actions.ts:8`, ROUTE006) để ghi cookie `NEXT_LOCALE`.
 - Google/Supabase trả trình duyệt về `/auth/callback` (ROUTE007, route handler không có giao diện — `app/auth/callback/route.ts:24`, BL002_OAuthCallbackExchange); thành công thì 302 về `/` (SCR003_Homepage), huỷ hoặc lỗi thì 302 về `/login?error=cancelled|failed`.
-- `proxy.ts` (BL003_SessionRefreshProxy) khớp `/login`: người đã đăng nhập mở `/login` bị chuyển 307 về `/` (`lib/supabase/proxy-session.ts:102`).
+- `proxy.ts` (BL003_SessionRefreshProxy) khớp `/login`: người đã đăng nhập mở `/login` bị chuyển 307 về `/` (`lib/supabase/proxy-session.ts:132`).
 
 > Note: Phân loại theo H-rule (thứ tự H6 → H4 → H5 → H2 → H3 → H1 → cổng 2-of-3): H6 không áp dụng (không có outlet/route con), H4 không có tab, H5 không có stepper, H2 = 0 (không import từ `features/*`, `modules/*`, `domains/*`), H3 = 0 (chỉ có landmark `<header>`/`<main>`/`<footer>`, không có `<section>`/`<article>`/`<aside>`/`role="region"`) [H3_RAW_DIV], H1 = 1 (chỉ F001) → 0/3 tín hiệu đạt cổng → atomic, không có REG. Cảnh báo: dự án dùng div thuần nên H3 dễ bị đánh giá thấp (giới hạn phát hiện đã biết).
 
@@ -111,9 +112,9 @@ Trang chủ công khai `/` của SAA 2025 (`app/page.tsx:7`): header cố địn
 Luồng dữ liệu và lời gọi dịch vụ (đầu vào cho BehaviorLogic):
 - `HomeContent` đọc cookie ngôn ngữ (`getLocale`), đọc biến môi trường `SAA_COUNTDOWN_TARGET` qua `parseCountdownTarget` (`home-content.tsx:31`) rồi chuyển số mili giây xuống đồng hồ phía client.
 - Lưới giải thưởng: `getAwards(locale)` (`lib/awards/get-awards.ts:18`) đọc bảng `awards` qua `createClient` (BL001_SupabaseServerClient) — MODEL001_Award.
-- Vùng tài khoản: `getCurrentUser()` (`lib/supabase/current-user.ts:32`) lấy claims JWT rồi đọc `profiles.role` dưới RLS — MODEL002_Profile; bấm Đăng xuất gọi Server Action `signOut` (`lib/auth/actions.ts:19`, ROUTE002).
+- Vùng tài khoản: `getCurrentUser()` (`lib/supabase/current-user.ts:33`) lấy claims JWT rồi đọc `profiles.role` dưới RLS — MODEL002_Profile; bấm Đăng xuất gọi Server Action `signOut` (`lib/auth/actions.ts:19`, ROUTE002).
 - Bộ chọn ngôn ngữ gọi `setLocale` (ROUTE003). `SamePageScrollTop` cuộn lên đầu khi bấm liên kết cùng trang (`header-behaviour/same-page-scroll-top.tsx:17`).
-- `proxy.ts` (BL003_SessionRefreshProxy) khớp `/` để làm mới cookie phiên; khách không bị chuyển hướng.
+- `proxy.ts` (BL003_SessionRefreshProxy) khớp `/` (nay là một trong mọi page route, F005) để làm mới cookie phiên; khi site đã mở khách không bị chuyển hướng, khi site khoá người không phải admin bị chuyển 307 về `/countdown` (SCR005_CountdownPrelaunch).
 
 > Note: Phân loại theo H-rule (thứ tự H6 → H4 → H5 → H2 → H3 → H1 → cổng 2-of-3): H6 không áp dụng (không có outlet), H4 không có tab, H5 không có stepper. H2 = 0: không có import khớp `features/*`, `modules/*`, `domains/*` (các module `lib/awards`, `lib/countdown`, `lib/i18n`, `lib/supabase`, `lib/auth` không nằm trong mẫu include của bảng JS/TS). H3 = 4 vỏ vùng ngữ nghĩa đặt tên: `<section>` ở `hero-section.tsx:13`, `root-further-section.tsx:16`, `awards-section.tsx:6` (`role="region"`) và `kudos-section.tsx:9` → đạt. H1 = 3: các route của màn hình mang owner F002 (ROUTE001), F003 (ROUTE002), F001+F002 (ROUTE003) → đạt, nhưng ở mức biên (code màn hình chỉ chú thích trực tiếp F002 và F003; F001 chỉ vào qua đồng sở hữu ROUTE003). Cổng 2-of-3: H1∧H3 → composite. Không dùng [SIGNAL_INFERRED]. Đồng hồ đếm ngược, hero và Kudos không tách REG vì không có tín hiệu độc lập (không có endpoint, trạng thái tải hay cổng quyền riêng — Trap 1/Trap 4). Nếu người duyệt coi H1 chưa đạt thì màn hình về atomic và REG001_AccountRegion chuyển thành vùng ghi chú; giữ composite vì F003 sở hữu vùng tài khoản (feature-list: "vùng của SCR003").
 
@@ -161,7 +162,7 @@ Luồng dữ liệu và lời gọi dịch vụ (đầu vào cho BehaviorLogic):
 
 | Code | Label | Owner | Independence Signals |
 |------|-------|-------|---------------------|
-| REG001_AccountRegion | AccountRegion (chuông + nút tài khoản trên header) | F003_AccountMenuAdminRole | cổng auth/quyền riêng (khách / người dùng / admin; mục Admin chỉ khi `role === "admin"`, `account-region.tsx:69-72`); trạng thái tải riêng (hai `Suspense` riêng, `account-region.tsx:28,38`); endpoint đọc riêng (claims JWT + `profiles.role`, `lib/supabase/current-user.ts:38,63`); bề mặt ghi riêng (`POST /` [Next-Action: signOut], ROUTE002) |
+| REG001_AccountRegion | AccountRegion (chuông + nút tài khoản trên header) | F003_AccountMenuAdminRole | cổng auth/quyền riêng (khách / người dùng / admin; mục Admin chỉ khi `role === "admin"`, `account-region.tsx:69-72`); trạng thái tải riêng (hai `Suspense` riêng, `account-region.tsx:28,38`); endpoint đọc riêng (claims JWT + `profiles.role`, `lib/supabase/current-user.ts:39,65`); bề mặt ghi riêng (`POST /` [Next-Action: signOut], ROUTE002) |
 | REG002_AwardsGrid | AwardsGrid (lưới giải thưởng) | F002_HomepageSaa | endpoint đọc riêng (bảng `awards` qua `getAwards`, `lib/awards/get-awards.ts:24-27`); trạng thái tải riêng (`Suspense` + `AwardsGridSkeleton`, `home-content.tsx:51-53`); trạng thái rỗng/lỗi riêng (`awards-grid.tsx:21-23`) |
 
 ---
@@ -179,7 +180,7 @@ Luồng dữ liệu và lời gọi dịch vụ (đầu vào cho BehaviorLogic):
 - Phần giải thưởng: `getAwardDetails(locale)` (`lib/awards/get-award-details.ts:24`) đọc bảng `awards` kèm `award_prizes` bằng một truy vấn lồng qua `createClient` (BL001_SupabaseServerClient) — MODEL001_Award, MODEL003_AwardPrize; hàng hỏng bị lọc, ánh xạ ở `lib/awards/award-detail-mapping.ts:99-116`.
 - Menu bên trái là client component: bấm thì cuộn tới khối, cuộn tay hoặc neo `#<slug>` thì đổi mục đang chọn (`app/_components/awards-nav-behaviour/use-awards-nav-active-slug.ts`, thuật toán thuần ở `lib/ui/section-scroll-spy.ts`); không gọi máy chủ.
 - Vùng tài khoản dùng chung với trang chủ (REG001_AccountRegion, F003); bộ chọn ngôn ngữ gọi `setLocale` (ROUTE009).
-- `proxy.ts` (BL003_SessionRefreshProxy) khớp `/awards-information` chỉ để làm mới cookie phiên; khách không bị chuyển hướng.
+- `proxy.ts` (BL003_SessionRefreshProxy) khớp mọi page route (F005), trong đó có `/awards-information`, để làm mới cookie phiên; khi site đã mở khách không bị chuyển hướng, khi site khoá người không phải admin bị chuyển 307 về `/countdown` (SCR005_CountdownPrelaunch).
 
 > Note: Loại composite do bước promote của feature F004 ghi; màn hình này chưa khai báo REG### riêng (vùng giải thưởng và menu có truy vấn, trạng thái tải/rỗng và hành vi client riêng nên có thể tách thành REG khi rebuild). Muốn tách thì chạy `/tkm:rebuild-spec --artifact screen-list`.
 
@@ -229,11 +230,59 @@ loading (vùng giải thưởng, vùng tài khoản), empty, error, nav-default,
 
 ---
 
+## SCR005_CountdownPrelaunch: Countdown Prelaunch
+
+**Type**: atomic
+
+### Description
+
+Trang đếm ngược prelaunch `/countdown` của F005 (`app/countdown/page.tsx:8`): nền toàn màn hình (`public/countdown/bg-image.png`) phủ lớp tối, một `<h1>` "Sự kiện sẽ bắt đầu sau" / "Event starts in" theo ngôn ngữ đã lưu và ba khối ngày / giờ / phút (mỗi khối là `role="group"` "NN DAYS" / "NN HOURS" / "NN MINUTES") kiểu LED với nhãn DAYS, HOURS, MINUTES. Không có header, footer, bộ chọn ngôn ngữ, nút hay liên kết nào. Chỉ hiện khi site đang khoá (mốc `site_settings.prelaunch_ends_at` còn ở tương lai), cho mọi vai trò, không cần đăng nhập.
+
+Luồng dữ liệu và lời gọi dịch vụ (đầu vào cho BehaviorLogic):
+- Vỏ tĩnh bọc `<Suspense>`; bên trong `CountdownPrelaunchContent` (`app/countdown/_components/countdown-prelaunch-content.tsx:14-34`) sau `connection()` đọc cookie ngôn ngữ (`getLocale`), đọc mốc `site_settings.prelaunch_ends_at` bằng `readPrelaunchEndsAt` (khoá publishable, không gắn cookie phiên, hạn chờ 2 giây, không retry, `lib/prelaunch/read-prelaunch-ends-at.ts:32-66`) rồi chụp giờ máy chủ `serverNowMs`, và giao `targetMs` cùng `serverNowMs` cho đồng hồ phía client. Trình duyệt không gọi Supabase.
+- Client (`usePrelaunchCountdown`, `lib/countdown/use-prelaunch-countdown.ts:32-51`) tính `clockOffsetMs = serverNowMs - Date.now()` một lần ở lần đọc đầu và đếm bằng `useCountdown(targetMs, clockOffsetMs)` (dùng lại phép tính của đồng hồ trang chủ, F002); khi về 0 hoặc mốc là `null` thì gọi `router.replace("/")` một lần cho mỗi `serverNowMs`.
+- `proxy.ts` (BL003_SessionRefreshProxy, mở rộng thành cổng prelaunch, `lib/supabase/proxy-session.ts:143-160` và `lib/prelaunch/prelaunch-gate-decision.ts:40-56`): khi khoá, mọi trang khác (trừ `/login`, `/auth/callback`) chuyển 307 về `/countdown` cho khách và người dùng thường, admin (đúng chữ `admin` ở `profiles.role`, đọc có hạn chờ 2 giây, lỗi thì coi là người thường) đi qua; khi đã mở hoặc mốc không dùng được, `/countdown` chuyển 307 về `/`.
+
+> Note: Loại atomic; không có REG### (một vùng nội dung, không có endpoint, trạng thái tải hay cổng quyền riêng). `/countdown` là ROUTE010 (`route-list.md`) và bảng `site_settings` là MODEL004 (`entities.md`).
+
+### Components
+
+| Component | Type | Purpose |
+|-----------|------|---------|
+| CountdownPage + CountdownPrelaunchContent (`app/countdown/page.tsx:8`, `app/countdown/_components/countdown-prelaunch-content.tsx:14`) | container | Vỏ tĩnh bọc `<Suspense>` có khung chờ nền tối; đọc locale, mốc và giờ máy chủ |
+| CountdownPrelaunchView (`app/_components/countdown-prelaunch/countdown-prelaunch-view.tsx:13`) | image, heading | Ảnh nền MoMorph toàn màn hình (`cover`) phủ lớp tối gradient, chỉ để trang trí; `<h1>` "Sự kiện sẽ bắt đầu sau" / "Event starts in" theo ngôn ngữ đã lưu |
+| CountdownPrelaunchUnit (`app/_components/countdown-prelaunch/countdown-prelaunch-unit.tsx:30`) | display widget | Một khối ngày / giờ / phút: mỗi ký tự một ô LED (`font-mono` thay phông của thiết kế) và nhãn DAYS, HOURS, MINUTES; `--` trước khi hydrate, `00` từ mốc trở đi |
+| PrelaunchCountdownLive (`app/countdown/_components/prelaunch-countdown-live.tsx:14`) | client container | Cầu nối client: gọi `usePrelaunchCountdown` rồi truyền giá trị cho view |
+| usePrelaunchCountdown (hành vi client, `lib/countdown/use-prelaunch-countdown.ts:32`) | behaviour | Không có giao diện; đếm theo giờ máy chủ và khi về 0 gọi `router.replace("/")` một lần cho mỗi `serverNowMs` |
+
+### Data Displayed
+
+- Data Entity 1: `site_settings.prelaunch_ends_at` (MODEL004_SiteSettings) — mốc mở site (bảng một dòng, đọc công khai, chỉ `service_role` ghi)
+- Data Entity 2: Giờ máy chủ lúc render (`serverNowMs`) — để bù độ lệch đồng hồ, không phải bảng DB
+- Data Entity 3: Chuỗi giao diện theo ngôn ngữ (`getDictionary(locale)`, nhánh `countdownPrelaunch.title`; nhãn đơn vị dùng `home.countdown`) — không phải bảng DB
+- Data Entity 4: Cookie `NEXT_LOCALE` (ngôn ngữ hiện tại)
+
+### Routes/URLs
+
+- `/countdown` (GET, HEAD; ROUTE010)
+- Không có Server Action, không có endpoint riêng cho mốc
+
+### Related Screens
+
+- SCR003_Homepage: Homepage (navigation — đích khi đồng hồ chạm 0 và khi mở `/countdown` sau mốc; khi khoá, người không phải admin mở `/` bị chuyển về đây)
+- SCR004_AwardsInformation: Awards Information (navigation — khi khoá, người không phải admin mở trang này bị chuyển về đây)
+
+### States
+
+loading (`--` trước khi hydrate), running, empty (mốc thiếu, trống hoặc hỏng: `00` rồi sang `/`), error (không đọc được mốc: như empty, không có thông báo lỗi), success (chạm 0: sang `/`)
+
+---
+
 ## Summary
 
-- **Total Screens**: 3 (đang hoạt động: SCR001_Login, SCR003_Homepage, SCR004_AwardsInformation); SCR002_Todo đã gỡ, không tính
+- **Total Screens**: 4 (đang hoạt động: SCR001_Login, SCR003_Homepage, SCR004_AwardsInformation, SCR005_CountdownPrelaunch (F005, chưa có mã)); SCR002_Todo đã gỡ, không tính
 - **Composite Screens**: 2 (SCR003_Homepage, 2 vùng REG; SCR004_AwardsInformation, chưa khai báo REG)
-- **Atomic Screens**: 1 (SCR001_Login)
+- **Atomic Screens**: 2 (SCR001_Login, SCR005_CountdownPrelaunch)
 
 ---
 

@@ -2,7 +2,7 @@
 
 **Project**: my-app (SAA 2025 — Sun* Annual Awards 2025)
 **Generated**: 2026-10-08
-**Analysis Scope**: Điều hướng giữa `/login` (SCR001_Login), `/` (SCR003_Homepage) và `/awards-information` (SCR004_AwardsInformation), đường quay về OAuth `/auth/callback`, chuyển hướng của `proxy.ts`, Server Action `signInWithGoogle` / `signOut` / `setLocale`. SCR002_Todo đã gỡ (2026-10-08), không có cạnh điều hướng.
+**Analysis Scope**: Điều hướng giữa `/login` (SCR001_Login), `/` (SCR003_Homepage), `/awards-information` (SCR004_AwardsInformation) và `/countdown` (SCR005_CountdownPrelaunch, F005), đường quay về OAuth `/auth/callback`, chuyển hướng của `proxy.ts`, Server Action `signInWithGoogle` / `signOut` / `setLocale`. SCR002_Todo đã gỡ (2026-10-08), không có cạnh điều hướng.
 
 **Code Format**: All SCR codes MUST follow `SCR###_NameSlug` format (e.g., SCR001_LoginForm, SCR002_Dashboard) | `SCR###/REG###` for region-scoped transitions
 
@@ -13,6 +13,10 @@ graph TD
     A["Truy cập trực tiếp / liên kết ngoài"] -->|"GET /"| H["SCR003_Homepage"]
     A -->|"GET /login"| L["SCR001_Login"]
     A -->|"GET /awards-information"| W["SCR004_AwardsInformation"]
+    A -->|"GET /countdown (site đang khoá)"| CD["SCR005_CountdownPrelaunch"]
+    H -->|"proxy 307 khi site khoá, không phải admin"| CD
+    W -->|"proxy 307 khi site khoá, không phải admin"| CD
+    CD -->|"chạm 00 00 00 hoặc proxy 307 khi site đã mở"| H
     H -->|"header, footer, hero, thẻ giải thưởng"| W
     W -->|"logo, About SAA 2025"| H
     W -->|"nút Login của khách, Đăng xuất"| L
@@ -39,9 +43,9 @@ graph TD
 
 | From Screen | To Screen | Action/Trigger | Conditions | Region |
 |-------------|-----------|----------------|------------|--------|
-| START (truy cập trực tiếp / liên kết ngoài) | SCR003_Homepage | Tải trang `GET /` (ROUTE001) | Không cần phiên; khách không bị chuyển hướng (`lib/supabase/proxy-session.ts:99-104`) | |
+| START (truy cập trực tiếp / liên kết ngoài) | SCR003_Homepage | Tải trang `GET /` (ROUTE001) | Không cần phiên; khi site đã mở khách không bị chuyển hướng (`lib/supabase/proxy-session.ts:129-135`); khi site khoá xem các dòng SCR005 bên dưới | |
 | START (truy cập trực tiếp / liên kết ngoài) | SCR001_Login | Tải trang `GET /login` (ROUTE004) | Khách: hiển thị màn hình đăng nhập | |
-| START (truy cập trực tiếp / liên kết ngoài) | SCR003_Homepage | `GET /login` bị `proxy` chuyển 307 về `/` | Phiên hợp lệ (`getClaims` có claims); chỉ GET/HEAD (`proxy-session.ts:99-102`) | |
+| START (truy cập trực tiếp / liên kết ngoài) | SCR003_Homepage | `GET /login` bị `proxy` chuyển 307 về `/` | Phiên hợp lệ (`getClaims` có claims); chỉ GET/HEAD (`proxy-session.ts:129-132`); khi site khoá và không phải admin, `/` tiếp tục bị chuyển 307 `/countdown` | |
 | SCR003_Homepage | SCR001_Login | Bấm nút "Login" (`GuestLoginLink`, `app/_components/site/account-slot-parts.tsx:14-22`) | Khách (không có người dùng, `account-region.tsx:53`) | SCR003_Homepage/REG001_AccountRegion |
 | SCR003_Homepage | SCR001_Login | Chọn "Đăng xuất" trong menu tài khoản → `signOut` (ROUTE002) rồi `redirect("/login")` (`lib/auth/actions.ts:19-33`) | Đã đăng nhập; luôn về `/login` kể cả khi revoke lỗi | SCR003_Homepage/REG001_AccountRegion |
 | SCR001_Login | Google OAuth (ngoài app) | Bấm nút Google → `signInWithGoogle` (ROUTE005) → `redirect(authorizeUrl)` (`app/login/actions.ts:60`) | Dựng được origin từ header và `signInWithOAuth` không lỗi; nếu không, ở lại SCR001 với lỗi inline | |
@@ -53,7 +57,12 @@ graph TD
 | SCR003_Homepage | SCR004_AwardsInformation | Bấm ảnh, tên hoặc "Chi tiết/Details" của thẻ giải thưởng → mở `/awards-information#<slug>` (`lib/awards/award-card-mapping.ts:60`); neo bỏ trống nếu hàng không có slug | Có dữ liệu giải thưởng; neo là slug của giải | SCR003_Homepage/REG002_AwardsGrid |
 | SCR003_Homepage | SCR004_AwardsInformation | Bấm "Awards Information" ở header (`site-header.tsx:48-54`) hoặc footer (`site-footer.tsx:45-51`), hoặc nút "ABOUT AWARDS" ở hero (`hero-section.tsx:69`) | Không cần phiên; không ai bị chuyển hướng | |
 | SCR003_Homepage | (chưa có page) `/sun-kudos`, `/standards` | Bấm liên kết ở header, hero, khối Kudos, footer | Đích chưa xây, không có SCR | |
-| START (truy cập trực tiếp / liên kết ngoài) | SCR004_AwardsInformation | Tải trang `GET /awards-information` (ROUTE008), kèm hoặc không kèm neo `#<slug>` | Không cần phiên; khách không bị chuyển hướng (`proxy.ts:19`, `lib/supabase/proxy-session.ts:99-105`); neo khớp slug thì trang tới khối đó, neo lạ bị bỏ qua | |
+| START (truy cập trực tiếp / liên kết ngoài) | SCR004_AwardsInformation | Tải trang `GET /awards-information` (ROUTE008), kèm hoặc không kèm neo `#<slug>` | Không cần phiên; khi site đã mở khách không bị chuyển hướng (`proxy.ts:23`, `lib/supabase/proxy-session.ts:129-135`); neo khớp slug thì trang tới khối đó, neo lạ bị bỏ qua | |
+| START (truy cập trực tiếp / liên kết ngoài) | SCR005_CountdownPrelaunch | Tải trang `GET /countdown` (HEAD cũng vậy) | Site đang khoá (`now < prelaunch_ends_at`); mọi vai trò kể cả khách, không cần phiên (`lib/prelaunch/prelaunch-gate-decision.ts:51-53`, `lib/supabase/proxy-session.ts:143-155`); mốc thiếu, `NULL`, hỏng hoặc đã qua thì xem dòng chuyển về `/` bên dưới | |
+| SCR003_Homepage | SCR005_CountdownPrelaunch | Mở `GET`/`HEAD /` khi site khoá → `proxy` chuyển 307 `/countdown` | Khách, hoặc đã đăng nhập mà vai trò không phải đúng chữ `admin` (tra vai trò lỗi hoặc quá 2 giây cũng tính là người thường); admin ở lại `/` (`lib/supabase/proxy-session.ts:157-159`) | |
+| SCR004_AwardsInformation | SCR005_CountdownPrelaunch | Mở `GET`/`HEAD /awards-information` khi site khoá → `proxy` chuyển 307 `/countdown` | Như dòng trên; mọi page route khác (kể cả đường chưa có page) cũng vậy, riêng `/login` và `/auth/callback` luôn được miễn (`lib/prelaunch/prelaunch-gate-decision.ts:14,46-55`) | |
+| SCR005_CountdownPrelaunch | SCR003_Homepage | Đồng hồ chạm 00 00 00 (hoặc mốc `null`) → `router.replace("/")`, Back không quay lại | Chỉ khi đã hydrate; một lần cho mỗi `serverNowMs` (`lib/countdown/use-prelaunch-countdown.ts:40-48`) | |
+| SCR005_CountdownPrelaunch | SCR003_Homepage | Mở `GET`/`HEAD /countdown` khi site đã mở, hoặc mốc thiếu/`NULL`/hỏng → `proxy` chuyển 307 `/` | Không đọc vai trò (`lib/prelaunch/prelaunch-gate-decision.ts:51-53`) | |
 | SCR004_AwardsInformation | SCR003_Homepage | Bấm logo hoặc "About SAA 2025" ở header (`site-header.tsx:26,40-46`) hoặc footer (`site-footer.tsx:24,37-43`) | Liên kết `/`; ở trang này "About SAA 2025" không ở kiểu đang chọn | |
 | SCR004_AwardsInformation | SCR001_Login | Bấm nút "Login" (vùng tài khoản dùng chung) hoặc chọn "Đăng xuất" → `signOut` rồi `redirect("/login")` | Khách có nút "Login"; Đăng xuất chỉ khi đã đăng nhập | |
 | SCR004_AwardsInformation | SCR004_AwardsInformation | Bấm mục menu → cuộn tới `<section id="<slug>">` và đổi mục đang chọn; cuộn tay, `hashchange`; chọn ngôn ngữ → `setLocale` (ROUTE009) ghi cookie `NEXT_LOCALE`, giao diện làm mới tại chỗ | Chuột trái thường, không phím bổ trợ (menu); giá trị ngôn ngữ trong danh sách cho phép | |
@@ -97,17 +106,19 @@ graph TD
 - Từ SCR004_AwardsInformation: logo hoặc "About SAA 2025" ở header/footer
 - Từ SCR001_Login: đăng nhập thành công qua `/auth/callback` (302 `/`)
 - Từ SCR001_Login: `proxy` chuyển 307 khi người đã đăng nhập mở `/login`
+- Từ SCR005_CountdownPrelaunch: đồng hồ chạm 00 00 00 (`router.replace("/")`), hoặc `proxy` chuyển 307 khi mở `/countdown` lúc site đã mở
 
 **Exit Points**:
 - Sang SCR001_Login: nút "Login" của khách (REG001_AccountRegion); Đăng xuất (REG001_AccountRegion)
 - Sang SCR004_AwardsInformation: liên kết "Awards Information" ở header, footer, nút "ABOUT AWARDS" ở hero, thẻ giải thưởng (REG002_AwardsGrid) kèm neo
 - Sang các đích chưa có page: `/sun-kudos`, `/standards`, `/profile`, `/admin` (không thuộc SCR nào)
+- Sang SCR005_CountdownPrelaunch: `proxy` chuyển 307 khi site khoá và người mở không phải admin
 
 **Decision Points**:
 - Vùng tài khoản (REG001_AccountRegion): không có người dùng → nút "Login"; có người dùng → menu tài khoản; role đọc đúng bằng `"admin"` → thêm mục Admin (`account-region.tsx:53-72`)
 - Chuông thông báo (REG001_AccountRegion): chỉ hiện khi đã đăng nhập (`account-region.tsx:44-47`)
 - Lưới giải thưởng (REG002_AwardsGrid): có dữ liệu → hiện thẻ; rỗng hoặc truy vấn lỗi → hiện thông báo rỗng (`awards-grid.tsx:21-23`)
-- Đồng hồ đếm ngược: `SAA_COUNTDOWN_TARGET` hợp lệ → đếm tiếp; thiếu hoặc sai định dạng → hiển thị mốc 00 và ẩn "Coming soon" (`lib/countdown/parse-countdown-target.ts:26-41`)
+- Đồng hồ đếm ngược: `SAA_COUNTDOWN_TARGET` hợp lệ → đếm tiếp; thiếu hoặc sai định dạng → hiển thị mốc 00 và ẩn "Coming soon" (`lib/countdown/parse-countdown-target.ts:32-51`)
 
 ---
 
@@ -121,12 +132,29 @@ graph TD
 - Sang SCR003_Homepage: logo, "About SAA 2025" ở header/footer
 - Sang SCR001_Login: nút "Login" của khách; Đăng xuất (vùng tài khoản dùng chung)
 - Sang các đích chưa có page: `/sun-kudos` ("Chi tiết" của Kudos, header, footer), `/standards` (footer), `/profile`, `/admin` (menu tài khoản)
+- Sang SCR005_CountdownPrelaunch: `proxy` chuyển 307 khi site khoá và người mở không phải admin
 
 **Decision Points**:
 - Phần giải thưởng: có ≥ 1 giải hợp lệ → menu và sáu khối; rỗng, truy vấn lỗi hoặc mọi hàng hỏng → thông báo `home.awards.empty` thay cho menu và khối (`award-details-loader.tsx:17-26`, `lib/awards/get-award-details.ts:34-49`)
 - Neo `#<slug>`: khớp slug của một giải → cuộn tới khối và chọn mục đó; không khớp hoặc mã hoá lỗi → bỏ qua, mục đầu đang chọn (`lib/ui/section-scroll-spy.ts:34-44`)
 - Bấm mục menu: chuột trái thường → `preventDefault`, cuộn mượt (tức thì khi bật giảm chuyển động); có phím bổ trợ hoặc không phải nút trái → liên kết mặc định (`use-awards-nav-active-slug.ts:73-88`)
 - Cuộn tay: không đang ghim → mục đang chọn là khối cuối đã lên tới đường chuẩn, hoặc mục cuối khi ở cuối trang (`section-scroll-spy.ts:18-26`)
+
+---
+
+### SCR005_CountdownPrelaunch (Countdown Prelaunch)
+
+**Entry Points**:
+- Truy cập trực tiếp `/countdown` hoặc liên kết ngoài, khi site đang khoá (mọi vai trò, không cần phiên)
+- Từ mọi page route khác: `proxy` chuyển 307 `/countdown` khi site khoá và người mở là khách hoặc không phải admin (SCR001_Login `/login` và `/auth/callback` được miễn; người đã đăng nhập mở `/login` bị đưa về `/` rồi tiếp tục tới đây)
+
+**Exit Points**:
+- Sang SCR003_Homepage: đồng hồ chạm 00 00 00 hoặc mốc `null` (`router.replace("/")`); hoặc `proxy` chuyển 307 `/` khi mở `/countdown` lúc site đã mở hay mốc không dùng được
+- Không có nút hay liên kết nào trên màn hình; admin chưa đăng nhập phải mở thẳng `/login`
+
+**Decision Points**:
+- `proxy` mở `/countdown`: site khoá → hiện màn hình; site mở, mốc thiếu, `NULL` hoặc hỏng → 307 `/` (`lib/prelaunch/prelaunch-gate-decision.ts:51-53`)
+- Đồng hồ: chưa hydrate → `--`, chưa chuyển; còn thời gian → đếm theo giờ máy chủ; chạm 0 hoặc mốc `null` → `00` rồi chuyển `/` một lần cho mỗi `serverNowMs` (`lib/countdown/use-prelaunch-countdown.ts:38-48`)
 
 ---
 
@@ -177,8 +205,9 @@ sequenceDiagram
 | SCR001_Login | Không (người đã đăng nhập bị chuyển 307 về `/`) | Public (khách) |
 | SCR003_Homepage | Không | Public; vùng REG001_AccountRegion đổi theo phiên: khách → "Login", user → menu Profile, admin → thêm mục Admin (chỉ là giao diện) |
 | SCR004_AwardsInformation | Không | Public; khách và người đã đăng nhập thấy cùng nội dung, chỉ vùng tài khoản dùng chung khác nhau |
+| SCR005_CountdownPrelaunch | Không | Public, mọi vai trò kể cả khách và admin; chỉ hiện khi site đang khoá |
 
-> Ghi chú: không có route nào bị chặn đối với khách; `proxy.ts` chỉ chuyển hướng `GET|HEAD /login` khi đã có phiên (xem GUARD-001). Quyền chi tiết nằm ở `permissions.md`.
+> Ghi chú: khi site đã mở không có route nào bị chặn đối với khách; `proxy.ts` chỉ chuyển hướng `GET|HEAD /login` khi đã có phiên (xem GUARD-001). Khi site còn khoá (F005), cổng prelaunch chuyển người không phải admin về `/countdown` (xem GUARD-002); đây là cổng ra mắt, không phải kiểm soát an ninh. Quyền chi tiết nằm ở `permissions.md`.
 
 ---
 
@@ -191,14 +220,16 @@ sequenceDiagram
 | SCR001_Login | Lỗi nhà cung cấp hoặc đổi code lỗi / ném lỗi | Callback 302 `/login?error=failed`, trang hiện thông báo lỗi; không bao giờ trả 500 (`route.ts:50-59`) | screen |
 | SCR001_Login | `?error` có giá trị lạ | Bỏ qua, không hiện lỗi và không phản chiếu query (`page.tsx:9-11`) | screen |
 | SCR001_Login | Chuyển ngôn ngữ thất bại | Giữ ngôn ngữ hiện tại, chỉ ghi log (`language-selector.tsx:52-57`) | screen |
-| SCR003_Homepage | Đọc phiên lỗi (claims lỗi / ném lỗi) | Coi là khách, hiện nút "Login", ghi log (`lib/supabase/current-user.ts:39-41,53-56`) | region:REG001_AccountRegion |
-| SCR003_Homepage | Tra cứu `profiles.role` lỗi / không có dòng / giá trị lạ | Quy về `"user"`, không hiện mục Admin (`current-user.ts:68-82`) | region:REG001_AccountRegion |
+| SCR003_Homepage | Đọc phiên lỗi (claims lỗi / ném lỗi) | Coi là khách, hiện nút "Login", ghi log (`lib/supabase/current-user.ts:40-42,54-57`) | region:REG001_AccountRegion |
+| SCR003_Homepage | Tra cứu `profiles.role` lỗi / không có dòng / giá trị lạ | Quy về `"user"`, không hiện mục Admin (`current-user.ts:70-83`) | region:REG001_AccountRegion |
 | SCR004_AwardsInformation | Truy vấn `awards` kèm `award_prizes` lỗi hoặc ném lỗi (kể cả thiếu biến môi trường Supabase) | Trả danh sách rỗng, hiện thông báo rỗng thay cho menu và khối, ghi log `[awards-information]`; Kudos và footer vẫn hiện (`lib/awards/get-award-details.ts:34-49`) | screen |
 | SCR004_AwardsInformation | Hàng giải thiếu cột hoặc sai kiểu | Hàng bị bỏ khỏi cả menu và khối, log số hàng bị bỏ (`get-award-details.ts:39-43`, `award-detail-mapping.ts:64-81`) | screen |
 | SCR004_AwardsInformation | Neo `#<slug>` không khớp giải nào hoặc mã hoá lỗi | Bỏ qua, không lỗi, trang ở đầu, mục đầu đang chọn (`section-scroll-spy.ts:34-44`) | screen |
 | SCR003_Homepage | Truy vấn `awards` lỗi hoặc dòng sai kiểu | Trả danh sách rỗng và hiện thông báo rỗng; dòng sai kiểu bị bỏ và ghi log (`lib/awards/get-awards.ts:28-43`) | region:REG002_AwardsGrid |
-| SCR003_Homepage | `SAA_COUNTDOWN_TARGET` thiếu hoặc sai định dạng | Đếm ngược hiển thị 00, ẩn "Coming soon", ghi log một lần (`parse-countdown-target.ts:26-41`) | screen |
-| SCR001_Login, SCR003_Homepage, SCR004_AwardsInformation | `proxy` kiểm tra phiên lỗi (thiếu biến môi trường Supabase, mạng lỗi) | Coi là khách, request đi tiếp, ghi log (`lib/supabase/proxy-session.ts:83-96`) | screen |
+| SCR003_Homepage | `SAA_COUNTDOWN_TARGET` thiếu hoặc sai định dạng | Đếm ngược hiển thị 00, ẩn "Coming soon", ghi log một lần (`parse-countdown-target.ts:32-51`) | screen |
+| SCR001_Login, SCR003_Homepage, SCR004_AwardsInformation | `proxy` kiểm tra phiên lỗi (thiếu biến môi trường Supabase, mạng lỗi) | Coi là khách, request đi tiếp, ghi log; khi site khoá khách bị chuyển `/countdown` (`lib/supabase/proxy-session.ts:110-126`) | screen |
+| SCR005_CountdownPrelaunch | Mốc `prelaunch_ends_at` thiếu dòng, `NULL`, sai kiểu, quá 2 giây hoặc lỗi mạng | Fail open: site mở, `/countdown` chuyển 307 `/`; ghi một dòng `[prelaunch]` mỗi thông báo một lần mỗi tiến trình (trừ `NULL`, im lặng) (`lib/prelaunch/read-prelaunch-ends-at.ts:32-66`) | screen |
+| SCR001_Login, SCR003_Homepage, SCR004_AwardsInformation, SCR005_CountdownPrelaunch | Tra `profiles.role` của người dùng đã đăng nhập lỗi, quá 2 giây hoặc không có dòng khi site khoá | Fail closed: coi là `user`, 307 `/countdown`, log `[profiles]` (`lib/prelaunch/read-gate-user-role.ts:24-49`) | screen |
 
 > Scope values: `screen` (affects entire screen) | `region:REG###` (error contained within the named region).
 
@@ -206,7 +237,7 @@ sequenceDiagram
 
 ## Circular Dependencies Check
 
-- [x] Không có vòng chuyển hướng tự động vô hạn: khách ở `/` không bị chuyển; `/login` chỉ chuyển về `/` khi đã có phiên; `signOut` luôn kết thúc ở `/login` và khách ở `/login` không bị chuyển tiếp
+- [x] Không có vòng chuyển hướng tự động vô hạn: khi site đã mở khách ở `/` không bị chuyển; khi site khoá `/` → `/countdown` và `/countdown` → `/` (chạm 0) chỉ xảy ra một lần vì đồng hồ đếm theo giờ máy chủ nên trình duyệt không tới `/` trước khi cổng mở (BR-007, BR-008 của F005); `/login` chỉ chuyển về `/` khi đã có phiên; `signOut` luôn kết thúc ở `/login` và khách ở `/login` không bị chuyển tiếp
 - [x] All screens have valid entry/exit points (SCR002_Todo đã gỡ, không tính)
 - [x] All navigation paths terminate
 
@@ -219,16 +250,30 @@ sequenceDiagram
 Route guards intercept navigation to enforce conditions beyond authentication — loading required data, checking permissions, or applying business rules. Document each guard found on any route.
 
 ### GUARD-001 — LoggedInRedirect on /login
-**trigger:** `middleware` (Next.js 16 `proxy.ts`, trước khi route khớp `config.matcher = ["/", "/login", "/awards-information"]` render)
-**source:** `proxy.ts:9` → `lib/supabase/proxy-session.ts:99-105`
+**trigger:** `middleware` (Next.js 16 `proxy.ts`, trước khi route khớp `config.matcher = ["/((?!_next/|__nextjs|.*\\..*).*)"]` render; F005 mở rộng từ `["/", "/login", "/awards-information"]`)
+**source:** `proxy.ts:10-12` → `lib/supabase/proxy-session.ts:129-135`
 **logic:**
 ```pseudo
 refresh Supabase session cookies (getClaims)
 if (method is not GET and not HEAD) → continue
 if (hasVerifiedClaims and path == /login) → redirect 307 /
-else → continue (guest on /, /login and /awards-information is never redirected)
+else → continue (while the site is open a guest is never redirected by this rule)
 ```
-**failure path:** lỗi `getClaims` hoặc ném lỗi (kể cả thiếu biến môi trường) → coi là khách, request đi tiếp, không có 500; không có route nào bị chặn đối với khách
+**failure path:** lỗi `getClaims` hoặc ném lỗi (kể cả thiếu biến môi trường) → coi là khách, request đi tiếp, không có 500; quy tắc này không chặn route nào đối với khách
+
+### GUARD-002 — PrelaunchGate on every page route (F005)
+**trigger:** `middleware` (cùng `proxy.ts`, chạy sau quy tắc `/login`; chỉ `GET`/`HEAD`, bỏ qua `/login` và `/auth/callback`)
+**source:** `proxy.ts:22-24` → `lib/supabase/proxy-session.ts:43-79,143-160` → `lib/prelaunch/prelaunch-gate-decision.ts:40-56`
+**logic:**
+```pseudo
+read prelaunch_ends_at (anon, no-store, 2 s timeout, no retry) in parallel with getClaims
+locked = moment != null and now < moment
+if (path == /countdown) → locked ? continue : redirect 307 /
+if (not locked) → continue
+if (no verified session) → redirect 307 /countdown
+if (role from profiles == exactly "admin") → continue else redirect 307 /countdown
+```
+**failure path:** mốc không đọc được → site mở (fail open); vai trò không đọc được → `user`, bị chuyển (fail closed); cổng không phải kiểm soát an ninh, không thấy `POST` nên mọi trang và action vẫn tự kiểm tra quyền
 
 ---
 

@@ -190,7 +190,7 @@ flowchart LR
 
 | Action | Scenario | Behavior |
 |---|---|---|
-| A1 · A2 | Khách chưa đăng nhập mở trang | Thấy đủ nội dung, proxy không chuyển hướng, vùng tài khoản hiện nút đăng nhập *(A0, BR-001)* |
+| A1 · A2 | Khách chưa đăng nhập mở trang | Khi site đã mở: thấy đủ nội dung, proxy không chuyển hướng, vùng tài khoản hiện nút đăng nhập (khi site còn khoá, cổng prelaunch F005 chuyển về `/countdown`) *(A0, BR-001)* |
 | A2 | Bảng `awards` rỗng, truy vấn lỗi hoặc thiếu `SUPABASE_URL`/`SUPABASE_PUBLISHABLE_KEY` | log `[awards-information]`, giữ tiêu đề trang, hiện thông báo rỗng thay cho menu và khối; Kudos và footer không ảnh hưởng *(DEC-001)* |
 | A2 | Hàng `awards` thiếu cột hoặc sai kiểu | hàng bị bỏ khỏi cả menu và khối, log số hàng bị bỏ *(DEC-001, ALG-002)* |
 | A2 | Giải không có hàng nào trong `award_prizes` | khối vẫn hiện, không có dòng giá trị *(DEC-002)* |
@@ -286,8 +286,8 @@ None.
 #### Bin 3 — cross-cutting, belongs to no single action
 
 **A0 · FR-601 / BR-001 — Trang Awards Information công khai cho mọi người xem.**
-Cross-cutting: áp dụng cho toàn trang, không thuộc riêng action nào. Trang không kiểm tra phiên; matcher của `proxy.ts` nay là `["/", "/login", "/awards-information"]` (`proxy.ts:18-20`), `/awards-information` được thêm dưới dạng literal tĩnh chỉ để làm mới token phiên — `redirectTarget` vẫn chỉ chuyển hướng người đã đăng nhập khỏi `/login`, nên khách không bao giờ bị chuyển hướng ở đây. Khách và người đã đăng nhập thấy cùng nội dung chung, chỉ vùng tài khoản khác (F003). Ở tầng dữ liệu, `awards` và `award_prizes` chỉ cho `select` với `anon` và `authenticated` nên người xem không ghi được; trang không dùng `service_role`.
-**Source:** `proxy.ts:18-20` · `lib/supabase/proxy-session.ts:99-105` *(`redirectTarget`, không đổi)*; sửa matcher là thay đổi của feature này trên module do F001 sở hữu, tài liệu F001 và F002 đã cập nhật theo.
+Cross-cutting: áp dụng cho toàn trang, không thuộc riêng action nào. Trang không kiểm tra phiên; matcher của `proxy.ts` nay là literal tĩnh `["/((?!_next/|__nextjs|.*\..*).*)"]` phủ mọi page route (`proxy.ts:22-24`; F004 từng thêm `/awards-information` vào `["/", "/login", "/awards-information"]`, F005 thay bằng matcher phủ định) để làm mới token phiên — `loginRedirectTarget` vẫn chỉ chuyển hướng người đã đăng nhập khỏi `/login`, nên quy tắc đăng nhập không bao giờ chuyển hướng khách ở đây. Riêng khi site còn khoá, cổng prelaunch của F005 chuyển người không phải admin về `/countdown`; từ mốc mở site trở đi trang công khai như mô tả. Khách và người đã đăng nhập thấy cùng nội dung chung, chỉ vùng tài khoản khác (F003). Ở tầng dữ liệu, `awards` và `award_prizes` chỉ cho `select` với `anon` và `authenticated` nên người xem không ghi được; trang không dùng `service_role`.
+**Source:** `proxy.ts:22-24` · `lib/supabase/proxy-session.ts:129-135` *(`loginRedirectTarget`, quy tắc `/login` không đổi)* · `lib/supabase/proxy-session.ts:143-160` *(cổng prelaunch của F005)*; matcher gốc là thay đổi của feature này trên module do F001 sở hữu, F005 đã mở rộng nó.
 
 #### Bin 2 — used by ≥2 named actions
 
@@ -369,7 +369,7 @@ blocks = rows.map((r, i) => ({
 ```text
 NEXT_LOCALE (cookie)                                    # vi | en, path=/, 1 năm, sameSite=lax (A5, dùng lại)
 SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY                  # server-only, đọc bởi createClient cho A2 (tên biến, không có giá trị ở đây)
-proxy matcher ["/", "/login", "/awards-information"]    # proxy.ts:19; literal tĩnh làm mới phiên, không chuyển hướng (A0)
+proxy matcher ["/((?!_next/|__nextjs|.*\..*).*)"]    # proxy.ts:23; F005 thay ["/", "/login", "/awards-information"]; literal tĩnh, làm mới phiên (A0); khi site khoá cổng F005 chuyển hướng
 supabase/migrations/20261009021753_add_award_details_and_prizes.sql   # thêm 5 cột vào awards + bảng award_prizes + RLS + GRANT
 supabase/seeds/common/02-award-details.sql              # seed chi tiết giải, chạy sau 01-awards.sql (chỉ khi db reset local)
 public/home/awards/<slug>.png                           # ảnh 336x336 dùng lại của thẻ ở trang chủ (D014)
@@ -455,7 +455,7 @@ Chính sách kiểm thử: `e2e-red-first` (điều hướng và chuyển trạn
 - *(A1)* Liên kết "Awards Information" ở header dùng lại chữ đã có trong từ điển trang chủ; chữ "Award Information" trong clarifications.md được hiểu là cùng mục này. Header và footer là mã của F002, được sửa ở mức thêm prop "trang hiện tại" với mặc định giữ nguyên hành vi cũ của trang chủ.
 - *(A2)* Ảnh của khối giải dùng lại `public/home/awards/<slug>.png` (336x336, đã ghép nền và tên giải); Figma dùng cùng nền và ảnh tên giải nên không cần thêm ảnh (D014).
 - *(A2)* Chữ mô tả dài, số lượng, đơn vị, số tiền và ghi chú lấy nguyên văn từ `momorph/awards-information-content.md` khi triển khai; spec này không chép lại.
-- *(A0, A2)* `proxy.ts` thêm literal `/awards-information` vào matcher; thay đổi này thuộc module do F001 sở hữu nhưng được feature này thực hiện (clarifications.md); tài liệu F001 và F002 đã cập nhật theo (2026-10-09).
+- *(A0, A2)* `proxy.ts` đã thêm literal `/awards-information` vào matcher (thuộc module do F001 sở hữu, F004 thực hiện); F005 sau đó thay matcher bằng literal phủ định phủ mọi page route nên trang này vẫn được khớp (2026-10-09, `proxy.ts:22-24`).
 - *(A2)* Dữ liệu giải thưởng chỉ có seed local; môi trường thật nằm ngoài phạm vi (như D006 của F002).
 - *(A4)* Cuộn tới khối và đặt mục đang chọn chỉ dùng API trình duyệt chuẩn (`scrollIntoView`, `scrollend`, `getBoundingClientRect`); hành vi ở trình duyệt không có `scrollend` dựa vào hẹn giờ nhàn rỗi 150ms và chỉ là suy luận, bộ Playwright hiện có chưa chạy riêng cho trường hợp đó.
 - *(A1)* Ảnh key visual của trang là ảnh trang chủ dùng lại (`/home/key-visual.png`) vì Figma không có tệp xuất riêng cho khung này; cần thay khi có tệp chính thức (`app/_components/awards-information/awards-information-hero.tsx:15-24`).
@@ -470,7 +470,7 @@ Chính sách kiểm thử: `e2e-red-first` (điều hướng và chuyển trạn
 
 ### 5.4 Source References
 
-Mã as-built của feature (đã kiểm `path:line`): `app/awards-information/page.tsx:7-15`; `app/awards-information/_components/awards-information-content.tsx:22-49`, `award-details-loader.tsx:13-46`; `app/_components/awards-information/` (`award-block.tsx:54-116`, `award-details-layout.tsx:8-21`, `award-details-states.tsx:4,11`, `awards-information-hero.tsx:9-45`, `awards-information-title.tsx:3-22`, `awards-nav-view.tsx:15-47`, `awards-information-icons.tsx`, `awards-information-types.ts`); `app/_components/awards-nav-behaviour/` (`awards-nav.tsx:19-32`, `use-awards-nav-active-slug.ts:52-153`, `awards-nav-scroll-dom.ts:14-68`); `lib/ui/section-scroll-spy.ts:18-44`; `lib/awards/get-award-details.ts:24-51`, `lib/awards/award-detail-mapping.ts:9-116`; `lib/i18n/awards-information-copy.ts`; `proxy.ts:18-20`; `supabase/migrations/20261009021753_add_award_details_and_prizes.sql`; `supabase/seeds/common/02-award-details.sql`. Module có sẵn được dùng lại hoặc sửa nhẹ: `app/_components/site/site-header.tsx:11-71` và `site-footer.tsx:15-68` (thêm `currentPage`), `site-types.ts:16-30`, `app/_components/home/kudos-section.tsx` (dùng lại), `app/_components/site/saa-page-shell.tsx`, `lib/awards/award-card-mapping.ts:67` (chỉ đổi `isLocalPath` thành `export` để `award-detail-mapping.ts` dùng chung), `lib/awards/get-awards.ts` (mẫu đọc dữ liệu, không sửa), `lib/i18n/dictionary.ts:1-4,18`, `supabase/migrations/20261008045411_create_awards.sql` (mẫu RLS), `supabase/seeds/common/01-awards.sql`.
+Mã as-built của feature (đã kiểm `path:line`): `app/awards-information/page.tsx:7-15`; `app/awards-information/_components/awards-information-content.tsx:22-49`, `award-details-loader.tsx:13-46`; `app/_components/awards-information/` (`award-block.tsx:54-116`, `award-details-layout.tsx:8-21`, `award-details-states.tsx:4,11`, `awards-information-hero.tsx:9-45`, `awards-information-title.tsx:3-22`, `awards-nav-view.tsx:15-47`, `awards-information-icons.tsx`, `awards-information-types.ts`); `app/_components/awards-nav-behaviour/` (`awards-nav.tsx:19-32`, `use-awards-nav-active-slug.ts:52-153`, `awards-nav-scroll-dom.ts:14-68`); `lib/ui/section-scroll-spy.ts:18-44`; `lib/awards/get-award-details.ts:24-51`, `lib/awards/award-detail-mapping.ts:9-116`; `lib/i18n/awards-information-copy.ts`; `proxy.ts:22-24`; `supabase/migrations/20261009021753_add_award_details_and_prizes.sql`; `supabase/seeds/common/02-award-details.sql`. Module có sẵn được dùng lại hoặc sửa nhẹ: `app/_components/site/site-header.tsx:11-71` và `site-footer.tsx:15-68` (thêm `currentPage`), `site-types.ts:16-30`, `app/_components/home/kudos-section.tsx` (dùng lại), `app/_components/site/saa-page-shell.tsx`, `lib/awards/award-card-mapping.ts:67` (chỉ đổi `isLocalPath` thành `export` để `award-detail-mapping.ts` dùng chung), `lib/awards/get-awards.ts` (mẫu đọc dữ liệu, không sửa), `lib/i18n/dictionary.ts:1-4,18`, `supabase/migrations/20261008045411_create_awards.sql` (mẫu RLS), `supabase/seeds/common/01-awards.sql`.
 
 **Source:** `app/awards-information/page.tsx:7-15` → `app/awards-information/_components/awards-information-content.tsx:22-49` → `lib/awards/get-award-details.ts:24-51` → `lib/awards/award-detail-mapping.ts:99-116` → `app/_components/awards-nav-behaviour/use-awards-nav-active-slug.ts:52-153` → `lib/ui/section-scroll-spy.ts:18-44`
 

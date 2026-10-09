@@ -36,9 +36,9 @@
 
 | Code | Name | Type | Enforced At |
 |------|------|------|-------------|
-| PERM001_LoginSessionRedirect | Chuyển người đã đăng nhập khỏi `/login` | route-guard | `proxy.ts:18-20`, `lib/supabase/proxy-session.ts:99-105` |
+| PERM001_LoginSessionRedirect | Chuyển người đã đăng nhập khỏi `/login` | route-guard | `proxy.ts:22-24`, `lib/supabase/proxy-session.ts:129-135` |
 | PERM002_OAuthCallbackPublicEntry | Điểm quay về OAuth công khai, đích cố định | route-guard | `app/auth/callback/route.ts:24-60` |
-| PERM005_SessionRoleResolution | Xác định danh tính và vai trò (fail closed) | role-based | `lib/supabase/current-user.ts:32-83` |
+| PERM005_SessionRoleResolution | Xác định danh tính và vai trò (fail closed) | role-based | `lib/supabase/current-user.ts:33-84` |
 | PERM003_AccountRegionAuthState | Vùng tài khoản đổi giao diện theo trạng thái đăng nhập | screen-permission | `app/_components/header-behaviour/account-region.tsx:44-62` |
 | PERM004_AdminMenuEntryVisibility | Mục Admin Dashboard chỉ hiện với admin (UX-only) | screen-permission | `app/_components/header-behaviour/account-region.tsx:69-73` |
 | PERM006_SignOutOwnSession | Đăng xuất chỉ tác động session của người gọi | action-permission | `lib/auth/actions.ts:19-33` |
@@ -48,6 +48,8 @@
 | PERM010_ProfilesSelectOwnServiceWrite | Bảng `profiles`: chỉ đọc dòng của mình, ghi chỉ `service_role` | data-permission | `supabase/migrations/20261008045415_create_profiles.sql:27-63` |
 | PERM011_SessionCookieSecureEnvGate | Cookie session chỉ `secure` ở production | env-gate | `lib/supabase/session-cookie-options.ts:11-16` |
 | PERM012_AwardPrizesPublicReadServiceWrite | Bảng `award_prizes`: đọc công khai, ghi chỉ `service_role` | data-permission | `supabase/migrations/20261009021753_add_award_details_and_prizes.sql:46-57` |
+| PERM013_SiteSettingsPublicReadServiceWrite | Bảng `site_settings`: đọc công khai, ghi chỉ `service_role` | data-permission | `supabase/migrations/20261009083754_create_site_settings.sql:31-43` |
+| PERM014_PrelaunchGate | Cổng prelaunch: trước mốc chỉ admin vượt cổng (fail open phía mốc, fail closed phía vai trò) | route-guard | `proxy.ts:22-24`, `lib/supabase/proxy-session.ts:143-160`, `lib/prelaunch/prelaunch-gate-decision.ts:40-56` |
 
 ---
 
@@ -56,11 +58,11 @@
 ### PERM001_LoginSessionRedirect: Chuyển người đã đăng nhập khỏi `/login`
 
 **Type**: route-guard
-**Enforced At**: `proxy.ts:18-20` (matcher `["/", "/login", "/awards-information"]`), `lib/supabase/proxy-session.ts:99-105` (`redirectTarget`)
+**Enforced At**: `proxy.ts:22-24` (matcher literal phủ định phủ mọi page route; F005 mở rộng từ `["/", "/login", "/awards-information"]`), `lib/supabase/proxy-session.ts:129-135` (`loginRedirectTarget`)
 
 #### Description
 
-`proxy.ts` chạy `updateSession` cho `/`, `/login` và `/awards-information` (`proxy.ts:9-20`; `/awards-information` thêm ngày 2026-10-09 bởi F004, chỉ để làm mới phiên). `updateSession` làm mới phiên Supabase bằng `getClaims()` (xác thực chữ ký JWT, `proxy-session.ts:82`). Quy tắc chuyển hướng **duy nhất** của dự án: request `GET` hoặc `HEAD` tới `/login` mà claims hợp lệ thì trả 307 về `/` (`proxy-session.ts:100-102`). Không route nào bị chặn đối với khách; `/` luôn đi tiếp (`proxy-session.ts:18-21`). Request `POST` (Server Action) không bao giờ bị chuyển hướng để không làm hỏng lời gọi action (`proxy-session.ts:23-25,100`). Đích chuyển hướng là đường dẫn cố định trên cùng origin, không đọc từ query nên không có open redirect (`proxy-session.ts:27-28`). Thiếu/sai `SUPABASE_URL` hoặc `SUPABASE_PUBLISHABLE_KEY`, lỗi `getClaims` hay lỗi mạng đều coi là khách, ghi log, không trả 500 (`proxy-session.ts:54-96`). Đây là fail-safe vì khách không được cấp quyền nào. Proxy không phải rào chắn bảo vệ route: trang và action phải tự kiểm tra lại (`proxy-session.ts:23-25`).
+`proxy.ts` chạy `updateSession` cho mọi page route (`proxy.ts:10-24`; matcher literal `"/((?!_next/|__nextjs|.*\\..*).*)"` loại `/_next/*`, `__nextjs*` và đường có dấu chấm; F005 thay matcher cũ, `/awards-information` đã được F004 thêm ngày 2026-10-09 chỉ để làm mới phiên). `/auth/callback` khớp matcher nhưng `updateSession` trả tiếp ngay, không làm mới phiên (`proxy-session.ts:45`). `updateSession` làm mới phiên Supabase bằng `getClaims()` (xác thực chữ ký JWT, `proxy-session.ts:110`). Quy tắc chuyển hướng **theo phiên** duy nhất: request `GET` hoặc `HEAD` tới `/login` mà claims hợp lệ thì trả 307 về `/` (`proxy-session.ts:129-135`); cổng prelaunch là quy tắc chuyển hướng riêng, xem PERM014. Khi site đã mở không route nào bị chặn đối với khách; `/` luôn đi tiếp (`proxy-session.ts:13-16`). Request `POST` (Server Action) không bao giờ bị chuyển hướng để không làm hỏng lời gọi action (`proxy-session.ts:35-40,130,162-164`). Đích chuyển hướng là đường dẫn cố định trên cùng origin, không đọc từ query nên không có open redirect (`proxy-session.ts:41-42`). Thiếu/sai `SUPABASE_URL` hoặc `SUPABASE_PUBLISHABLE_KEY`, lỗi `getClaims` hay lỗi mạng đều coi là khách, ghi log, không trả 500 (`proxy-session.ts:81-127`). Đây là fail-safe vì khách không được cấp quyền nào. Proxy không phải rào chắn bảo vệ route: trang và action phải tự kiểm tra lại (`proxy-session.ts:35-37`).
 
 #### Related Routes
 
@@ -70,6 +72,7 @@
 - ROUTE005, ROUTE006 (POST) `/login` — không bị chuyển hướng
 - ROUTE002, ROUTE003 (POST) `/` — không bị chuyển hướng
 - ROUTE009 (POST) `/awards-information` — không bị chuyển hướng
+- ROUTE010 (GET) `/countdown` — đi qua `updateSession` như mọi page route (quy tắc `/login` không áp dụng)
 
 #### Related Screens
 
@@ -101,7 +104,7 @@
 
 #### Description
 
-`/auth/callback` ngoài matcher của proxy và công khai theo thiết kế, vì đây là nơi session được tạo ra (`route.ts:24`). Lớp bảo vệ nằm ở chính handler: chỉ đổi `code` hợp lệ lấy session (`exchangeCodeForSession`, `route.ts:47`), `?error=` từ nhà cung cấp thì không bao giờ đổi `code` đi kèm (`route.ts:35-38`), thiếu `code` thì coi là huỷ (`route.ts:40-41`). Mọi nhánh trả 302 tới đích cố định `/` hoặc `/login?error=cancelled|failed` trên cùng origin; `next`, `redirect_to` và mọi query khác bị bỏ qua nên không thành open redirect (`route.ts:19-21,26-29`). Lỗi trao đổi hoặc exception không bao giờ ra 500 (`route.ts:53-59`). Phía Supabase, `redirectTo` còn bị đối chiếu với danh sách cho phép `additional_redirect_urls` trong `supabase/config.toml:150`.
+`/auth/callback` khớp matcher của proxy nhưng `updateSession` trả tiếp ngay (`lib/supabase/proxy-session.ts:45`: không làm mới phiên, không cổng prelaunch), và công khai theo thiết kế, vì đây là nơi session được tạo ra (`route.ts:24`). Lớp bảo vệ nằm ở chính handler: chỉ đổi `code` hợp lệ lấy session (`exchangeCodeForSession`, `route.ts:47`), `?error=` từ nhà cung cấp thì không bao giờ đổi `code` đi kèm (`route.ts:35-38`), thiếu `code` thì coi là huỷ (`route.ts:40-41`). Mọi nhánh trả 302 tới đích cố định `/` hoặc `/login?error=cancelled|failed` trên cùng origin; `next`, `redirect_to` và mọi query khác bị bỏ qua nên không thành open redirect (`route.ts:19-21,26-29`). Lỗi trao đổi hoặc exception không bao giờ ra 500 (`route.ts:53-59`). Phía Supabase, `redirectTo` còn bị đối chiếu với danh sách cho phép `additional_redirect_urls` trong `supabase/config.toml:150`.
 
 #### Related Routes
 
@@ -169,7 +172,7 @@ Phía server quyết định phần giao diện bên phải header theo `getCurr
 
 #### Description
 
-Mục "Admin" trỏ `/admin` chỉ được thêm vào menu khi `role === "admin"` (`account-region.tsx:71`). Mọi vai trò khác, kể cả lỗi tra cứu (đã rơi về `user`), không thấy mục này. Việc ẩn mục chỉ là UX: `/admin` hiện chưa có page (`app/**/page.tsx` chỉ có `/` và `/login`), nên truy cập trực tiếp trả 404 cho mọi vai trò và không có guard phía server, kể cả proxy (matcher không gồm `/admin`). Comment trong code yêu cầu khi xây `/admin` phải tự kiểm tra lại vai trò ở server (`account-region.tsx:67-68`, `current-user.ts:26-27`). Mục Profile (`/profile`) cũng chưa có page.
+Mục "Admin" trỏ `/admin` chỉ được thêm vào menu khi `role === "admin"` (`account-region.tsx:71`). Mọi vai trò khác, kể cả lỗi tra cứu (đã rơi về `user`), không thấy mục này. Việc ẩn mục chỉ là UX: `/admin` hiện chưa có page (`app/**/page.tsx` chỉ có `/` và `/login`), nên truy cập trực tiếp trả 404 cho mọi vai trò và không có guard phía server, kể cả proxy (matcher không gồm `/admin`). Comment trong code yêu cầu khi xây `/admin` phải tự kiểm tra lại vai trò ở server (`account-region.tsx:67-68`, `current-user.ts:27-28`). Mục Profile (`/profile`) cũng chưa có page.
 
 #### Related Routes
 
@@ -199,11 +202,11 @@ Mục "Admin" trỏ `/admin` chỉ được thêm vào menu khi `role === "admin
 ### PERM005_SessionRoleResolution: Xác định danh tính và vai trò (fail closed)
 
 **Type**: role-based
-**Enforced At**: `lib/supabase/current-user.ts:32-83` (`getCurrentUser`, `readRole`)
+**Enforced At**: `lib/supabase/current-user.ts:33-84` (`getCurrentUser`, `readRole`), `lib/supabase/user-role.ts:13-15` (`toUserRole`, dùng chung với PERM014)
 
 #### Description
 
-Nguồn sự thật duy nhất của danh tính và vai trò phía server. Danh tính chỉ lấy từ JWT claims đã xác thực (`getClaims()`, không dùng `getSession()`; `current-user.ts:20-21,38`). Vai trò chỉ lấy từ `public.profiles.role` đọc bằng phiên của chính người dùng dưới RLS, không bao giờ từ `user_metadata` (`current-user.ts:21-23,63-67`). Chỉ giá trị chữ `"admin"` mới thành `admin` (`current-user.ts:77`). Fail closed: không có claims, lỗi auth hay exception → `null` (khách) (`current-user.ts:39-57`); không có dòng profile, lỗi tra cứu hay giá trị lạ → `"user"`, không bao giờ `"admin"` (`current-user.ts:68-82`). Kết quả được `cache()` theo request. Đọc trực tiếp bảng nên đổi vai trò có hiệu lực ở request kế tiếp. Chỉ `AccountRegion` đang dùng hàm này (`account-region.tsx:45,51`); chưa có trang hay action nào ra quyết định chặn dựa trên nó.
+Nguồn sự thật duy nhất của danh tính và vai trò phía server. Danh tính chỉ lấy từ JWT claims đã xác thực (`getClaims()`, không dùng `getSession()`; `current-user.ts:21-22,39`). Vai trò chỉ lấy từ `public.profiles.role` đọc bằng phiên của chính người dùng dưới RLS, không bao giờ từ `user_metadata` (`current-user.ts:22-24,65-69`). Chỉ giá trị chữ `"admin"` mới thành `admin`: hàm thuần `toUserRole` (`user-role.ts:13-15`) được gọi ở `current-user.ts:78`. Fail closed: không có claims, lỗi auth hay exception → `null` (khách) (`current-user.ts:40-58`); không có dòng profile, lỗi tra cứu hay giá trị lạ → `"user"`, không bao giờ `"admin"` (`current-user.ts:70-83`). Kết quả được `cache()` theo request. Đọc trực tiếp bảng nên đổi vai trò có hiệu lực ở request kế tiếp. Chỉ `AccountRegion` đang dùng hàm này (`account-region.tsx:45,51`); chưa có trang hay action nào ra quyết định chặn dựa trên nó.
 
 #### Related Routes
 
@@ -450,18 +453,91 @@ Cùng mẫu với PERM009. RLS bật trên `public.award_prizes` (`:46`); policy
 
 ---
 
+### PERM013_SiteSettingsPublicReadServiceWrite: Bảng `site_settings`: đọc công khai, ghi chỉ `service_role`
+
+**Type**: data-permission
+**Enforced At**: `supabase/migrations/20261009083754_create_site_settings.sql:31-43` (RLS bật; policy `site_settings_select_public`; GRANT tường minh)
+
+#### Description
+
+Cùng mẫu với PERM009. RLS bật trên `public.site_settings` (`:31`); policy `site_settings_select_public` cho `anon` và `authenticated` đọc mọi dòng (`using (true)`, `:33-35`). Quyền viết tường minh: thu hồi hết quyền của `public`, `anon`, `authenticated` rồi cấp `select` cho `anon, authenticated` và toàn quyền DML cho `service_role` (`:41-43`); không có policy hay GRANT ghi cho người dùng nên không có đường ghi từ app. Mọi cột đều đọc công khai nên không được lưu giá trị nhạy cảm ở đây. Khoá chính `singleton boolean` kèm `check (singleton)` giữ tối đa một dòng (`:22-27`); migration chèn sẵn dòng với `prelaunch_ends_at = NULL` (cổng tắt, `:46`); seed local `supabase/seeds/common/03-site-settings.sql:7-11` đặt mốc quá khứ. Proxy và trang `/countdown` đọc bằng khoá publishable (vai trò `anon`, không cookie) ở `lib/prelaunch/read-prelaunch-ends-at.ts:32-66`.
+
+#### Related Routes
+
+- ROUTE010 (GET) `/countdown` — đọc mốc để hiển thị đồng hồ
+- ROUTE001, ROUTE008 (GET) `/`, `/awards-information` — proxy đọc mốc để quyết định cổng (PERM014)
+
+#### Related Screens
+
+- SCR005_CountdownPrelaunch - Countdown Prelaunch
+
+#### Permission Rules
+
+| Role | Allow | Conditions |
+|------|-------|------------|
+| anon | ✓ (select) | Mọi dòng. Không có insert/update/delete. |
+| authenticated | ✓ (select) | Mọi dòng. Không có insert/update/delete. |
+| service_role | ✓ (select, insert, update, delete) | Bỏ qua RLS; dùng cho vận hành (đặt hoặc xoá mốc), seed và helper E2E. |
+
+#### Related Modules
+
+- `lib/prelaunch/read-prelaunch-ends-at.ts`
+- `e2e/support/prelaunch-setting.ts` (helper E2E ghi bằng `service_role`)
+- MODEL004_SiteSettings
+
+---
+
+### PERM014_PrelaunchGate: Cổng prelaunch: trước mốc chỉ admin vượt cổng
+
+**Type**: route-guard
+**Enforced At**: `proxy.ts:22-24` (matcher), `lib/supabase/proxy-session.ts:43-79,143-160` (`updateSession`, `prelaunchGateTarget`), `lib/prelaunch/prelaunch-gate-decision.ts:40-56` (`decidePrelaunchGate`), `lib/prelaunch/read-gate-user-role.ts:24-49` (`readGateUserRole`), `lib/supabase/user-role.ts:13-15` (`toUserRole`)
+
+#### Description
+
+Cổng ra mắt (F005), không phải kiểm soát an ninh (FR-602). Chỉ `GET`/`HEAD` được xét (`lib/supabase/proxy-session.ts:54,162-164`); `/login` và `/auth/callback` luôn được miễn (`lib/prelaunch/prelaunch-gate-decision.ts:14`; `/auth/callback` còn trả tiếp ngay ở `lib/supabase/proxy-session.ts:45`). Mốc đọc từ `site_settings.prelaunch_ends_at` song song với `getClaims()` (`lib/supabase/proxy-session.ts:55-58`). Khoá khi `momentMs !== null && nowMs < momentMs` (bằng nhau là mở, `lib/prelaunch/prelaunch-gate-decision.ts:49`). Khi khoá: `/countdown` hiện cho mọi vai trò (`:51-52`); mọi page route khác chuyển 307 `/countdown` trừ khi phiên đã xác minh có `profiles.role` đúng chữ `admin` (`lib/supabase/proxy-session.ts:157-159`). Khi mở hoặc mốc không dùng được: `/countdown` chuyển 307 `/` (`lib/prelaunch/prelaunch-gate-decision.ts:52`), mọi trang khác đi tiếp. Mốc **fail open** (thiếu dòng, `NULL`, sai, quá 2 giây hay lỗi mạng đều là site mở, không retry, `lib/prelaunch/read-prelaunch-ends-at.ts:9,32-66`); vai trò **fail closed**: lỗi, quá 2 giây, không có hồ sơ hay giá trị khác `admin` đều là `user` (`lib/prelaunch/read-gate-user-role.ts:11,24-49`). Đích chuyển hướng là hằng `/countdown` hoặc `/`, không đọc từ request (`lib/prelaunch/prelaunch-gate-decision.ts:7,9`), nên không có open redirect. Vì `POST` không qua cổng nên mọi trang và Server Action vẫn phải tự kiểm tra quyền.
+
+#### Related Routes
+
+- ROUTE001, ROUTE008 (GET) `/`, `/awards-information` — bị 307 `/countdown` khi khoá với người không phải admin; các trang khác cũng vậy
+- ROUTE010 (GET) `/countdown` — hiện khi khoá; 307 `/` khi mở
+- ROUTE004 (GET) `/login`, ROUTE007 (GET) `/auth/callback` — luôn được miễn
+- ROUTE002, ROUTE003, ROUTE005, ROUTE006, ROUTE009 (POST) — không qua cổng
+
+#### Related Screens
+
+- SCR005_CountdownPrelaunch - Countdown Prelaunch (đích bị chuyển hướng khi khoá)
+- SCR003_Homepage - Homepage; SCR004_AwardsInformation - Awards Information (bị chuyển hướng khi khoá với người không phải admin)
+
+#### Permission Rules
+
+| Role | Allow | Conditions |
+|------|-------|------------|
+| Anonymous visitor | ✗ (khi khoá, chỉ `/countdown`, `/login`, `/auth/callback`) | Mọi page route khác → 307 `/countdown`, không tra `profiles`. Khi mở hoặc mốc không dùng được: vào được mọi trang. |
+| Authenticated user | ✗ (khi khoá, như khách) | Vai trò `user`, tra vai trò lỗi, quá 2 giây hoặc không có hồ sơ → 307 `/countdown`. |
+| Authenticated admin | ✓ | `profiles.role = 'admin'` đọc được bằng phiên của chính người dùng; duyệt toàn site khi khoá, `/countdown` cũng hiện cho admin. |
+
+#### Related Modules
+
+- `proxy.ts`
+- `lib/supabase/proxy-session.ts` (BL003_SessionRefreshProxy)
+- `lib/prelaunch/prelaunch-gate-decision.ts`, `lib/prelaunch/read-prelaunch-ends-at.ts`, `lib/prelaunch/read-gate-user-role.ts`
+- `lib/supabase/user-role.ts`
+- MODEL004_SiteSettings, MODEL002_Profile (cột `role`, DISC-001)
+
+---
+
 ## Summary
 
-- **Total Permission Items**: 12
-- **By Type**: route-guard: 2, screen-permission: 2, action-permission: 3, data-permission: 3, role-based: 1, resource-ownership: 0, field-permission: 0, api-scope: 0, feature-flag: 0, experiment: 0, env-gate: 1, locale-gate: 0
+- **Total Permission Items**: 14
+- **By Type**: route-guard: 3, screen-permission: 2, action-permission: 3, data-permission: 4, role-based: 1, resource-ownership: 0, field-permission: 0, api-scope: 0, feature-flag: 0, experiment: 0, env-gate: 1, locale-gate: 0
 - **UX-only (không phải rào chắn server)**: PERM003, PERM004
 - **Authorization model**: RBAC đơn giản (`profiles.role` ∈ {`user`, `admin`}) cộng RLS theo vai trò Postgres; không có phân quyền theo sở hữu giữa người dùng.
 
 ### Gaps (ghi nhận, không phải PERM)
 
-- `/admin` chưa có page và chưa có kiểm tra vai trò phía server; hiện chỉ có việc ẩn mục menu (PERM004). Khi xây phải gọi `getCurrentUser()` và từ chối nếu không phải `admin` (yêu cầu từ code: `current-user.ts:26-27`).
+- `/admin` chưa có page và chưa có kiểm tra vai trò phía server; hiện chỉ có việc ẩn mục menu (PERM004). Khi xây phải gọi `getCurrentUser()` và từ chối nếu không phải `admin` (yêu cầu từ code: `current-user.ts:27-28`).
 - `/profile`, `/sun-kudos`, `/standards` có liên kết nhưng chưa có page, truy cập hiện trả 404; chưa có quy tắc quyền để ghi.
-- `getCurrentUser()` mới chỉ phục vụ vùng tài khoản; chưa trang hay action nào chặn truy cập dựa trên vai trò.
+- `getCurrentUser()` mới chỉ phục vụ vùng tài khoản; chưa trang hay action nào chặn truy cập dựa trên vai trò. Cổng prelaunch (PERM014) có dùng vai trò `admin` nhưng chỉ để quyết định ai vượt cổng ra mắt, nó fail open ở phía mốc và không thấy `POST`, nên không thay việc tự kiểm tra quyền.
 
 ---
 
@@ -469,8 +545,8 @@ Cùng mẫu với PERM009. RLS bật trên `public.award_prizes` (`:46`); policy
 
 - [x] All PERM### codes are unique
 - [x] All PERM### codes are referenced in FeatureList.md
-- [x] All related route references are valid (ROUTE### in RouteList: ROUTE001..009 đều tồn tại; `/admin` chỉ ghi chú là chưa có route)
-- [x] All related screen references are valid (SCR001_Login, SCR003_Homepage, SCR003_Homepage/REG001_AccountRegion, SCR003_Homepage/REG002_AwardsGrid, SCR004_AwardsInformation theo ScreenList; PERM003/PERM004 nhắm vùng REG001_AccountRegion — chỉ ẩn/hiện giao diện, UX-only)
+- [x] All related route references are valid (ROUTE### in RouteList: ROUTE001..010 đều tồn tại; `/admin` chỉ ghi chú là chưa có route)
+- [x] All related screen references are valid (SCR001_Login, SCR003_Homepage, SCR003_Homepage/REG001_AccountRegion, SCR003_Homepage/REG002_AwardsGrid, SCR004_AwardsInformation, SCR005_CountdownPrelaunch theo ScreenList; PERM003/PERM004 nhắm vùng REG001_AccountRegion — chỉ ẩn/hiện giao diện, UX-only)
 - [x] All related module references are valid
 - [x] No orphaned permission references
 

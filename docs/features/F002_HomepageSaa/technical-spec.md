@@ -115,7 +115,7 @@ flowchart LR
 **Who** · Người xem trang chủ *(gate A0 — § 4.4)*
 **FE** · `LiveCountdown` (`app/_components/home/countdown.tsx:13-16`, `"use client"`) vẽ `CountdownTiles` (`app/_components/home/countdown-tiles.tsx:24-45`): nhãn "Coming soon" chỉ vẽ khi `showComingSoon` (`:33-36`), ba ô DAYS / HOURS / MINUTES, mỗi ký tự một hộp (`Array.from(value)`, `:9`) nên ngày ba chữ số cho ba hộp; chữ số dùng `font-mono` thay cho font "Digital Numbers" của Figma vì font này chưa được đóng gói (`:4-5,15`). Khối thông tin sự kiện nằm cạnh trong hero (`app/_components/home/hero-section.tsx:52-63`): "Thời gian:" / "Địa điểm:" (EN: "Time:" / "Venue:") kèm giá trị và dòng livestream, chỉ để xem; giá trị `26/12/2025`, `Âu Cơ Art Center` và câu livestream là hằng số tiếng Việt dùng chung hai ngôn ngữ (`lib/i18n/home-copy.ts:31-35,64,89`).
 **Request** · prop `targetMs` (`number | null`) và `labels` (`home.countdown`) do `HomeContent` truyền xuống (`app/_components/home/home-content.tsx:31,47`)
-**BE** · Máy chủ, mỗi lần dựng `HomeContent`: `parseCountdownTarget(process.env.SAA_COUNTDOWN_TARGET)` cho `targetMs` hoặc `null` — `ALG-001`: kiểm tra chuỗi ISO-8601 bắt buộc có múi giờ rồi đổi sang epoch ms *(§ 4.5)*. Trình duyệt, `useCountdown` (`lib/countdown/use-countdown.ts:36-46`) — `ALG-002`: tính số phút còn lại làm tròn lên, tách ngày/giờ/phút và hẹn giờ vào đúng ranh giới phút kế tiếp *(§ 4.5)*.
+**BE** · Máy chủ, mỗi lần dựng `HomeContent`: `parseCountdownTarget(process.env.SAA_COUNTDOWN_TARGET)` (tham số `label` tuỳ chọn do F005 thêm; bỏ trống thì giữ nhãn lỗi `[countdown] SAA_COUNTDOWN_TARGET`) cho `targetMs` hoặc `null` — `ALG-001`: kiểm tra chuỗi ISO-8601 bắt buộc có múi giờ rồi đổi sang epoch ms *(§ 4.5)*. Trình duyệt, `useCountdown` (`lib/countdown/use-countdown.ts:42-55`; tham số thứ hai `clockOffsetMs` tuỳ chọn, mặc định `0`, do F005 thêm — trang chủ không truyền nên hành vi không đổi) — `ALG-002`: tính số phút còn lại làm tròn lên, tách ngày/giờ/phút và hẹn giờ vào đúng ranh giới phút kế tiếp *(§ 4.5)*.
 **Rule**
 - **BR-001 — Mốc đếm ngược phải là ISO-8601 có múi giờ; thiếu hoặc sai coi như không có mốc.** Giá trị thiếu, trống, thiếu múi giờ hoặc có trường ngoài khoảng (tháng 13, giờ 25…) cho `targetMs = null`; ngày lịch không tồn tại như 30/02 vẫn được engine lùi sang tháng sau và coi là hợp lệ. Khi `targetMs = null`: đồng hồ hiện 00 00 00, "Coming soon" ẩn, trang không lỗi; một dòng log `[countdown]` cho mỗi giá trị sai khác nhau trên mỗi tiến trình máy chủ. `lib/countdown/parse-countdown-target.ts:12-18,26-41`
 - **BR-002 — Đếm theo phút, làm tròn lên, ít nhất hai chữ số.** Chỉ về 0 khi hiện tại đã tới hoặc qua mốc; số một chữ số được đệm số 0, ô ngày dài hơn khi còn trên 99 ngày. `lib/countdown/countdown-math.ts:15-18,21-28`
@@ -123,12 +123,12 @@ flowchart LR
 
 | DEC | subtype | Condition | What the user sees | Source |
 |---|---|---|---|---|
-| **DEC-001** | render | chưa hydrate (máy chủ hoặc lần render đầu của trình duyệt): snapshot server `-1` | ba ô `--`, nhãn "Coming soon" ẩn | `lib/countdown/use-countdown.ts:19-25` `lib/countdown/use-countdown.ts:44` |
-| **DEC-001** | render | `targetMs` hợp lệ VÀ số phút còn lại > 0 | ngày/giờ/phút còn lại đệm hai chữ số và nhãn "Coming soon" | `lib/countdown/use-countdown.ts:45` `app/_components/home/countdown-tiles.tsx:33-36` |
-| **DEC-001** | render | `targetMs = null` HOẶC hiện tại ≥ mốc (số phút còn lại = 0) | `00 00 00` và nhãn "Coming soon" ẩn | `lib/countdown/use-countdown.ts:45` `lib/countdown/countdown-math.ts:15-18` |
+| **DEC-001** | render | chưa hydrate (máy chủ hoặc lần render đầu của trình duyệt): snapshot server `-1` | ba ô `--`, nhãn "Coming soon" ẩn | `lib/countdown/use-countdown.ts:19-27` `lib/countdown/use-countdown.ts:53` |
+| **DEC-001** | render | `targetMs` hợp lệ VÀ số phút còn lại > 0 | ngày/giờ/phút còn lại đệm hai chữ số và nhãn "Coming soon" | `lib/countdown/use-countdown.ts:54` `app/_components/home/countdown-tiles.tsx:33-36` |
+| **DEC-001** | render | `targetMs = null` HOẶC hiện tại ≥ mốc (số phút còn lại = 0) | `00 00 00` và nhãn "Coming soon" ẩn | `lib/countdown/use-countdown.ts:54` `lib/countdown/countdown-math.ts:15-18` |
 
-**Result** · Chỉ đọc, không ghi DB. Hẹn giờ phía trình duyệt kích hoạt đúng lúc số phút đổi, mỗi lần tính lại từ `Date.now()`, dừng khi về 0 và đọc lại ngay khi tab ẩn quay lại hiện (`lib/countdown/use-countdown.ts:54-79`). Người xem thấy số giảm mỗi phút mà không tải lại.
-**Source:** `app/_components/home/home-content.tsx:31,47` → `lib/countdown/parse-countdown-target.ts:26-41` → `app/_components/home/countdown.tsx:13-16` → `lib/countdown/use-countdown.ts:36-79` → `lib/countdown/countdown-math.ts:15-40` → `app/_components/home/countdown-tiles.tsx:24-45`
+**Result** · Chỉ đọc, không ghi DB. Hẹn giờ phía trình duyệt kích hoạt đúng lúc số phút đổi, mỗi lần tính lại từ `Date.now()`, dừng khi về 0 và đọc lại ngay khi tab ẩn quay lại hiện (`lib/countdown/use-countdown.ts:63-93`). Người xem thấy số giảm mỗi phút mà không tải lại.
+**Source:** `app/_components/home/home-content.tsx:31,47` → `lib/countdown/parse-countdown-target.ts:32-51` → `app/_components/home/countdown.tsx:13-16` → `lib/countdown/use-countdown.ts:42-93` → `lib/countdown/countdown-math.ts:15-40` → `app/_components/home/countdown-tiles.tsx:24-45`
 
 <!-- Không vẽ sequenceDiagram: dưới ngưỡng (không ghi bảng nào, không phải tác vụ nền). Phần phân nhánh hiển thị là bảng DEC-001. -->
 
@@ -219,7 +219,7 @@ flowchart LR
 | `SiteFooter` | logo, bốn liên kết, bản quyền; prop `currentPage` tuỳ chọn, bỏ trống (trang chủ) thì không liên kết nào ở kiểu đang chọn | A1, A5 | `app/_components/site/site-footer.tsx` |
 | `HeroSection` | ảnh nền, tiêu đề, khối sự kiện, hai nút kêu gọi, chứa slot đồng hồ | A1, A2 | `app/_components/home/hero-section.tsx` |
 | `LiveCountdown`, `CountdownTiles` | đồng hồ đếm ngược client + ba ô + nhãn "Coming soon" | A2 | `app/_components/home/countdown.tsx`, `app/_components/home/countdown-tiles.tsx` |
-| `useCountdown` | hook `useSyncExternalStore` theo phút | A2 | `lib/countdown/use-countdown.ts` |
+| `useCountdown` | hook `useSyncExternalStore` theo phút; tham số tuỳ chọn `clockOffsetMs` (mặc định `0`, F005) cộng vào mọi lần đọc `Date.now()` | A2 | `lib/countdown/use-countdown.ts` |
 | `parseCountdownTarget`, `countdown-math` | hàm thuần: parse mốc, tính phút còn lại, tách ngày/giờ/phút | A2 | `lib/countdown/parse-countdown-target.ts`, `lib/countdown/countdown-math.ts` |
 | `RootFurtherSection`, `KudosSection`, `WidgetButton` | các khối tĩnh còn lại | A1 | `app/_components/home/root-further-section.tsx`, `app/_components/home/kudos-section.tsx`, `app/_components/home/widget-button.tsx` |
 | `AwardsSection`, `AwardsGrid`, `AwardsGridSkeleton`, `AwardsGridLoader` | tiêu đề mục, lưới thẻ, khung chờ, bộ nạp dữ liệu | A3 | `app/_components/home/awards-section.tsx`, `app/_components/home/awards-grid.tsx`, `app/_components/home/home-content.tsx` |
@@ -266,8 +266,8 @@ None.
 #### Bin 3 — cross-cutting, belongs to no single action
 
 **A0 · FR-601 / BR-007 — Trang chủ công khai cho mọi người xem.**
-Cross-cutting: áp dụng cho toàn trang, không thuộc riêng action nào. `app/page.tsx` không kiểm tra phiên và `proxy.ts` không bao giờ chuyển hướng ở `/`: matcher chứa `/` chỉ để làm mới token (khách đi tiếp, `redirectTarget` chỉ chuyển hướng người đã đăng nhập khỏi `/login`). Khách và người đã đăng nhập thấy cùng nội dung chung, chỉ vùng tài khoản khác nhau (F003). Ở tầng dữ liệu, `awards` chỉ cho `select` với `anon` và `authenticated` nên người xem không ghi được (PERM009).
-**Source:** `app/page.tsx:7-15` · `proxy.ts:18-19` · `lib/supabase/proxy-session.ts:99-105` · `supabase/migrations/20261008045411_create_awards.sql:26-36`
+Cross-cutting: áp dụng cho toàn trang, không thuộc riêng action nào. `app/page.tsx` không kiểm tra phiên và quy tắc đăng nhập của `proxy.ts` không bao giờ chuyển hướng khách ở `/`: matcher phủ mọi page route (F005) và `/` được khớp để làm mới token (khách đi tiếp; `loginRedirectTarget` chỉ chuyển hướng người đã đăng nhập khỏi `/login`). Riêng khi site còn khoá, cổng prelaunch của F005 chuyển người không phải admin ở `/` về `/countdown`; từ mốc mở site trở đi trang chủ công khai như trên. Khách và người đã đăng nhập thấy cùng nội dung chung, chỉ vùng tài khoản khác nhau (F003). Ở tầng dữ liệu, `awards` chỉ cho `select` với `anon` và `authenticated` nên người xem không ghi được (PERM009).
+**Source:** `app/page.tsx:7-15` · `proxy.ts:22-23` · `lib/supabase/proxy-session.ts:129-135` · `supabase/migrations/20261008045411_create_awards.sql:26-36`
 
 #### Bin 2 — used by ≥2 named actions
 
@@ -296,7 +296,7 @@ award desc   -> description_vi (always)
 ### Phân tích mốc đếm ngược từ biến môi trường thành thời điểm hợp lệ hoặc rỗng (ALG-001)
 **Linked FR:** FR-002, FR-203
 **Used in:** A2
-**Source:** `lib/countdown/parse-countdown-target.ts:7-8,26-41`
+**Source:** `lib/countdown/parse-countdown-target.ts:9-10,32-51`
 **Input:** chuỗi `SAA_COUNTDOWN_TARGET` hoặc `undefined` · **Output:** epoch ms hoặc `null` · **Complexity:** O(1)
 **Description:** Chuỗi phải có dạng ISO-8601 kèm múi giờ (`Z` hoặc `±hh:mm`); chuỗi không có múi giờ bị từ chối vì sẽ cho kết quả khác nhau theo môi trường chạy. Lỗi không ném ra: trả `null` và ghi log một lần cho mỗi giá trị sai khác nhau trên mỗi tiến trình (`reportOnce`, `:12-18`) để cấu hình sai không làm tràn log. Biến chỉ đọc phía máy chủ; trình duyệt chỉ nhận con số.
 
@@ -313,7 +313,7 @@ parse(raw):
 ### Tính số phút còn lại, tách ngày/giờ/phút và lịch cập nhật theo phút (ALG-002)
 **Linked FR:** FR-202, FR-203
 **Used in:** A2
-**Source:** `lib/countdown/countdown-math.ts:15-40` · `lib/countdown/use-countdown.ts:19-25,36-79`
+**Source:** `lib/countdown/countdown-math.ts:15-40` · `lib/countdown/use-countdown.ts:19-27,42-93`
 **Input:** `targetMs`, giờ hiện tại · **Output:** `[ngày, giờ, phút]` dạng chuỗi hoặc placeholder · **Complexity:** O(1)
 **Description:** Số phút còn lại làm tròn lên nên 0 chỉ xuất hiện khi hiện tại đã tới hoặc qua mốc. Hẹn giờ kế tiếp đặt vào đúng lúc số phút đổi (tính từ mốc, không phải từ lúc tải trang), mỗi lần kích hoạt tính lại từ giờ hiện tại; khi tab ẩn quay lại hiện, `visibilitychange` đọc lại ngay. Snapshot phía máy chủ là placeholder `-1` để prerender không đọc giờ (tránh lỗi dưới `cacheComponents` và lệch hydrate).
 
@@ -359,7 +359,7 @@ card.href  = trim(slug) ? "/awards-information#" + encodeURIComponent(trim(slug)
 SAA_COUNTDOWN_TARGET = <ISO-8601 có múi giờ>   # server-only, mốc sự kiện cho A2; mẫu ở .env.example:18; thiếu/sai -> 00 00 00 (BR-001)
 SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY         # server-only, đọc bởi createClient cho A3 (tên biến, không có giá trị ở đây)
 NEXT_LOCALE (cookie)                            # vi | en, path=/, 1 năm, sameSite=lax (A4)
-proxy matcher ["/", "/login", "/awards-information"]                   # thêm "/" để làm mới phiên khi mở trang chủ; F001 (SessionProxy) sở hữu; "/awards-information" thêm bởi F004
+proxy matcher ["/((?!_next/|__nextjs|.*\..*).*)"]                    # F005: mọi page route (trước đó ["/", "/login", "/awards-information"]); trang chủ vẫn được khớp để làm mới phiên; F001 (SessionProxy) sở hữu
 supabase/migrations/20261008045411_create_awards.sql   # bảng awards + RLS + GRANT; tách khỏi profiles của F003
 supabase/seeds/common/01-awards.sql             # upsert 6 hạng mục theo slug (chỉ chạy khi db reset local)
 public/home/awards/<slug>.png                   # ảnh thẻ 336x336 đã ghép nền (Storage bucket không dùng)
@@ -458,8 +458,8 @@ Bộ kiểm thử Playwright hiện có phủ trang chủ: `e2e/homepage-layout-
 ### 5.2 Assumptions
 
 - *(A1)* Nội dung dài (đoạn Root Further, câu trích, mô tả sáu giải thưởng, đoạn Kudos) được lấy nguyên văn từ khung Figma i87tDx10uM khi triển khai (`lib/i18n/home-copy.ts:3-6`, `supabase/seeds/common/01-awards.sql:2`); spec này không chép lại.
-- *(A0, A1)* `proxy.ts` khớp `/` (`proxy.ts:18-19`) nên token xoay vòng ở trang công khai được ghi vào cookie phản hồi; F001 (SessionProxy) sở hữu thay đổi này, F002 chỉ dựa vào đó.
-- *(A2)* `useSyncExternalStore` chỉ dùng snapshot server khi dựng và hydrate nên không đọc `Date.now()` lúc prerender (`lib/countdown/use-countdown.ts:16-25`); đây là suy luận từ ngữ nghĩa React, spec này không chạy `next build`.
+- *(A0, A1)* `proxy.ts` khớp `/` (matcher phủ mọi page route, `proxy.ts:22-23`) nên token xoay vòng ở trang công khai được ghi vào cookie phản hồi; F001 (SessionProxy) sở hữu thay đổi này, F002 chỉ dựa vào đó.
+- *(A2)* `useSyncExternalStore` chỉ dùng snapshot server khi dựng và hydrate nên không đọc `Date.now()` lúc prerender (`lib/countdown/use-countdown.ts:16-27`); đây là suy luận từ ngữ nghĩa React, spec này không chạy `next build`.
 - *(A2)* `SAA_COUNTDOWN_TARGET` được đọc trong `HomeContent`, nằm sau `await getLocale()` (đọc cookie) nên chạy ở thời điểm request, không bị nướng lúc dựng; đổi mốc cần khởi động lại tiến trình máy chủ để nạp lại biến môi trường nhưng không cần dựng lại (`app/_components/home/home-content.tsx:28-31`). Chưa chạy thực tế để xác nhận.
 - *(A3)* Ảnh giải thưởng là tệp tĩnh dưới `/public` (`public/home/awards/<slug>.png`), `image_path` lưu đường dẫn gốc; mô tả luôn tiếng Việt vì bảng không có `description_en` (`supabase/migrations/20261008045411_create_awards.sql:19`).
 - *(A1, A3)* Dữ liệu 6 hạng mục chỉ là seed local; môi trường thật nằm ngoài phạm vi (quyết định 2026-10-08).
@@ -470,7 +470,7 @@ Bộ kiểm thử Playwright hiện có phủ trang chủ: `e2e/homepage-layout-
 2. **`page.clock` và HMR của Next dev** *(A2)*: chưa xác nhận ca đồng hồ chạy ổn định trên `next dev` hay chỉ trên `build + start`.
 3. **Cách E2E ép trạng thái lỗi của mục giải thưởng** *(A3)*: truy vấn chạy phía máy chủ nên `page.route` không chặn được; trạng thái rỗng kiểm được bằng dữ liệu, trạng thái lỗi chưa có đường kiểm tự động trong `e2e/homepage-awards.spec.ts`.
 4. **Hành vi bố cục dưới 1024px của header** *(A1)*: ba liên kết điều hướng bị ẩn và chưa thấy menu thay thế trong code; chờ quyết định ở D007 của functional-spec.
-5. **Ngày lịch không tồn tại vẫn được chấp nhận** *(A2)*: regex chỉ kiểm hình dạng chuỗi (`lib/countdown/parse-countdown-target.ts:7-8`) và `Date.parse("2026-02-30T10:00:00+07:00")` trả về mốc hợp lệ (lùi sang 2/3); chỉ trường ngoài khoảng (tháng 13, giờ 25…) mới ra NaN → `null`. Chú thích nguồn ở `lib/countdown/parse-countdown-target.ts:21` ("impossible values") gây hiểu nhầm; chưa sửa vì spec này không đổi mã nguồn.
+5. **Ngày lịch không tồn tại vẫn được chấp nhận** *(A2)*: regex chỉ kiểm hình dạng chuỗi (`lib/countdown/parse-countdown-target.ts:9-10`) và `Date.parse("2026-02-30T10:00:00+07:00")` trả về mốc hợp lệ (lùi sang 2/3); chỉ trường ngoài khoảng (tháng 13, giờ 25…) mới ra NaN → `null`. Chú thích nguồn ở `lib/countdown/parse-countdown-target.ts:21` ("impossible values") gây hiểu nhầm; chưa sửa vì spec này không đổi mã nguồn.
 
 ### 5.4 Source References
 
@@ -482,7 +482,7 @@ Bộ kiểm thử Playwright hiện có phủ trang chủ: `e2e/homepage-layout-
 | A1-A3 | 4 | `HomeContent` | `app/_components/home/home-content.tsx:27-67` | ghép trang, đọc locale và mốc |
 | A1 | 5 | `SiteHeader`, `SiteFooter` | `app/_components/site/site-header.tsx:11-71`, `app/_components/site/site-footer.tsx:15-68` | header cố định và footer |
 | A1, A2 | 6 | `HeroSection` | `app/_components/home/hero-section.tsx:10-85` | hero, sự kiện, hai nút kêu gọi |
-| A2 | 7 | `parseCountdownTarget`, `useCountdown`, `countdown-math` | `lib/countdown/parse-countdown-target.ts:26-41`, `lib/countdown/use-countdown.ts:36-79`, `lib/countdown/countdown-math.ts:15-40` | đồng hồ đếm ngược |
+| A2 | 7 | `parseCountdownTarget`, `useCountdown`, `countdown-math` | `lib/countdown/parse-countdown-target.ts:32-51`, `lib/countdown/use-countdown.ts:42-93`, `lib/countdown/countdown-math.ts:15-40` | đồng hồ đếm ngược |
 | A3 | 8 | `getAwards`, `toAwardCards` | `lib/awards/get-awards.ts:18-45`, `lib/awards/award-card-mapping.ts:34-69` | đọc và ánh xạ giải thưởng |
 | A3 | 9 | `AwardsSection`, `AwardsGrid` | `app/_components/home/awards-section.tsx:3-28`, `app/_components/home/awards-grid.tsx:20-88` | tiêu đề mục, lưới, khung chờ |
 | A4 | 10 | `LanguageSelector`, `setLocale` | `app/_components/site/language-selector.tsx:24-146`, `lib/i18n/actions.ts:8-17` | đổi ngôn ngữ |

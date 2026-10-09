@@ -267,6 +267,7 @@ Chín quyết định đầu đã chốt ngày 2026-10-09 (clarifications.md) v�
 | Khổ màn hình nhỏ | Menu thành thanh tab cuộn ngang, ảnh xếp trên nội dung của mỗi khối | None — silent handling |
 | Ngôn ngữ EN | Chữ giao diện tiếng Anh; mô tả dài, đoạn Kudos và tên giải vẫn như bản tiếng Việt | None — silent handling |
 | Khách chưa đăng nhập mở trang | Thấy đủ nội dung, không bị chuyển hướng; vùng tài khoản hiện nút đăng nhập | None — silent handling |
+| Site còn khoá trước giờ mở (F005) và người mở không phải admin | Được đưa tới trang đếm ngược thay vì trang này; admin xem bình thường; từ giờ mở trở đi như các dòng trên | None — silent handling |
 
 ## 10. Edge Behaviours to Verify
 

@@ -35,6 +35,11 @@ erDiagram
         timestamptz created_at
         timestamptz updated_at
     }
+    MODEL004_SiteSettings {
+        boolean singleton PK
+        timestamptz prelaunch_ends_at
+        timestamptz updated_at
+    }
     AUTH_USERS_EXTERNAL {
         uuid id PK
     }
@@ -75,7 +80,7 @@ erDiagram
 
 **Description**: Hồ sơ mỗi người dùng đã xác thực, giữ vai trò (role) dùng cho phân quyền. Mỗi `auth.users` có đúng một dòng: tạo tự động bằng trigger `on_auth_user_created` khi user mới sinh ra, và đã backfill một lần cho tài khoản có trước migration. Người dùng chỉ đọc được dòng của chính mình; không có quyền insert/update/delete cho `authenticated`, nên đổi role chỉ qua `service_role` hoặc SQL của vận hành.
 
-**Source:** `supabase/migrations/20261008045415_create_profiles.sql:18-23` (bảng), `:27-31` (RLS), `:35-37` (quyền), `:41-58` (hàm + trigger), `:61-63` (backfill); đọc role: `lib/supabase/current-user.ts:61-83` (`readRole`), kiểu `UserRole` `:6`.
+**Source:** `supabase/migrations/20261008045415_create_profiles.sql:18-23` (bảng), `:27-31` (RLS), `:35-37` (quyền), `:41-58` (hàm + trigger), `:61-63` (backfill); đọc role: `lib/supabase/current-user.ts:63-84` (`readRole`), quy tắc `"admin"`: `lib/supabase/user-role.ts:13-15` (`toUserRole`), kiểu `UserRole`: `lib/supabase/user-role.ts:6` (re-export ở `current-user.ts:7`); cổng prelaunch (F005) đọc lại cột này bằng `lib/prelaunch/read-gate-user-role.ts:24-49`.
 
 | Attribute | Type | Constraints | Description |
 |-----------|------|-------------|-------------|
@@ -93,7 +98,7 @@ erDiagram
 
 | Field | DISC-### | Values | Description |
 |-------|----------|--------|-------------|
-| role | DISC-001 | user, admin | `user`: người dùng thường (mặc định). `admin`: quản trị viên. Ràng buộc bằng CHECK ở DB (`create_profiles.sql:20`) và bằng kiểu `UserRole = "user" \| "admin"` ở app (`current-user.ts:6`). Phía app chỉ giá trị chữ `"admin"` mới được coi là admin; mọi giá trị khác, lỗi tra cứu hay không có dòng đều quy về `"user"` (`current-user.ts:77`). |
+| role | DISC-001 | user, admin | `user`: người dùng thường (mặc định). `admin`: quản trị viên. Ràng buộc bằng CHECK ở DB (`create_profiles.sql:20`) và bằng kiểu `UserRole = "user" \| "admin"` ở app (`user-role.ts:6`). Phía app chỉ giá trị chữ `"admin"` mới được coi là admin (`toUserRole`, `user-role.ts:13-15`, dùng chung bởi `getCurrentUser()` và cổng prelaunch); mọi giá trị khác, lỗi tra cứu hay không có dòng đều quy về `"user"` (`current-user.ts:78`, `read-gate-user-role.ts:35-47`). |
 
 ---
 
@@ -113,6 +118,25 @@ erDiagram
 
 **Relationships**:
 - Many-to-One với MODEL001_Award qua `award_slug` (`on delete cascade on update cascade`). Khóa chính (`award_slug`, `sort_order`) bắt đầu bằng `award_slug` nên cũng phục vụ tra cứu theo khóa ngoại, không có chỉ mục riêng (`:40-41`).
+
+**Discriminator Fields**: None.
+
+---
+
+### MODEL004_SiteSettings
+
+**Description**: Cài đặt toàn site, một dòng duy nhất, hiện chỉ giữ mốc mở site (F005): `prelaunch_ends_at` là thời điểm tuyệt đối; trước mốc proxy đưa mọi người không phải admin về `/countdown`, `NULL` nghĩa là cổng tắt. Dữ liệu chỉ đọc cho `anon` và `authenticated` (mọi cột đọc công khai, không lưu giá trị nhạy cảm); ghi chỉ qua `service_role`. Migration chèn sẵn dòng với `prelaunch_ends_at = NULL`; seed local đặt mốc quá khứ và chạy lại được nhờ `on conflict (singleton) do update`.
+
+**Source:** `supabase/migrations/20261009083754_create_site_settings.sql:22-27` (bảng), `:29` (comment), `:31-35` (RLS, policy `site_settings_select_public`), `:41-43` (quyền), `:46` (dòng khởi tạo); seed: `supabase/seeds/common/03-site-settings.sql:7-11`; đọc dữ liệu: `lib/prelaunch/read-prelaunch-ends-at.ts:32-66` (`.select("prelaunch_ends_at").eq("singleton", true).maybeSingle()`, khoá publishable, không cache, hạn chờ 2 giây, không retry); ghi (chỉ E2E): `e2e/support/prelaunch-setting.ts:33-37`.
+
+| Attribute | Type | Constraints | Description |
+|-----------|------|-------------|-------------|
+| singleton | boolean | PK, NOT NULL, DEFAULT true, CHECK (singleton) | Chỉ nhận `true` nên tối đa một dòng (`create_site_settings.sql:23-24`). Truy vấn lọc `eq("singleton", true)`. |
+| prelaunch_ends_at | timestamptz | NULL (không default) | Mốc mở site; `NULL` = cổng tắt (site mở). Kiểu `timestamptz` nên DB từ chối giá trị không phải thời điểm (lỗi 22007); PostgREST trả chuỗi ISO có offset, được `parseCountdownTarget` phân tích (`create_site_settings.sql:25`, `read-prelaunch-ends-at.ts:70-77`). |
+| updated_at | timestamptz | NOT NULL, DEFAULT now() | Thời điểm cập nhật cuối. Không có trigger tự cập nhật; seed đặt `now()` khi upsert (`create_site_settings.sql:26`). |
+
+**Relationships**:
+- Không có khóa ngoại và không quan hệ với bảng nào khác; proxy đọc đồng thời `profiles` (MODEL002_Profile) để biết admin nhưng không join.
 
 **Discriminator Fields**: None.
 
@@ -143,6 +167,16 @@ erDiagram
 | Kiểu dòng đọc về | sort_order, amount_vnd, note_vi, note_en | `isAwardPrizeRow`: hai số là số nguyên (`amount_vnd >= 0`), hai ghi chú là chuỗi hoặc null | Một mức hỏng làm cả hàng giải bị coi là hỏng và bị bỏ (`award-detail-mapping.ts:51-61,79`) |
 | Chỉ đọc cho client | (bảng) | RLS: policy `award_prizes_select_public` cho `anon`, `authenticated`; thu hồi hết quyền rồi chỉ cấp `select` | Ghi bị từ chối (`insert/update/delete` chỉ `service_role`) |
 
+### SiteSettings (`site_settings`)
+
+| Rule | Field | Constraint | Error Message |
+|------|-------|------------|---------------|
+| Chỉ một dòng | singleton | PRIMARY KEY, CHECK (singleton) | Lỗi Postgres 23514 khi chèn `singleton = false`; 23505 khi trùng dòng (seed dùng upsert `on conflict (singleton)`) |
+| Mốc là thời điểm | prelaunch_ends_at | kiểu timestamptz, cho phép NULL | Lỗi Postgres 22007 khi giá trị không phải thời điểm; NULL tắt cổng |
+| Dấu thời gian bắt buộc | updated_at | NOT NULL, DEFAULT now() | Lỗi Postgres 23502 |
+| Giá trị đọc về | prelaunch_ends_at | chuỗi ISO có offset; app kiểm kiểu và phân tích | Không phải chuỗi hoặc không phân tích được → coi là không khoá, log `[prelaunch]` một lần mỗi tiến trình (`read-prelaunch-ends-at.ts:70-77`) |
+| Chỉ đọc cho client | (bảng) | RLS: policy `site_settings_select_public` cho `anon`, `authenticated`; thu hồi hết quyền rồi chỉ cấp `select` | Ghi bị từ chối (`insert/update/delete` chỉ `service_role`) |
+
 ### Profile (`profiles`)
 
 | Rule | Field | Constraint | Error Message |
@@ -158,5 +192,5 @@ erDiagram
 
 ## Summary
 
-- **Total Entities**: 3 (MODEL001_Award, MODEL002_Profile, MODEL003_AwardPrize; `auth.users` là thực thể ngoài, không tính)
-- **Total Relationships**: 2 (Profile 1—1 `auth.users`, cascade delete; Award 1—n AwardPrize, cascade delete)
+- **Total Entities**: 4 (MODEL001_Award, MODEL002_Profile, MODEL003_AwardPrize, MODEL004_SiteSettings; `auth.users` là thực thể ngoài, không tính)
+- **Total Relationships**: 2 (Profile 1—1 `auth.users`, cascade delete; Award 1—n AwardPrize, cascade delete; MODEL004_SiteSettings không có quan hệ)

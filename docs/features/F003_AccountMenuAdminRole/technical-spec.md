@@ -70,7 +70,7 @@ flowchart LR
 **Who** · Khách, người dùng đã đăng nhập, admin *(gate A0 — § 4.4: BR-004 — ẩn/hiện chỉ là UX)*
 **FE** · `HomeContent` đặt hai slot vào `SiteHeader`: `bellSlot` (trái bộ chọn ngôn ngữ) và `accountSlot` (phải, bọc trong khung cố định 96x40) — `app/_components/home/home-content.tsx:37-42`, `app/_components/site/site-header.tsx:61-68`. `AccountBellRegion` bọc `SignedInBell` trong `<Suspense fallback={null}>` (không placeholder, nên chuông xuất hiện không đẩy bộ chọn ngôn ngữ); `AccountRegion` bọc `AccountControl` trong `<Suspense fallback={<AccountSlotSkeleton />}>` (khối 96x40 không có chữ nên người đã đăng nhập không thấy "Login" nhấp nháy — FR-205) — `app/_components/header-behaviour/account-region.tsx:24-42`, `app/_components/site/account-slot-parts.tsx:9-11`. Khách: `GuestLoginLink` là `next/link` tới `/login`, nút chữ cao 40 (FR-101); đã đăng nhập: `NotificationBell` là `<button>` 40x40 có `aria-label`, không handler, không badge, không panel (FR-201, FR-202) — `account-slot-parts.tsx:14-33`.
 **Request** · cookie phiên Supabase và cookie `NEXT_LOCALE` (nhãn lấy từ `getDictionary(locale).accountMenu`) — `lib/i18n/dictionary.ts:14-22,48-55,60-67`
-**BE** · cả `SignedInBell` và `AccountControl` gọi `getCurrentUser()` (A4); hàm bọc `cache()` nên một request chỉ đọc phiên và vai trò một lần dù hai vùng cùng gọi — `account-region.tsx:44-62`, `lib/supabase/current-user.ts:32`. `AccountControl` truyền `triggerLabel`, danh sách mục đã lọc theo vai trò và `signOut` cho `AccountMenu` (A2); `role` không đi xuống trình duyệt, chỉ danh sách mục đã lọc đi xuống (FR-203) — `account-region.tsx:56-60`, `app/_components/header-behaviour/account-menu.tsx:8-15`.
+**BE** · cả `SignedInBell` và `AccountControl` gọi `getCurrentUser()` (A4); hàm bọc `cache()` nên một request chỉ đọc phiên và vai trò một lần dù hai vùng cùng gọi — `account-region.tsx:44-62`, `lib/supabase/current-user.ts:33`. `AccountControl` truyền `triggerLabel`, danh sách mục đã lọc theo vai trò và `signOut` cho `AccountMenu` (A2); `role` không đi xuống trình duyệt, chỉ danh sách mục đã lọc đi xuống (FR-203) — `account-region.tsx:56-60`, `app/_components/header-behaviour/account-menu.tsx:8-15`.
 **Rule** · quyết định vùng này hiện gì:
 - **BR-003 — Mục Trang quản trị chỉ có khi vai trò đọc được đúng bằng `"admin"`.** `accountMenuItems` luôn thêm "Hồ sơ" (`/profile`) và chỉ thêm "Trang quản trị" (`/admin`) khi `role === "admin"`; khách, `user` và vai trò tra cứu lỗi (đã quy về `user`) đều không có mục này; quyết định đưa ra ở server, không đọc dữ liệu do trình duyệt gửi. Mục `/profile` và `/admin` là liên kết tới trang chưa có (404) — `account-region.tsx:64-73`.
 
@@ -136,13 +136,13 @@ flowchart LR
 `FR-601` `FR-602` `BR-001` `BR-002` `BR-005` `INT-001` `INT-002` `US007`
 
 **Who** · Mã phía server của hệ thống *(gate A0 — § 4.4: BR-004)*
-**BE** · `getCurrentUser` bọc `cache()` của React; `await connection()` đặt ngoài `try` vì `getClaims()` đọc đồng hồ, cacheComponents không cho phép khi prerender. Gọi `supabase.auth.getClaims()` (INT-001: xác minh JWT của phiên); lỗi, không có `sub` hợp lệ hoặc ngoại lệ → `null` (khách). Có claims thì `from("profiles").select("role").eq("id", sub).maybeSingle()` bằng phiên của chính người dùng (INT-002: đọc hồ sơ của mình dưới RLS) và trả `{ id, email, role }` — `lib/supabase/current-user.ts:32-58,61-83`.
+**BE** · `getCurrentUser` bọc `cache()` của React; `await connection()` đặt ngoài `try` vì `getClaims()` đọc đồng hồ, cacheComponents không cho phép khi prerender. Gọi `supabase.auth.getClaims()` (INT-001: xác minh JWT của phiên); lỗi, không có `sub` hợp lệ hoặc ngoại lệ → `null` (khách). Có claims thì `from("profiles").select("role").eq("id", sub).maybeSingle()` bằng phiên của chính người dùng (INT-002: đọc hồ sơ của mình dưới RLS) và trả `{ id, email, role }` — `lib/supabase/current-user.ts:33-59,63-84`.
 **Rule**
-- **BR-002 — Không đọc được vai trò thì coi là `user`, không bao giờ `admin`.** Lỗi truy vấn, không có hàng hồ sơ hoặc ngoại lệ đều ra `"user"` và chỉ ghi log; header vẫn dựng bình thường (FR-602) — `current-user.ts:68-75,78-82`.
-- **BR-001 — Vai trò chỉ là `user` hoặc `admin`, mặc định `user`.** Ở đây chuẩn hóa lúc đọc: chỉ giá trị đúng bằng chuỗi `"admin"` mới thành `admin`, mọi giá trị khác thành `user` (DISC-001 `role`) *(§ 4.4)* — `current-user.ts:76-77`.
-- **BR-005 — Chỉ phía vận hành ghi được vai trò; người dùng chỉ đọc hồ sơ của mình.** Ở đây: truy vấn dùng khóa publishable và phiên người dùng nên RLS chỉ cho thấy hàng của chính mình *(§ 4.4)* — `current-user.ts:61-67`.
+- **BR-002 — Không đọc được vai trò thì coi là `user`, không bao giờ `admin`.** Lỗi truy vấn, không có hàng hồ sơ hoặc ngoại lệ đều ra `"user"` và chỉ ghi log; header vẫn dựng bình thường (FR-602) — `current-user.ts:70-77,79-83`.
+- **BR-001 — Vai trò chỉ là `user` hoặc `admin`, mặc định `user`.** Ở đây chuẩn hóa lúc đọc: chỉ giá trị đúng bằng chuỗi `"admin"` mới thành `admin`, mọi giá trị khác thành `user` (DISC-001 `role`) *(§ 4.4)* — `current-user.ts:78` gọi hàm thuần `toUserRole` (`lib/supabase/user-role.ts:13-15`), dùng chung với cổng prelaunch của F005 để chỉ có một bản quy tắc.
+- **BR-005 — Chỉ phía vận hành ghi được vai trò; người dùng chỉ đọc hồ sơ của mình.** Ở đây: truy vấn dùng khóa publishable và phiên người dùng nên RLS chỉ cho thấy hàng của chính mình *(§ 4.4)* — `current-user.ts:63-69`.
 **Result** · read-only — **no DB write**. FR-601: vai trò chỉ lấy từ `public.profiles` ở server, không từ `user_metadata` (người dùng tự ghi được). Kết quả `CurrentUser | null` cho A1; `/admin` khi được xây phải gọi lại đúng hàm này (BR-004).
-**Source:** `lib/supabase/current-user.ts:16-58` → `lib/supabase/current-user.ts:60-83` → `lib/supabase/server.ts:19-50`
+**Source:** `lib/supabase/current-user.ts:17-59` → `lib/supabase/current-user.ts:61-84` → `lib/supabase/server.ts:19-50`
 
 <!-- No diagram: dưới ngưỡng — chỉ đọc một bảng, đồng bộ. -->
 
@@ -207,7 +207,7 @@ sequenceDiagram
 | `AccountMenuView` | giao diện nút + menu, không giữ trạng thái | A2, A3 | `app/_components/site/account-menu-view.tsx:12-61` |
 | `useMenuDisclosure` | trạng thái và listener mở/đóng | A2 | `lib/ui/use-menu-disclosure.ts:23-74` |
 | `signOut` | Server Action đăng xuất | A3 | `lib/auth/actions.ts:19-33` |
-| `getCurrentUser` | đọc claims + vai trò, fail closed | A1, A4 | `lib/supabase/current-user.ts:32-83` |
+| `getCurrentUser` | đọc claims + vai trò, fail closed | A1, A4 | `lib/supabase/current-user.ts:33-84` |
 | `SiteHeader` (F002) | cung cấp `bellSlot` và `accountSlot` cùng khung 96x40 | A1 | `app/_components/site/site-header.tsx:11-71` |
 | `handle_new_user` | trigger SQL tạo hồ sơ | A5 | `supabase/migrations/20261008045415_create_profiles.sql:41-58` |
 
@@ -274,8 +274,8 @@ stateDiagram-v2
 #### Bin 3 — cross-cutting, belongs to no single action
 
 **A0 · BR-004 — Ẩn mục menu chỉ là giao diện, không phải phân quyền (cross-cutting: áp cho mọi route/action quản trị, không thuộc một action nào của feature).**
-Mọi route hoặc action quản trị (như `/admin` khi được xây) phải tự gọi `getCurrentUser()` ở server và từ chối khi `role !== "admin"`; việc A1 không liệt kê mục Trang quản trị không được coi là kiểm soát truy cập. Hiện `/admin` chưa có page và proxy không chặn route nào theo vai trò (PERM004: UX-only). Không phải rule của riêng feature này mà là ràng buộc cho trang đích sau này.
-**Source:** `lib/supabase/current-user.ts:26-27` · `app/_components/header-behaviour/account-region.tsx:64-68`
+Mọi route hoặc action quản trị (như `/admin` khi được xây) phải tự gọi `getCurrentUser()` ở server và từ chối khi `role !== "admin"`; việc A1 không liệt kê mục Trang quản trị không được coi là kiểm soát truy cập. Hiện `/admin` chưa có page. Proxy không chặn route nào theo vai trò như kiểm soát truy cập (PERM004: UX-only); cổng prelaunch của F005 có đọc vai trò (`lib/prelaunch/read-gate-user-role.ts:24-49`) nhưng chỉ để quyết định ai được vượt cổng ra mắt, và fail open ở phía mốc, nên không thay việc tự kiểm tra ở server. Không phải rule của riêng feature này mà là ràng buộc cho trang đích sau này.
+**Source:** `lib/supabase/current-user.ts:27-28` · `app/_components/header-behaviour/account-region.tsx:64-68`
 ```text
 adminRoute(request):
   user = getCurrentUser()            # A4, read again per request
@@ -286,7 +286,7 @@ adminRoute(request):
 
 **BR-001 — Vai trò chỉ là `user` hoặc `admin`, mặc định `user`.**
 Used in: **A4** · **A5**. A5 chèn hàng với mặc định `user`, cột có `check` giới hạn hai giá trị; A4 chuẩn hóa lúc đọc: chỉ chuỗi `"admin"` mới là admin, mọi giá trị khác thành `user`.
-**Source:** `supabase/migrations/20261008045415_create_profiles.sql:18-23` · `lib/supabase/current-user.ts:76-77`
+**Source:** `supabase/migrations/20261008045415_create_profiles.sql:18-23` · `lib/supabase/current-user.ts:78` · `lib/supabase/user-role.ts:13-15`
 ```text
 A5: insert profiles(id)  -> role = default 'user'   # check role in ('user','admin')
 A4: role = (row.role == 'admin') ? 'admin' : 'user'
@@ -306,7 +306,7 @@ service_role:  full access (bypasses RLS)
 ### Supabase Auth xác minh claims của phiên và hủy phiên khi đăng xuất (INT-001)
 **Linked FR:** FR-405, FR-601
 **Used in:** A4, A3
-**Source:** `lib/supabase/current-user.ts:38` · `lib/auth/actions.ts:22`
+**Source:** `lib/supabase/current-user.ts:39` · `lib/auth/actions.ts:22`
 **Type:** api-call
 **Target:** Supabase Auth (`SUPABASE_URL`, server-only); `getClaims()` xác minh JWT, `signOut({ scope: "local" })` hủy phiên hiện tại
 **Payload:** cookie phiên của người gọi qua `@supabase/ssr`; không gửi secret nào từ trình duyệt
@@ -315,7 +315,7 @@ service_role:  full access (bypasses RLS)
 ### Supabase Data API đọc hồ sơ của chính người dùng dưới RLS (INT-002)
 **Linked FR:** FR-601, FR-602
 **Used in:** A4
-**Source:** `lib/supabase/current-user.ts:63-67`
+**Source:** `lib/supabase/current-user.ts:65-69`
 **Type:** api-call
 **Target:** Supabase Data API (bảng `profiles`) qua `supabase.from("profiles")`
 **Payload:** `select role` với `id = <sub>`; phiên người dùng và khóa publishable, không dùng khóa secret
@@ -411,8 +411,8 @@ Bằng chứng tự động đã có trong repo: `e2e/homepage-account-menu.spec
 
 ### 5.2 Assumptions
 
-- *(A4)* Vai trò đọc bằng truy vấn `profiles` dưới RLS ngay sau `getClaims()`, không dùng custom access token hook: một truy vấn cho mỗi request của người đã đăng nhập; chỉ xem lại khi cần vai trò ở proxy hoặc khi truy vấn thành điểm nghẽn đo được.
-- *(A1, A4)* Proxy làm mới phiên cho `/` (matcher `["/", "/login", "/awards-information"]`, thuộc F001/BL003) là điều kiện để trang chủ công khai không làm người đã đăng nhập mất phiên khi token xoay vòng — `proxy.ts:18`. Lập luận về token xoay vòng là suy luận, chưa chạy thật *[INFERRED]*.
+- *(A4)* Vai trò đọc bằng truy vấn `profiles` dưới RLS ngay sau `getClaims()`, không dùng custom access token hook: một truy vấn cho mỗi request của người đã đăng nhập; chỉ xem lại khi truy vấn thành điểm nghẽn đo được. Proxy (cổng prelaunch F005) đã có đường đọc vai trò riêng `readGateUserRole` vì `getCurrentUser()` không chạy được trong proxy; hai đường dùng chung `toUserRole`.
+- *(A1, A4)* Proxy làm mới phiên cho `/` (matcher literal phủ mọi page route, F005 mở rộng từ `["/", "/login", "/awards-information"]`; thuộc F001/BL003) là điều kiện để trang chủ công khai không làm người đã đăng nhập mất phiên khi token xoay vòng — `proxy.ts:22-23`. Lập luận về token xoay vòng là suy luận, chưa chạy thật *[INFERRED]*.
 - *(A3)* `scope: "local"` là quyết định sản phẩm đã chốt; code khớp quyết định — `lib/auth/actions.ts:22`.
 - *(A5)* Cột `updated_at` không có trigger cập nhật vì không ai sửa hồ sơ trong phạm vi này (YAGNI) — `supabase/migrations/20261008045415_create_profiles.sql:18-23`.
 - *(A1)* Luồng đăng nhập Google hoàn tất (callback) là của F001; hồ sơ `role = user` xuất hiện ở lần đăng nhập đầu nhờ A5, nên F003 chỉ đọc kết quả (liên quan US013 của F001).
@@ -420,7 +420,7 @@ Bằng chứng tự động đã có trong repo: `e2e/homepage-account-menu.spec
 ### 5.3 Unresolved Questions
 
 1. **Không đóng menu khi chọn mục** *(A2)*: `AccountMenu` không có xử lý đóng khi bấm một `next/link`; menu chỉ biến mất vì trang đích thay trang hiện tại. Chưa kiểm nếu sau này header nằm trong layout dùng chung (không bị unmount khi điều hướng).
-2. **`connection()` hay API khác** *(A4)*: code dùng `connection()` để đánh dấu request-time; chưa đối chiếu hướng dẫn mới nhất của bản Next đang dùng — `lib/supabase/current-user.ts:34`.
+2. **`connection()` hay API khác** *(A4)*: code dùng `connection()` để đánh dấu request-time; chưa đối chiếu hướng dẫn mới nhất của bản Next đang dùng — `lib/supabase/current-user.ts:35`.
 3. **Trigger lỗi chặn đăng ký** *(A5)*: nếu `handle_new_user` lỗi thì tạo tài khoản cũng lỗi (ghi chú trong migration); `e2e/supabase-schema-rls.spec.ts` chưa có ca tạo tài khoản mới để chứng minh trigger chạy từ luồng đăng nhập thật.
 4. **`aria-expanded` chưa có e2e khẳng định** *(A2)*: FR-204 đã được cài đặt — nút tài khoản có `aria-label`, `aria-haspopup="menu"`, `aria-expanded={open}` (`app/_components/site/account-menu-view.tsx:29-32`), chuông có `aria-label` (`app/_components/site/account-slot-parts.tsx:29`) — nhưng `e2e/homepage-account-menu.spec.ts` chỉ tìm chuông và nút theo tên truy cập (dòng 31, 33) mà không `toHaveAttribute("aria-expanded", …)`; việc `aria-expanded` đổi theo trạng thái mở/đóng chưa được kiểm chứng tự động.
 
@@ -430,7 +430,7 @@ Bằng chứng tự động đã có trong repo: `e2e/homepage-account-menu.spec
 |---|---|---|---|---|
 | A4, A5 | 1 | `public.profiles` | `supabase/migrations/20261008045415_create_profiles.sql:18-37` | bảng hồ sơ, RLS, grant (MODEL002_Profile) |
 | A5 | 2 | `handle_new_user` | `supabase/migrations/20261008045415_create_profiles.sql:41-63` | trigger + backfill tạo hồ sơ |
-| A4 | 3 | `getCurrentUser` | `lib/supabase/current-user.ts:32-83` | đọc claims và vai trò, fail closed |
+| A4 | 3 | `getCurrentUser` | `lib/supabase/current-user.ts:33-84` | đọc claims và vai trò, fail closed |
 | A1 | 4 | `AccountRegion` | `app/_components/header-behaviour/account-region.tsx:24-73` | slot chuông, slot tài khoản, lọc mục theo vai trò |
 | A1, A3 | 5 | `account-slot-parts` | `app/_components/site/account-slot-parts.tsx:9-33` | skeleton, liên kết khách, chuông |
 | A2 | 6 | `AccountMenu`, `useMenuDisclosure` | `app/_components/header-behaviour/account-menu.tsx:16-33`, `lib/ui/use-menu-disclosure.ts:23-74` | trạng thái mở/đóng |

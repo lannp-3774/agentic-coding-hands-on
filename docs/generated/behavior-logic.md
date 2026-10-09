@@ -52,7 +52,7 @@ Cardinality Contract that governs how these items are counted live in the **Dev 
 
 | Code | Name | Trigger | Payload | File Schema |
 |------|------|---------|---------|--------------|
-| BL003_SessionRefreshProxy | Session Refresh Proxy | Mọi request khớp `config.matcher` (`/`, `/login`, `/awards-information`), chạy trước khi route render | — | N/A — not a file-exchange type |
+| BL003_SessionRefreshProxy | Session Refresh Proxy | Mọi request khớp `config.matcher` (mọi page route trừ `/_next/*`, `__nextjs*` và đường có dấu chấm), chạy trước khi route render | — | N/A — not a file-exchange type |
 
 ---
 
@@ -101,7 +101,7 @@ Aggregating multiple source files into a single BL item violates Rule C1 and wil
 ## BL001_SupabaseServerClient: Supabase Server Client
 
 **Type**: integration
-**Trigger**: Gọi mỗi request từ Server Component, Server Action hoặc Route Handler cần Supabase (callers: `lib/awards/get-awards.ts:23`, `lib/awards/get-award-details.ts:29`, `lib/supabase/current-user.ts:37`, `app/login/actions.ts:39`, `lib/auth/actions.ts:21`, `app/auth/callback/route.ts:46`)
+**Trigger**: Gọi mỗi request từ Server Component, Server Action hoặc Route Handler cần Supabase (callers: `lib/awards/get-awards.ts:23`, `lib/awards/get-award-details.ts:29`, `lib/supabase/current-user.ts:38`, `app/login/actions.ts:39`, `lib/auth/actions.ts:21`, `app/auth/callback/route.ts:46`)
 **Payload**: — (không phải loại event/notification)
 **File Schema**: N/A — not a file-exchange type
 **Source File**: lib/supabase/server.ts
@@ -152,7 +152,7 @@ Quy tắc: mỗi request tạo một client riêng, không dùng chung giữa c�
 
 Điểm quay về của luồng Login with Google (OAuth PKCE), là Route Handler `GET` (`app/auth/callback/route.ts:24`). `completeSignIn` quyết định kết quả: có `error` từ nhà cung cấp thì không bao giờ đổi `code` kèm theo (`access_denied` → `cancelled`, lỗi khác → `failed`, `route.ts:35-38`); không có `code` → `cancelled` (`route.ts:40-41`); có `code` thì gọi `supabase.auth.exchangeCodeForSession(code)` qua `createClient` (BL001_SupabaseServerClient) để đổi lấy phiên, cookie phiên ghi qua adapter cookie và Next gắn vào redirect (`route.ts:43-48`). Đổi lỗi hoặc ném lỗi → `failed`, ghi log `[auth/callback]`, không bao giờ trả 500 (`route.ts:49-59`).
 
-Kết quả luôn là 302 tới đường dẫn cố định trên chính origin của request: thành công → `/` (SCR003_Homepage), còn lại → `/login?error=cancelled|failed` (SCR001_Login) (`route.ts:26-29`). Tham số `next`, `redirect_to` và mọi query khác bị bỏ qua nên không thành open redirect; redirect trên origin của request cũng giữ cookie phiên đúng host đã đặt cookie PKCE. Route này nằm ngoài `config.matcher` của proxy.
+Kết quả luôn là 302 tới đường dẫn cố định trên chính origin của request: thành công → `/` (SCR003_Homepage), còn lại → `/login?error=cancelled|failed` (SCR001_Login) (`route.ts:26-29`). Tham số `next`, `redirect_to` và mọi query khác bị bỏ qua nên không thành open redirect; redirect trên origin của request cũng giữ cookie phiên đúng host đã đặt cookie PKCE. Route này khớp `config.matcher` của proxy (matcher phủ mọi page route) nhưng `updateSession` trả tiếp ngay nên proxy không chạm vào request (`lib/supabase/proxy-session.ts:45`).
 
 [SIGNAL_INFERRED] — Intent matched: integration, đổi mã OAuth phía server với Supabase Auth khi nhà cung cấp redirect về. No-row reason: stack Next.js 16 App Router, không có dòng Next.js trong bảng theo stack. Observed pattern: Route Handler hàm async `GET(request)` (khai báo công khai) → `completeSignIn` → `supabase.auth.exchangeCodeForSession(code)` → 302 (`route.ts:24-60`).
 
@@ -176,7 +176,7 @@ Kết quả luôn là 302 tới đường dẫn cố định trên chính origin
 ## BL003_SessionRefreshProxy: Session Refresh Proxy
 
 **Type**: middleware
-**Trigger**: Mọi request khớp `config.matcher = ["/", "/login", "/awards-information"]` của `proxy.ts`, chạy trước khi route render (`proxy.ts:9,18-20`)
+**Trigger**: Mọi request khớp `config.matcher = ["/((?!_next/|__nextjs|.*\\..*).*)"]` của `proxy.ts` (mọi page route; F005 mở rộng từ `["/", "/login", "/awards-information"]`), chạy trước khi route render (`proxy.ts:10,22-24`)
 **Payload**: — (không phải loại event/notification)
 **File Schema**: N/A — not a file-exchange type
 **Source File**: lib/supabase/proxy-session.ts
@@ -184,11 +184,11 @@ Kết quả luôn là 302 tới đường dẫn cố định trên chính origin
 
 ### Description
 
-Chuỗi xử lý request (Next.js 16 `proxy.ts`, trước đây là middleware) do `proxy(request)` uỷ quyền cho `updateSession(request)` (`proxy.ts:9-11`, `lib/supabase/proxy-session.ts:30`). Thứ tự: (1) `hasVerifiedSession` tạo `createServerClient` trên cookie của request rồi gọi `supabase.auth.getClaims()` để làm mới token; cookie mới được gom vào `pending` (và phản chiếu lên request để Server Component cùng request đọc được token mới) (`proxy-session.ts:60-97`); (2) `redirectTarget` quyết định chuyển hướng; (3) gắn cookie và header đã gom vào response, kể cả khi là redirect, nếu không sẽ mất token mới và gây vòng đăng xuất (`proxy-session.ts:43-50`).
+Chuỗi xử lý request (Next.js 16 `proxy.ts`, trước đây là middleware) do `proxy(request)` uỷ quyền cho `updateSession(request)` (`proxy.ts:10-12`, `lib/supabase/proxy-session.ts:43`). Thứ tự: (1) `verifySession` tạo `createServerClient` trên cookie của request rồi gọi `supabase.auth.getClaims()` để làm mới token; cookie mới được gom vào `pending` (và phản chiếu lên request để Server Component cùng request đọc được token mới) (`proxy-session.ts:88-127`); (2) `loginRedirectTarget` quyết định chuyển hướng `/login` (`proxy-session.ts:129-135`), và F005 thêm cổng prelaunch `prelaunchGateTarget` (`proxy-session.ts:143-160`; đọc mốc song song với `getClaims()`, `:55-58`); (3) gắn cookie và header đã gom vào response, kể cả khi là redirect, nếu không sẽ mất token mới và gây vòng đăng xuất (`proxy-session.ts:70-76`). `/auth/callback` khớp matcher nhưng được trả tiếp ngay trước bước (1) (`proxy-session.ts:45`).
 
-Quy tắc chuyển hướng duy nhất: chỉ `GET`/`HEAD` và `pathname === "/login"` khi đã có claims hợp lệ → 307 `/` (`proxy-session.ts:99-105`); `POST` (Server Action) luôn đi tiếp để không làm hỏng lời gọi `signOut` khi phiên đã hết hạn. Không route nào bị chặn đối với khách: khách ở `/`, `/login` và `/awards-information` đi tiếp bình thường. Mọi lỗi (không có claims, claims lỗi, mạng lỗi, thiếu hoặc sai biến môi trường Supabase) đều coi là khách, request đi tiếp, ghi log `[proxy]`, không bao giờ trả 500 (`proxy-session.ts:82-96`). Đích chuyển hướng là đường dẫn cố định trên origin của request, không dùng query nên không thành open redirect. Phần quy tắc chuyển hướng `/login` → `/` được mô tả ở Permissions; ở đây chỉ ghi phần làm mới phiên.
+Quy tắc chuyển hướng theo phiên: chỉ `GET`/`HEAD` và `pathname === "/login"` khi đã có claims hợp lệ → 307 `/` (`proxy-session.ts:129-135`); `POST` (Server Action) luôn đi tiếp để không làm hỏng lời gọi `signOut` khi phiên đã hết hạn. Khi site đã mở không route nào bị chặn đối với khách: khách ở `/`, `/login` và `/awards-information` đi tiếp bình thường. Khi site còn khoá (F005), cổng prelaunch chuyển người không phải admin về `/countdown` và chuyển `/countdown` về `/` khi site đã mở; phần cổng (mốc fail open, vai trò fail closed, hạn chờ 2 giây, không retry) mô tả ở `permissions-matrix.md` (PERM014) và `docs/features/F005_CountdownPrelaunch/technical-spec.md`; file này chưa có BL riêng cho cổng và các hàm trong `lib/prelaunch/` (chạy `/tkm:rebuild-spec --artifact behavior-logic`). Mọi lỗi (không có claims, claims lỗi, mạng lỗi, thiếu hoặc sai biến môi trường Supabase) đều coi là khách, request đi tiếp, ghi log `[proxy]`, không bao giờ trả 500 (`proxy-session.ts:110-126`). Đích chuyển hướng là đường dẫn cố định trên origin của request, không dùng query nên không thành open redirect. Phần quy tắc chuyển hướng `/login` → `/` được mô tả ở Permissions; ở đây chỉ ghi phần làm mới phiên.
 
-[SIGNAL_INFERRED] — Intent matched: middleware, chuỗi xử lý request chạy trước route, làm mới cookie phiên (token refresh là hạ tầng, không phải kiểm soát truy cập). No-row reason: stack Next.js 16 (`proxy.ts`, trước là `middleware.ts`), không có dòng Next.js trong bảng theo stack. Observed pattern: `proxy.ts` hàm async `proxy(request)` (khai báo công khai) với `config.matcher = ["/", "/login", "/awards-information"]` uỷ quyền cho `updateSession(request)` (`proxy-session.ts:30-52`).
+[SIGNAL_INFERRED] — Intent matched: middleware, chuỗi xử lý request chạy trước route, làm mới cookie phiên (token refresh là hạ tầng, không phải kiểm soát truy cập). No-row reason: stack Next.js 16 (`proxy.ts`, trước là `middleware.ts`), không có dòng Next.js trong bảng theo stack. Observed pattern: `proxy.ts` hàm async `proxy(request)` (khai báo công khai) với `config.matcher = ["/((?!_next/|__nextjs|.*\\..*).*)"]` uỷ quyền cho `updateSession(request)` (`proxy-session.ts:43-79`).
 
 ### Related Modules
 
@@ -236,7 +236,7 @@ Document client-side patterns found in the codebase. For each, record: pattern t
 
 **Extraction signature:** timer wrapper around a handler — `setTimeout`, `clearTimeout`, `debounce(fn, ms)`, `throttle(fn, ms)`, `useDebounce`, `useDebouncedCallback`
 
-Có một mẫu throttle/debounce (F004): trình nghe `scroll` của menu giải thưởng chỉ đặt lại mục đang chọn tối đa một lần mỗi khung hình bằng `requestAnimationFrame` (`app/_components/awards-nav-behaviour/use-awards-nav-active-slug.ts:119-122`), và một hẹn giờ nhàn rỗi 150 ms (`:11,17-30`) nhả "ghim" mục vừa bấm khi không còn sự kiện cuộn (dự phòng cho trình duyệt không có `scrollend`; `scrollend`, `wheel`, `touchstart`, `keydown` cũng nhả ghim, `:128-131`). Ngoài ra không có mẫu nào khác. (`lib/countdown/use-countdown.ts:61` dùng `setTimeout` để căn nhịp đồng hồ cục bộ, không bọc handler người dùng.)
+Có một mẫu throttle/debounce (F004): trình nghe `scroll` của menu giải thưởng chỉ đặt lại mục đang chọn tối đa một lần mỗi khung hình bằng `requestAnimationFrame` (`app/_components/awards-nav-behaviour/use-awards-nav-active-slug.ts:119-122`), và một hẹn giờ nhàn rỗi 150 ms (`:11,17-30`) nhả "ghim" mục vừa bấm khi không còn sự kiện cuộn (dự phòng cho trình duyệt không có `scrollend`; `scrollend`, `wheel`, `touchstart`, `keydown` cũng nhả ghim, `:128-131`). Ngoài ra không có mẫu nào khác. (`lib/countdown/use-countdown.ts:74` dùng `setTimeout` để căn nhịp đồng hồ cục bộ, không bọc handler người dùng.)
 
 ### Optimistic UI
 

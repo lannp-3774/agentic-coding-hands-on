@@ -13,7 +13,7 @@
   },
   "fcode_index_sha": "8e4b4014a79014e88b7a600b902c3639b09d9e091fc5624b0dde91737a582a06",
   "last_api_contracts_run_sha": "",
-  "last_feature_spec_run_sha": "b28c60350ef1f1fa368069126812cf9f2f35b769",
+  "last_feature_spec_run_sha": "cf818bff4284e41ddb5a873e9eeb5246d404b5ba",
   "last_flows_run_sha": "",
   "last_glossary_run_sha": "",
   "last_rebuild_sha": "4c651f1a70c86ea76cf5657a8235dde3b9c81f18",
@@ -23,10 +23,11 @@
   "rebuilt_at": "2026-10-08T11:52:17Z",
   "schema_version": "22.1.0",
   "screen_spec_shas": {
-    "SCR001": "91bb4c50e90be9dd949112a33051aedcf01c872b97f396285376765407e3665c",
+    "SCR001": "e636a5e9abedc55775c0708ac5d129bcecbaa07496beb8d391f9ead36ac432ae",
     "SCR002": "23ac84c178819ec59a31c96793adb5f8c32def0a23ebffda932bc840be8274d9",
-    "SCR003": "d7d22729e1c0d4e0c4149ddb43b4c9abd8a659d9aae4305d2066dd46208c69a2",
-    "SCR004": "539b94911bcd292e19b00448a41aded05b9388dc6c84be618a972b2363afbe2b"
+    "SCR003": "5800083e812bad3bf56562909544f1587198e8127dc9993c119edf7686ca9cc9",
+    "SCR004": "25a38d74310c938b411406c8d20a6994ee774e0e95ba99b6154fa7d54002c580",
+    "SCR005": "4a8be213657afdd88fc675cbba1c20793874261b13fcb455f5c46213a36bd482"
   },
   "translations": {}
 }

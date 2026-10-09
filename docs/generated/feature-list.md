@@ -21,7 +21,7 @@
 
 **Cross-reference**: See ScreenList Regions subsection for region definitions and the `REG###_NameSlug` registry.
 
-> Ghi chú mã chuẩn: bốn mã F001_LoginWithGoogle, F002_HomepageSaa, F003_AccountMenuAdminRole, F004_AwardsInformation (thêm 2026-10-09) là mã chuẩn (canonical) đã khoá, không đánh số lại, không thêm F### khác. Việc phân cụm bên dưới đối chiếu với `code-formats.md § Feature Clustering Rule` và cho kết quả trùng với các mã chuẩn (xem verdict từng tên ở `> Note:` trong mục Feature Details).
+> Ghi chú mã chuẩn: năm mã F001_LoginWithGoogle, F002_HomepageSaa, F003_AccountMenuAdminRole, F004_AwardsInformation (thêm 2026-10-09), F005_CountdownPrelaunch (thêm 2026-10-09) là mã chuẩn (canonical) đã khoá, không đánh số lại, không thêm F### khác. Việc phân cụm bên dưới đối chiếu với `code-formats.md § Feature Clustering Rule` và cho kết quả trùng với các mã chuẩn (xem verdict từng tên ở `> Note:` trong mục Feature Details).
 
 ## Feature Hierarchy
 
@@ -39,6 +39,7 @@
 | F002_HomepageSaa | Homepage SAA | ui | TypeScript, SQL | my-app | P0 |
 | F003_AccountMenuAdminRole | Account Menu & Admin Role | ui | TypeScript, SQL | my-app | P1 |
 | F004_AwardsInformation | Awards Information | ui | TypeScript, SQL | my-app | P1 |
+| F005_CountdownPrelaunch | Countdown Prelaunch | mixed | TypeScript, SQL | my-app | P1 |
 
 ## Feature Details
 
@@ -214,17 +215,57 @@
 > Note: Trạng thái đang chọn của header và footer (prop `currentPage` của SiteHeader/SiteFooter, mã của F002) do F004 thêm; trang chủ không truyền prop nên giữ nguyên hành vi.
 > Note: Mã US của F004 được cấp lại thành US022..US027 theo dãy toàn cục (spec của feature ghi US022..US027).
 
+### F005_CountdownPrelaunch: Countdown Prelaunch
+
+**Type**: mixed
+**Description**: Trang đếm ngược toàn màn hình `/countdown` ("Sự kiện sẽ bắt đầu sau" / "Event starts in") và cổng prelaunch toàn site. Đầu vào: request `GET`/`HEAD` tới mọi trang, mốc `site_settings.prelaunch_ends_at` (bảng một dòng, đọc công khai, chỉ `service_role` ghi), phiên đăng nhập và `profiles.role`, cookie `NEXT_LOCALE`. Xử lý: proxy đọc mốc song song với `getClaims()`; khi mốc còn ở tương lai thì chuyển 307 mọi trang (trừ `/login`, `/auth/callback`) về `/countdown` cho khách và người dùng thường, admin đi qua; mốc thiếu, `NULL`, hỏng hay không đọc được thì site mở (fail open); sau mốc `/countdown` chuyển về `/`. Trang đếm ngược đếm theo giờ máy chủ (bù độ lệch đồng hồ một lần ở lần đọc đầu phía client) bằng phép tính phút của đồng hồ trang chủ và tự `router.replace("/")` khi chạm 0. Đầu ra: trước giờ mở, người không phải admin chỉ thấy trang đếm ngược; từ giờ mở, site hoạt động như trước.
+
+**Workspace**: my-app
+**Languages**: TypeScript, SQL (migration tạo bảng `site_settings` và seed local)
+**Components**: 5 thành phần trong SCR005_CountdownPrelaunch (`CountdownPage` + `CountdownPrelaunchContent`, `CountdownPrelaunchView`, `CountdownPrelaunchUnit`, `PrelaunchCountdownLive`, hook `usePrelaunchCountdown`), cộng phần cổng trong proxy (`prelaunchGateTarget`), `decidePrelaunchGate`, `readPrelaunchEndsAt`, `readGateUserRole` và hàm vai trò dùng chung `toUserRole`
+
+**Related Screens**:
+- SCR005_CountdownPrelaunch: Countdown Prelaunch (atomic; F005 sở hữu cả màn hình)
+
+**Related User Stories**:
+- US028: Xem đồng hồ đếm ngược prelaunch
+- US029: Bị giữ ở trang đếm ngược khi mở trang khác trước giờ mở
+- US030: Admin duyệt toàn site trước giờ mở
+- US031: Tự vào site khi đồng hồ chạm 0
+- US032: Rời trang đếm ngược sau giờ mở
+- US033: Đặt mốc mở site
+
+**Related APIs/Routes**:
+- (GET, HEAD) /countdown — ROUTE010
+- Cổng prelaunch trên mọi `GET`/`HEAD` khớp matcher phủ mọi page route của proxy (không phải route riêng; xem PERM014)
+
+**Related Data Models**:
+- MODEL004_SiteSettings (bảng một dòng, cột `prelaunch_ends_at`)
+- MODEL002_Profile (chỉ đọc `role` để nhận biết admin)
+
+**Related Background Logic**:
+- BL003_SessionRefreshProxy: Session Refresh Proxy (mở rộng thành cổng prelaunch, đổi matcher; thuộc F001)
+
+**Related Permissions**:
+- PERM013_SiteSettingsPublicReadServiceWrite: Bảng `site_settings`: đọc công khai, ghi chỉ `service_role`
+- PERM014_PrelaunchGate: Cổng prelaunch: trước mốc chỉ admin vượt cổng (fail open phía mốc, fail closed phía vai trò)
+- PERM010_ProfilesSelectOwnServiceWrite: Bảng `profiles`: chỉ đọc dòng của mình (proxy đọc vai trò bằng phiên của chính người dùng)
+
+> Note: Mã US028..US033 theo dãy toàn cục, tiếp sau US027; user-stories.md chưa có sáu mã này vì file đã vượt giới hạn kích thước (chạy `/tkm:rebuild-spec --artifact user-stories`); nội dung nằm ở `docs/features/F005_CountdownPrelaunch/functional-spec.md` § 7.
+> Note: BL003_SessionRefreshProxy chưa có mô tả cổng prelaunch trong behavior-logic.md (chạy `/tkm:rebuild-spec --artifact behavior-logic`); phần cổng được mô tả ở `docs/features/F005_CountdownPrelaunch/technical-spec.md` § 3.2 và PERM014.
+> Note: Mốc prelaunch (`site_settings`) độc lập với mốc đồng hồ trang chủ `SAA_COUNTDOWN_TARGET` của F002 (BR-006).
+
 ---
 
 ## Summary
 
-- **Total Features**: 4
-- **Total Screens**: 3 màn hình đang hoạt động (SCR001_Login, SCR003_Homepage, SCR004_AwardsInformation) + 1 bản ghi đã gỡ (SCR002_Todo, tombstone, không tính) + 2 vùng (SCR003_Homepage/REG001_AccountRegion, SCR003_Homepage/REG002_AwardsGrid)
-- **Total User Stories**: 27 (F001: 6, F002: 8, F003: 7, F004: 6)
-- **Total Routes**: 9 (ROUTE001..ROUTE009; ROUTE003, ROUTE006 và ROUTE009 dùng chung F001, F002 và F004 theo route-list)
-- **Total Data Models**: 3
+- **Total Features**: 5
+- **Total Screens**: 4 màn hình đang hoạt động (SCR001_Login, SCR003_Homepage, SCR004_AwardsInformation, SCR005_CountdownPrelaunch (F005)) + 1 bản ghi đã gỡ (SCR002_Todo, tombstone, không tính) + 2 vùng (SCR003_Homepage/REG001_AccountRegion, SCR003_Homepage/REG002_AwardsGrid)
+- **Total User Stories**: 33 (F001: 6, F002: 8, F003: 7, F004: 6, F005: 6)
+- **Total Routes**: 10 (ROUTE001..ROUTE010; ROUTE003, ROUTE006 và ROUTE009 dùng chung F001, F002 và F004 theo route-list; ROUTE010 là F005)
+- **Total Data Models**: 4
 - **Total Background Logic**: 3 (BL001 dùng chung ba feature)
-- **Total Permissions**: 12 (PERM008 dùng chung F001, F002 và F004)
+- **Total Permissions**: 14 (PERM008 dùng chung F001, F002 và F004; PERM013, PERM014 là F005)
 - **Languages Detected**: TypeScript, SQL
 
 ## Cross-Reference Validation

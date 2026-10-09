@@ -19,7 +19,7 @@ authored_by: rebuild-spec
 
 ## 1. Technical Overview
 
-Khách mở `/login`, bấm nút Google; Server Action khởi động luồng OAuth PKCE của Supabase Auth và chuyển cùng tab sang Google. Google trả về `/auth/callback`, route handler đổi `code` lấy phiên rồi 302 về trang chủ `/` (hoặc về `/login?error=cancelled|failed`). Phiên nằm trong cookie do `@supabase/ssr` quản lý; `proxy.ts` làm mới cookie ở `/`, `/login` và `/awards-information`, đồng thời chuyển người đã đăng nhập mở `/login` về `/` — `/` là trang công khai nên proxy không bao giờ chuyển hướng khách. Toàn bộ truy cập Supabase chạy phía máy chủ (Server Action, Route Handler, proxy); ngôn ngữ giao diện lấy từ cookie `NEXT_LOCALE` và từ điển vi/en trong repo. Trang `/todo` và đăng xuất đã gỡ khỏi F001 (2026-10-08); đăng xuất thuộc F003.
+Khách mở `/login`, bấm nút Google; Server Action khởi động luồng OAuth PKCE của Supabase Auth và chuyển cùng tab sang Google. Google trả về `/auth/callback`, route handler đổi `code` lấy phiên rồi 302 về trang chủ `/` (hoặc về `/login?error=cancelled|failed`). Phiên nằm trong cookie do `@supabase/ssr` quản lý; `proxy.ts` làm mới cookie ở mọi page route (matcher phủ định tĩnh, mở rộng bởi F005), đồng thời chuyển người đã đăng nhập mở `/login` về `/` — `/` là trang công khai nên quy tắc đăng nhập không bao giờ chuyển hướng khách (khi site còn khoá, cổng prelaunch của F005 mới chuyển, nhưng `/login` và `/auth/callback` luôn được miễn). Toàn bộ truy cập Supabase chạy phía máy chủ (Server Action, Route Handler, proxy); ngôn ngữ giao diện lấy từ cookie `NEXT_LOCALE` và từ điển vi/en trong repo. Trang `/todo` và đăng xuất đã gỡ khỏi F001 (2026-10-08); đăng xuất thuộc F003.
 
 ```mermaid
 flowchart LR
@@ -135,7 +135,7 @@ sequenceDiagram
 `GET /auth/callback` → `` `AuthCallbackRoute#GET` ``
 `FR-402` `FR-403` `FR-601` `BR-001` `BR-002` `BR-003` `BR-009` `DEC-003` `INT-001` `US002` `US013` · `SCR001_Login`
 
-**Who** · Khách vừa quay về từ Google *(công khai theo thiết kế: nơi phiên được tạo, nằm ngoài matcher của proxy)*
+**Who** · Khách vừa quay về từ Google *(công khai theo thiết kế: nơi phiên được tạo; matcher của proxy có khớp đường này nhưng `updateSession` trả `NextResponse.next()` ngay, không làm mới phiên và không qua cổng prelaunch: `lib/supabase/proxy-session.ts:45`)*
 **FE** · không có giao diện — chỉ trả chuyển hướng 302
 **Request** · query `code` *(vắng khi hủy)* hoặc `error` *(Google/Supabase báo lỗi)*; cookie PKCE code verifier. Mọi query khác (`next`, `redirect_to`, …) bị bỏ qua.
 **BE** · `GET` gọi `completeSignIn(searchParams)` rồi dựng 302 tới đường dẫn cố định trên origin của request (`app/auth/callback/route.ts:24-30`). Nhánh đổi mã: `createClient()` → `supabase.auth.exchangeCodeForSession(code)`, cookie phiên ghi qua adapter `setAll` và Next gắn vào redirect (`:43-48`). Ngoại lệ (Supabase không tới được, thiếu biến môi trường, lỗi ghi cookie) cũng bị bắt và coi là `failed`, ghi log `[auth/callback]`, không bao giờ trả 500 (`:49-59`). `INT-001` ở đây: đổi mã xác thực lấy phiên *(§ 4.5)*.
@@ -177,14 +177,14 @@ sequenceDiagram
 ### 3.3 CAP-03 — Điều hướng và làm mới phiên
 
 #### A5 · Làm mới phiên và chuyển hướng theo phiên
-`proxy` trên `/`, `/login` và `/awards-information` → `` `SessionProxy#proxy` ``
+`proxy` trên mọi page route (matcher phủ định tĩnh) → `` `SessionProxy#proxy` ``
 `FR-001` `FR-102` `FR-103` `BR-002` `BR-005` `BR-009` `DEC-001` `DEC-002` `INT-001` `US014` `US015` *(FR-103, DEC-002 đã gỡ 2026-10-08)* · `SCR001_Login`
 
-**Who** · Mọi request `GET`/`HEAD`/`POST` tới `/` hoặc `/login` *(`/` là trang chủ công khai của F002)*
+**Who** · Mọi request `GET`/`HEAD`/`POST` tới một page route khớp matcher, trừ `/auth/callback` *(`/` là trang chủ công khai của F002; cổng prelaunch ở cùng hàm thuộc F005)*
 **Request** · cookie phiên Supabase
-**BE** · `proxy(request)` (`proxy.ts:9-11`, runtime Node) uỷ quyền cho `updateSession` (`lib/supabase/proxy-session.ts:30-52`): `hasVerifiedSession` tạo server client trên cookie của request và gọi `supabase.auth.getClaims()` để xác minh chữ ký và làm mới token (`:60-97`; `INT-001`: kiểm tra phiên ở dịch vụ xác thực *(§ 4.5)*). Cookie mới được gom vào `pending`, phản chiếu lên request để Server Component cùng request đọc được token mới (`:72-78`), rồi gắn vào response kể cả khi là redirect — nếu không sẽ mất token mới và gây vòng đăng xuất (`:43-50`). Matcher là `["/", "/login", "/awards-information"]` (`proxy.ts:18-20`); `/` và `/awards-information` (thêm bởi F004) được khớp để token xoay vòng ở trang công khai rơi vào cookie của response (Server Component không ghi được cookie).
+**BE** · `proxy(request)` (`proxy.ts:10-12`, runtime Node) uỷ quyền cho `updateSession` (`lib/supabase/proxy-session.ts:43-79`): `verifySession` tạo server client trên cookie của request và gọi `supabase.auth.getClaims()` để xác minh chữ ký và làm mới token (`:88-127`; `INT-001`: kiểm tra phiên ở dịch vụ xác thực *(§ 4.5)*). Cookie mới được gom vào `pending`, phản chiếu lên request để Server Component cùng request đọc được token mới (`:100-106`), rồi gắn vào response kể cả khi là redirect — nếu không sẽ mất token mới và gây vòng đăng xuất (`:70-76`). Matcher là literal tĩnh `["/((?!_next/|__nextjs|.*\..*).*)"]` (`proxy.ts:22-24`), phủ mọi page route (F005 mở rộng từ `["/", "/login", "/awards-information"]`) để token xoay vòng ở trang công khai rơi vào cookie của response (Server Component không ghi được cookie); `/auth/callback` khớp matcher nhưng `updateSession` trả tiếp ngay (`:45`). Phần cổng prelaunch trong cùng hàm thuộc F005.
 **Rule**
-- **BR-005 — Phiên không hợp lệ hoặc hết hạn coi như chưa đăng nhập.** Claims vắng, lỗi xác minh, lỗi mạng hoặc thiếu/sai biến môi trường Supabase đều dẫn tới nhánh khách, request đi tiếp và chỉ ghi log `[proxy]`, không bao giờ trả 500; quyết định dựa trên claims đã xác minh bằng `getClaims()`, không dựa trên `getSession()` hay cookie thô. `lib/supabase/proxy-session.ts:54-96`
+- **BR-005 — Phiên không hợp lệ hoặc hết hạn coi như chưa đăng nhập.** Claims vắng, lỗi xác minh, lỗi mạng hoặc thiếu/sai biến môi trường Supabase đều dẫn tới nhánh khách, request đi tiếp và chỉ ghi log `[proxy]`, không bao giờ trả 500; quyết định dựa trên claims đã xác minh bằng `getClaims()`, không dựa trên `getSession()` hay cookie thô. `lib/supabase/proxy-session.ts:81-127`
   ```text
   authenticated = getClaims() returns verified claims (any error -> false)
   redirectTarget:
@@ -197,11 +197,11 @@ sequenceDiagram
 
 | DEC | subtype | Condition | What the user sees | Source |
 |---|---|---|---|---|
-| **DEC-001** | flow | method là `GET` hoặc `HEAD` VÀ `pathname === "/login"` VÀ có claims hợp lệ | chuyển 307 tới `/` | `lib/supabase/proxy-session.ts:99-105` |
-| **DEC-002** | flow | *Đã gỡ (2026-10-08): từng là "chưa đăng nhập mà vào `/todo` thì về `/login`"; `/todo` bị gỡ và `/` là trang công khai* | không còn nhánh chặn khách: khách ở `/` luôn xem được trang chủ, không bị chuyển hướng | `lib/supabase/proxy-session.ts:99-105` |
+| **DEC-001** | flow | method là `GET` hoặc `HEAD` VÀ `pathname === "/login"` VÀ có claims hợp lệ | chuyển 307 tới `/` | `lib/supabase/proxy-session.ts:129-135` |
+| **DEC-002** | flow | *Đã gỡ (2026-10-08): từng là "chưa đăng nhập mà vào `/todo` thì về `/login`"; `/todo` bị gỡ và `/` là trang công khai* | không còn nhánh chặn khách: khách ở `/` luôn xem được trang chủ, không bị chuyển hướng (khi site đã mở; cổng F005 xem technical-spec F005) | `lib/supabase/proxy-session.ts:129-135` |
 
-**Result** · Không ghi DB. Cookie phiên được làm mới khi token sắp hết hạn; nếu không rơi vào DEC-001, request đi tiếp bình thường. Khách ở `/`, `/login` và `/awards-information` luôn đi tiếp.
-**Source:** `proxy.ts:9-20` → `lib/supabase/proxy-session.ts:30-105` → `lib/supabase/session-cookie-options.ts:11-16`
+**Result** · Không ghi DB. Cookie phiên được làm mới khi token sắp hết hạn; nếu không rơi vào DEC-001, request đi tiếp bình thường. Khi site đã mở, khách ở mọi page route luôn đi tiếp (cổng prelaunch của F005 chỉ chuyển khi site còn khoá).
+**Source:** `proxy.ts:10-24` → `lib/supabase/proxy-session.ts:43-164` → `lib/supabase/session-cookie-options.ts:11-16`
 
 ---
 
@@ -312,7 +312,7 @@ Không có quy tắc nào thuộc về mọi action, nên `A0` không claim mã 
 
 **BR-002 — Đích sau đăng nhập và đích chuyển hướng của người đã đăng nhập luôn là `/`.**
 Used in: **A3** · **A5**. Cả hai đích là hằng số trên origin của request, không đọc từ query; `/` là trang chủ công khai (F002) nên đích này không phải tiền tố được bảo vệ.
-**Source:** `app/auth/callback/route.ts:4,26-29` · `lib/supabase/proxy-session.ts:6-10,102`
+**Source:** `app/auth/callback/route.ts:4,26-29` · `lib/supabase/proxy-session.ts:10-16,132`
 ```text
 A3: success -> 302 SUCCESS_PATH ("/")        # query ignored
 A5: GET|HEAD /login and authenticated -> 307 POST_LOGIN_PATH ("/")
@@ -338,7 +338,7 @@ setLocale(v):      v in {vi, en} ? set NEXT_LOCALE=v (path=/, 1y, lax) : ignore
 
 **BR-009 — Cookie phiên và cookie PKCE chỉ đọc được phía máy chủ.**
 Used in: **A2** · **A3** · **A5**. Cả server client thường và server client của proxy truyền cùng `SESSION_COOKIE_OPTIONS`, nên cookie nào `@supabase/ssr` ghi (phiên, PKCE verifier) đều `httpOnly`, `sameSite=lax`, `path=/`; cờ `secure` chỉ bật khi `NODE_ENV === "production"` để `http://localhost` vẫn chạy được ở môi trường phát triển.
-**Source:** `lib/supabase/session-cookie-options.ts:11-16` · `lib/supabase/server.ts:24` · `lib/supabase/proxy-session.ts:67`
+**Source:** `lib/supabase/session-cookie-options.ts:11-16` · `lib/supabase/server.ts:24` · `lib/supabase/proxy-session.ts:95`
 ```text
 cookieOptions = { httpOnly: true, secure: NODE_ENV == "production", sameSite: "lax", path: "/" }
 ```
@@ -348,7 +348,7 @@ cookieOptions = { httpOnly: true, secure: NODE_ENV == "production", sameSite: "l
 ### Supabase Auth xử lý đăng nhập Google, đổi mã lấy phiên và xác minh phiên (INT-001)
 **Linked FR:** FR-401, FR-402, FR-001
 **Used in:** A2 → A3, A5
-**Source:** `app/login/actions.ts:39-43` · `app/auth/callback/route.ts:46-47` · `lib/supabase/proxy-session.ts:65-82`
+**Source:** `app/login/actions.ts:39-43` · `app/auth/callback/route.ts:46-47` · `lib/supabase/proxy-session.ts:93-110`
 **Type:** api-call
 **Target:** Supabase Auth tại `SUPABASE_URL` (máy chủ), phía sau là Google OAuth; điểm cuối authorize/token của Supabase Auth (E2E chặn `/auth/v1/authorize` để quan sát nút chờ)
 **Payload:** `provider=google`, `redirectTo=<origin>/auth/callback`, tham số PKCE `code_challenge`/`code_challenge_method` do SDK sinh; ở A3 gửi `code` kèm code verifier từ cookie; ở A5 gửi token trong cookie để `getClaims()` xác minh. Không có secret nào đi qua trình duyệt.
@@ -363,7 +363,7 @@ GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET      # file .env gốc, Supabase CLI đ�
 supabase/config.toml:148-150: site_url và additional_redirect_urls (gồm http://localhost:3000/auth/callback)
 supabase/config.toml:201: [auth.email] enable_signup = true   # chỉ để E2E tạo phiên bằng mật khẩu ở local
 NEXT_LOCALE cookie: path=/, maxAge 1 năm, sameSite=lax        # A4
-proxy matcher: ["/", "/login", "/awards-information"]    # trước 2026-10-08: ["/login", "/todo/:path*"]; "/awards-information" thêm 2026-10-09 (F004)
+proxy matcher: ["/((?!_next/|__nextjs|.*\..*).*)"]    # F005 (2026-10-09): mọi page route; trước đó ["/", "/login", "/awards-information"] (F004, 2026-10-09), ["/login", "/todo/:path*"] (trước 2026-10-08)
 ```
 
 **Client behavior:** see
@@ -470,7 +470,7 @@ Chính sách kiểm thử `e2e-red-first`: các file E2E Playwright cấp màn h
 | A4 | 9 | `setLocale` / `isLocale` | `lib/i18n/actions.ts:8-17`, `lib/i18n/locales.ts:1-11` | ghi cookie ngôn ngữ, danh sách cho phép |
 | A1, A4 | 10 | `getLocale` / `getDictionary` | `lib/i18n/get-locale.ts:9-12`, `lib/i18n/dictionary.ts:25-73` | đọc ngôn ngữ và chữ giao diện |
 | A1, A4 | 11 | `HtmlLangScript` / `HtmlLangSync` | `app/_components/html-lang.tsx:10-35`, `app/layout.tsx:21-34` | giữ `<html lang>` khớp ngôn ngữ |
-| A5 | 12 | `proxy` / `updateSession` | `proxy.ts:9-20`, `lib/supabase/proxy-session.ts:30-105` | làm mới phiên và chuyển hướng `/login` |
+| A5 | 12 | `proxy` / `updateSession` | `proxy.ts:10-24`, `lib/supabase/proxy-session.ts:43-164` | làm mới phiên và chuyển hướng `/login` |
 
 #### Data Flow
 
