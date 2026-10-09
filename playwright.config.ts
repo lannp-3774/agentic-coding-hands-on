@@ -8,6 +8,7 @@ try {
 }
 
 const baseURL = 'http://localhost:3000';
+const PRELAUNCH_GATE_SPECS = /prelaunch-gate-.*\.spec\.ts$/;
 
 export default defineConfig({
   testDir: './e2e',
@@ -22,6 +23,15 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+      testIgnore: PRELAUNCH_GATE_SPECS,
+    },
+    {
+      name: 'prelaunch-gate',
+      testMatch: PRELAUNCH_GATE_SPECS,
+      dependencies: ['chromium'],
+      workers: 1,
+      fullyParallel: false,
       use: { ...devices['Desktop Chrome'] },
     },
   ],
