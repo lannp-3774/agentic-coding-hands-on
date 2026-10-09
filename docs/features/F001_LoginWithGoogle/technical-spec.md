@@ -19,7 +19,7 @@ authored_by: rebuild-spec
 
 ## 1. Technical Overview
 
-Khách mở `/login`, bấm nút Google; Server Action khởi động luồng OAuth PKCE của Supabase Auth và chuyển cùng tab sang Google. Google trả về `/auth/callback`, route handler đổi `code` lấy phiên rồi 302 về trang chủ `/` (hoặc về `/login?error=cancelled|failed`). Phiên nằm trong cookie do `@supabase/ssr` quản lý; `proxy.ts` làm mới cookie ở `/` và `/login`, đồng thời chuyển người đã đăng nhập mở `/login` về `/` — `/` là trang công khai nên proxy không bao giờ chuyển hướng khách. Toàn bộ truy cập Supabase chạy phía máy chủ (Server Action, Route Handler, proxy); ngôn ngữ giao diện lấy từ cookie `NEXT_LOCALE` và từ điển vi/en trong repo. Trang `/todo` và đăng xuất đã gỡ khỏi F001 (2026-10-08); đăng xuất thuộc F003.
+Khách mở `/login`, bấm nút Google; Server Action khởi động luồng OAuth PKCE của Supabase Auth và chuyển cùng tab sang Google. Google trả về `/auth/callback`, route handler đổi `code` lấy phiên rồi 302 về trang chủ `/` (hoặc về `/login?error=cancelled|failed`). Phiên nằm trong cookie do `@supabase/ssr` quản lý; `proxy.ts` làm mới cookie ở `/`, `/login` và `/awards-information`, đồng thời chuyển người đã đăng nhập mở `/login` về `/` — `/` là trang công khai nên proxy không bao giờ chuyển hướng khách. Toàn bộ truy cập Supabase chạy phía máy chủ (Server Action, Route Handler, proxy); ngôn ngữ giao diện lấy từ cookie `NEXT_LOCALE` và từ điển vi/en trong repo. Trang `/todo` và đăng xuất đã gỡ khỏi F001 (2026-10-08); đăng xuất thuộc F003.
 
 ```mermaid
 flowchart LR
@@ -52,7 +52,7 @@ flowchart LR
 | **A2** | `LoginActions#signInWithGoogle` | `POST` `/login` *(Server Action)* | FR-401, FR-602, BR-006, BR-008, BR-009, INT-001, US001 | — *(chỉ ghi cookie PKCE, không ghi DB)* | § 3.1 ▸ **diagram** |
 | **A3** | `AuthCallbackRoute#GET` | `GET` `/auth/callback` | FR-402, FR-403, FR-601, BR-001, BR-002, BR-003, BR-009, DEC-003, INT-001, US002, US013 | `auth.users`, `auth.sessions` *(Supabase quản lý)* | § 3.1 ▸ **diagram** |
 | **A4** | `LocaleActions#setLocale` | `POST` `/login` *(Server Action)* | FR-206, FR-207, FR-404, FR-407, BR-004, US012 | — *(chỉ ghi cookie `NEXT_LOCALE`)* | § 3.2 |
-| **A5** | `SessionProxy#proxy` | `proxy` · `/`, `/login` | FR-001, FR-102, FR-103, BR-002, BR-005, BR-009, DEC-001, DEC-002, INT-001, US014, US015 | — *(chỉ làm mới cookie phiên)* | § 3.3 |
+| **A5** | `SessionProxy#proxy` | `proxy` · `/`, `/login`, `/awards-information` | FR-001, FR-102, FR-103, BR-002, BR-005, BR-009, DEC-001, DEC-002, INT-001, US014, US015 | — *(chỉ làm mới cookie phiên)* | § 3.3 |
 | **A6** | *(đã gỡ 2026-10-08)* `TodoPage#render` | — *(trước đây `GET` `/todo`)* | FR-405, BR-007 | — | § 3.4 |
 | **A7** | *(đã gỡ 2026-10-08)* `TodoActions#signOut` | — *(trước đây `POST` `/todo`)* | FR-406 | — | § 3.4 |
 
@@ -177,12 +177,12 @@ sequenceDiagram
 ### 3.3 CAP-03 — Điều hướng và làm mới phiên
 
 #### A5 · Làm mới phiên và chuyển hướng theo phiên
-`proxy` trên `/` và `/login` → `` `SessionProxy#proxy` ``
+`proxy` trên `/`, `/login` và `/awards-information` → `` `SessionProxy#proxy` ``
 `FR-001` `FR-102` `FR-103` `BR-002` `BR-005` `BR-009` `DEC-001` `DEC-002` `INT-001` `US014` `US015` *(FR-103, DEC-002 đã gỡ 2026-10-08)* · `SCR001_Login`
 
 **Who** · Mọi request `GET`/`HEAD`/`POST` tới `/` hoặc `/login` *(`/` là trang chủ công khai của F002)*
 **Request** · cookie phiên Supabase
-**BE** · `proxy(request)` (`proxy.ts:9-11`, runtime Node) uỷ quyền cho `updateSession` (`lib/supabase/proxy-session.ts:30-52`): `hasVerifiedSession` tạo server client trên cookie của request và gọi `supabase.auth.getClaims()` để xác minh chữ ký và làm mới token (`:60-97`; `INT-001`: kiểm tra phiên ở dịch vụ xác thực *(§ 4.5)*). Cookie mới được gom vào `pending`, phản chiếu lên request để Server Component cùng request đọc được token mới (`:72-78`), rồi gắn vào response kể cả khi là redirect — nếu không sẽ mất token mới và gây vòng đăng xuất (`:43-50`). Matcher là `["/", "/login"]` (`proxy.ts:17-19`); `/` được khớp để token xoay vòng ở trang công khai rơi vào cookie của response (Server Component không ghi được cookie).
+**BE** · `proxy(request)` (`proxy.ts:9-11`, runtime Node) uỷ quyền cho `updateSession` (`lib/supabase/proxy-session.ts:30-52`): `hasVerifiedSession` tạo server client trên cookie của request và gọi `supabase.auth.getClaims()` để xác minh chữ ký và làm mới token (`:60-97`; `INT-001`: kiểm tra phiên ở dịch vụ xác thực *(§ 4.5)*). Cookie mới được gom vào `pending`, phản chiếu lên request để Server Component cùng request đọc được token mới (`:72-78`), rồi gắn vào response kể cả khi là redirect — nếu không sẽ mất token mới và gây vòng đăng xuất (`:43-50`). Matcher là `["/", "/login", "/awards-information"]` (`proxy.ts:18-20`); `/` và `/awards-information` (thêm bởi F004) được khớp để token xoay vòng ở trang công khai rơi vào cookie của response (Server Component không ghi được cookie).
 **Rule**
 - **BR-005 — Phiên không hợp lệ hoặc hết hạn coi như chưa đăng nhập.** Claims vắng, lỗi xác minh, lỗi mạng hoặc thiếu/sai biến môi trường Supabase đều dẫn tới nhánh khách, request đi tiếp và chỉ ghi log `[proxy]`, không bao giờ trả 500; quyết định dựa trên claims đã xác minh bằng `getClaims()`, không dựa trên `getSession()` hay cookie thô. `lib/supabase/proxy-session.ts:54-96`
   ```text
@@ -200,8 +200,8 @@ sequenceDiagram
 | **DEC-001** | flow | method là `GET` hoặc `HEAD` VÀ `pathname === "/login"` VÀ có claims hợp lệ | chuyển 307 tới `/` | `lib/supabase/proxy-session.ts:99-105` |
 | **DEC-002** | flow | *Đã gỡ (2026-10-08): từng là "chưa đăng nhập mà vào `/todo` thì về `/login`"; `/todo` bị gỡ và `/` là trang công khai* | không còn nhánh chặn khách: khách ở `/` luôn xem được trang chủ, không bị chuyển hướng | `lib/supabase/proxy-session.ts:99-105` |
 
-**Result** · Không ghi DB. Cookie phiên được làm mới khi token sắp hết hạn; nếu không rơi vào DEC-001, request đi tiếp bình thường. Khách ở `/` và `/login` luôn đi tiếp.
-**Source:** `proxy.ts:9-19` → `lib/supabase/proxy-session.ts:30-105` → `lib/supabase/session-cookie-options.ts:11-16`
+**Result** · Không ghi DB. Cookie phiên được làm mới khi token sắp hết hạn; nếu không rơi vào DEC-001, request đi tiếp bình thường. Khách ở `/`, `/login` và `/awards-information` luôn đi tiếp.
+**Source:** `proxy.ts:9-20` → `lib/supabase/proxy-session.ts:30-105` → `lib/supabase/session-cookie-options.ts:11-16`
 
 ---
 
@@ -363,7 +363,7 @@ GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET      # file .env gốc, Supabase CLI đ�
 supabase/config.toml:148-150: site_url và additional_redirect_urls (gồm http://localhost:3000/auth/callback)
 supabase/config.toml:201: [auth.email] enable_signup = true   # chỉ để E2E tạo phiên bằng mật khẩu ở local
 NEXT_LOCALE cookie: path=/, maxAge 1 năm, sameSite=lax        # A4
-proxy matcher: ["/", "/login"]    # trước 2026-10-08: ["/login", "/todo/:path*"]
+proxy matcher: ["/", "/login", "/awards-information"]    # trước 2026-10-08: ["/login", "/todo/:path*"]; "/awards-information" thêm 2026-10-09 (F004)
 ```
 
 **Client behavior:** see
@@ -470,7 +470,7 @@ Chính sách kiểm thử `e2e-red-first`: các file E2E Playwright cấp màn h
 | A4 | 9 | `setLocale` / `isLocale` | `lib/i18n/actions.ts:8-17`, `lib/i18n/locales.ts:1-11` | ghi cookie ngôn ngữ, danh sách cho phép |
 | A1, A4 | 10 | `getLocale` / `getDictionary` | `lib/i18n/get-locale.ts:9-12`, `lib/i18n/dictionary.ts:25-73` | đọc ngôn ngữ và chữ giao diện |
 | A1, A4 | 11 | `HtmlLangScript` / `HtmlLangSync` | `app/_components/html-lang.tsx:10-35`, `app/layout.tsx:21-34` | giữ `<html lang>` khớp ngôn ngữ |
-| A5 | 12 | `proxy` / `updateSession` | `proxy.ts:9-19`, `lib/supabase/proxy-session.ts:30-105` | làm mới phiên và chuyển hướng `/login` |
+| A5 | 12 | `proxy` / `updateSession` | `proxy.ts:9-20`, `lib/supabase/proxy-session.ts:30-105` | làm mới phiên và chuyển hướng `/login` |
 
 #### Data Flow
 

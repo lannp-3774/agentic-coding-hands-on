@@ -7,9 +7,9 @@ lang: vi
 
 # Architecture
 
-Kiến trúc AS-BUILT của ứng dụng SAA 2025 (Next.js 16.4 + Supabase): trang chủ công khai `/` (F002), đăng nhập Google `/login` + `/auth/callback` (F001), menu tài khoản có vai trò admin nằm trong header trang chủ (F003). Route theo `ROUTE001`–`ROUTE007` (xem `route-list.md`), bảng dữ liệu theo `MODEL001_Award`, `MODEL002_Profile` (xem `data-model.md`). Tài liệu này đối chiếu bản nháp forward của takumi với code hiện có: mọi đường dẫn bên dưới đều tồn tại trong working tree.
+Kiến trúc AS-BUILT của ứng dụng SAA 2025 (Next.js 16.4 + Supabase): trang chủ công khai `/` (F002), trang Hệ thống giải thưởng công khai `/awards-information` (F004), đăng nhập Google `/login` + `/auth/callback` (F001), menu tài khoản có vai trò admin nằm trong header trang chủ (F003). Route theo `ROUTE001`–`ROUTE009` (xem `route-list.md`), bảng dữ liệu theo `MODEL001_Award`, `MODEL002_Profile`, `MODEL003_AwardPrize` (xem `entities.md`). Tài liệu này đối chiếu bản nháp forward của takumi với code hiện có: mọi đường dẫn bên dưới đều tồn tại trong working tree.
 
-> Note: `/todo` (SCR002_Todo) đã bị xoá khỏi code (`app/todo/**` không còn); `/profile`, `/admin`, `/awards-information`, `/sun-kudos`, `/standards` được link tới nhưng **chưa có page** trong `app/` (xem "Known Gaps" ở cuối mục System Architecture).
+> Note: `/todo` (SCR002_Todo) đã bị xoá khỏi code (`app/todo/**` không còn); `/profile`, `/admin`, `/sun-kudos`, `/standards` được link tới nhưng **chưa có page** trong `app/` (xem "Known Gaps" ở cuối mục System Architecture).
 
 ## System Architecture
 
@@ -22,7 +22,7 @@ flowchart LR
         CD["Client: LiveCountdown, LanguageSelector, AccountMenu, GoogleButton"]
     end
     subgraph "Next.js 16.4 App Router"
-        P["proxy.ts (matcher / va /login)"]
+        P["proxy.ts (matcher /, /login va /awards-information)"]
         H["GET / HomePage + HomeContent"]
         L["GET /login LoginPage"]
         CB["GET /auth/callback route handler"]
@@ -31,7 +31,7 @@ flowchart LR
     end
     subgraph "Supabase (Auth + PostgREST + Postgres)"
         G["Auth / GoTrue"]
-        R["PostgREST + Postgres: awards, profiles"]
+        R["PostgREST + Postgres: awards, award_prizes, profiles"]
     end
     GO[Google OAuth]
 
@@ -60,7 +60,7 @@ flowchart LR
 graph TD
     page["app/page.tsx"]
     layout["app/layout.tsx"]
-    comp["app/_components (home, site, header-behaviour)"]
+    comp["app/_components (home, site, header-behaviour, awards-information, awards-nav-behaviour)"]
     login["app/login"]
     callback["app/auth/callback"]
     proxy["proxy.ts"]
@@ -88,13 +88,13 @@ graph TD
     proxy -->|2| lsup
 ```
 
-Quy tắc phụ thuộc (đúng với code): `lib/*` không import ngược `app/*`; `lib/supabase` là lá duy nhất chạm Supabase (`@supabase/ssr`); `lib/countdown/parse-countdown-target.ts` và `lib/awards/award-card-mapping.ts` là hàm thuần (chỉ import type), `lib/countdown/use-countdown.ts` và `lib/ui/use-menu-disclosure.ts` là hook client (`"use client"`).
+Quy tắc phụ thuộc (đúng với code): `lib/*` không import ngược `app/*`; `lib/supabase` là lá duy nhất chạm Supabase (`@supabase/ssr`); `lib/countdown/parse-countdown-target.ts` và `lib/awards/award-card-mapping.ts`, `lib/awards/award-detail-mapping.ts` và `lib/ui/section-scroll-spy.ts` là hàm thuần (chỉ import type hoặc mapping thuần), `lib/countdown/use-countdown.ts` và `lib/ui/use-menu-disclosure.ts` là hook client (`"use client"`).
 
 ### Components
 
 | Component | Path | Responsibility |
 |-----------|------|----------------|
-| Proxy | `proxy.ts` | Chạy trên Node runtime trước route khớp, gọi `updateSession`. `matcher: ["/", "/login"]` phải là literal tĩnh (`proxy.ts:17-19`); `/auth/callback`, `/_next/*`, asset không khớp. |
+| Proxy | `proxy.ts` | Chạy trên Node runtime trước route khớp, gọi `updateSession`. `matcher: ["/", "/login", "/awards-information"]` phải là literal tĩnh (`proxy.ts:18-20`); `/auth/callback`, `/_next/*`, asset không khớp. |
 | Session helper | `lib/supabase/proxy-session.ts` | `updateSession` (`:30`): `getClaims()` làm mới token, chép cookie mới sang response. Quy tắc chuyển hướng duy nhất: GET/HEAD `/login` + claims hợp lệ → 307 `/` (`:99-105`). Khách trên `/` không bị chuyển hướng. Request khác GET/HEAD (Server Action POST) đi tiếp. Thiếu/sai env hoặc `getClaims` lỗi → coi là khách, chỉ ghi log. |
 | Server client | `lib/supabase/server.ts` | `createClient()` (`:19`) tạo `createServerClient` mới mỗi lần gọi, đọc/ghi cookie qua `cookies()`. `setAll` bọc try/catch vì Server Component không ghi được cookie; lỗi khác với thông báo "read-only" thì log. |
 | Supabase env | `lib/supabase/supabase-env.ts` | `getSupabaseEnv()` (`:15`) đọc `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` mỗi lần gọi; thiếu hoặc `SUPABASE_URL` không phải http(s) thì ném lỗi. Không dùng tiền tố `NEXT_PUBLIC_`. |
@@ -102,6 +102,7 @@ Quy tắc phụ thuộc (đúng với code): `lib/*` không import ngược `app
 | Current user | `lib/supabase/current-user.ts` | `getCurrentUser` (`:32`) bọc `cache()` (một lần/request): `connection()` rồi `getClaims()` và đọc `profiles.role` bằng session của người dùng. Lỗi claims/ngoại lệ → `null` (khách); lỗi/thiếu dòng/giá trị lạ khi đọc role → `"user"` (fail closed); chỉ literal `"admin"` mới ra `admin`. |
 | Root layout | `app/layout.tsx` | Không đọc cookie (đọc sẽ chặn prerender mọi route dưới `cacheComponents`). Cố định `lang="vi"` + `suppressHydrationWarning`; `HtmlLangScript` (`app/_components/html-lang.tsx`) đặt `documentElement.lang` theo cookie `NEXT_LOCALE` lúc parse HTML. Font Geist/Geist Mono qua `next/font/google`. |
 | Homepage | `app/page.tsx`, `app/_components/home/home-content.tsx` | `HomePage` là vỏ tĩnh bọc `SaaPageShell` + `<Suspense>`; `HomeContent` (async) đọc locale, `parseCountdownTarget(process.env.SAA_COUNTDOWN_TARGET)` và ráp header, hero, Root Further, Awards, Kudos, widget, footer. Awards và vùng tài khoản có `<Suspense>` riêng. |
+| Award details query (F004) | `lib/awards/get-award-details.ts`, `lib/awards/award-detail-mapping.ts` | `getAwardDetails(locale)` (`get-award-details.ts:24`): `connection()` ngoài `try`, rồi một truy vấn lồng `from("awards").select(AWARD_DETAIL_COLUMNS)` kèm `award_prizes(...)` sắp theo `sort_order` (`:30-33`). Không bao giờ ném: lỗi → log `[awards-information]` và trả `[]`; hàng hỏng bị lọc và đếm vào log. Mapping thuần (`award-detail-mapping.ts:99-116`): số lượng đệm hai chữ số, số tiền ngăn nghìn bằng dấu chấm kèm "VNĐ", chữ EN rơi về VN khi trống, ảnh trái/phải xen kẽ. |
 | Awards query | `lib/awards/get-awards.ts`, `lib/awards/award-card-mapping.ts` | `getAwards(locale)` (`:18`): `connection()` rồi `from("awards").select(...).order("sort_order")` bằng server client (vai `anon` cho khách). Không bao giờ ném: lỗi → log `[awards]` và trả `[]`. Mapping lọc dòng sai kiểu, ép `image_path` về đường dẫn cục bộ (fallback `/home/logo.png`), link `/awards-information#<slug>`. Chưa dùng `"use cache"`. |
 | Countdown | `lib/countdown/parse-countdown-target.ts`, `lib/countdown/countdown-math.ts`, `lib/countdown/use-countdown.ts`, `app/_components/home/countdown.tsx`, `app/_components/home/countdown-tiles.tsx` | Server parse `SAA_COUNTDOWN_TARGET` (ISO-8601 bắt buộc có offset; sai/thiếu → `null`, log một lần mỗi giá trị) rồi truyền số epoch ms xuống `LiveCountdown` (client). Hook dùng `useSyncExternalStore`, snapshot server là chỗ giữ chỗ `--`, tick theo phút, đọc lại khi tab hiện. |
 | Account region | `app/_components/header-behaviour/account-region.tsx` | `AccountRegion` / `AccountBellRegion`, mỗi vùng một `<Suspense>`; fallback là `AccountSlotSkeleton` (không phải nút Login, tránh nháy). Khách → `GuestLoginLink` (`/login`); đã đăng nhập → `AccountMenu` + chuông (chỉ UI). Mục Admin chỉ có khi `role === "admin"` (`:69-73`). |
@@ -116,9 +117,10 @@ Quy tắc phụ thuộc (đúng với code): `lib/*` không import ngược `app
 | Language selector | `app/_components/site/language-selector.tsx` | Client dropdown dùng chung cho `/` và `/login`; nhận `onSelect={setLocale}` qua prop. |
 | Site chrome | `app/_components/site/site-header.tsx`, `site-footer.tsx`, `saa-page-shell.tsx`, `site-icons.tsx`, `site-types.ts`, `account-slot-parts.tsx` | Phần hiển thị thuần (header/footer/shell/icon/kiểu props) dùng chung giữa các trang SAA. |
 | Home sections | `app/_components/home/{hero,root-further,awards,kudos}-section.tsx`, `awards-grid.tsx`, `widget-button.tsx` | Các khối trình bày của trang chủ; dữ liệu và copy nhận qua props. |
+| Awards Information (F004) | `app/awards-information/page.tsx`, `app/awards-information/_components/{awards-information-content,award-details-loader}.tsx`, `app/_components/awards-information/*` (hero, tiêu đề, bố cục, khối giải, trạng thái, `awards-nav-view.tsx`), `app/_components/awards-nav-behaviour/*` | Vỏ tĩnh + `<Suspense>`; nội dung ghép header/footer (`currentPage="awards"`), phần giải thưởng đọc dữ liệu trong `<Suspense>` thứ hai. Menu là client component: hook `use-awards-nav-active-slug.ts` là nơi duy nhất ghi mục đang chọn (bấm, cuộn tay, neo `#<slug>`); thuật toán thuần ở `lib/ui/section-scroll-spy.ts`, các lời gọi DOM ở `awards-nav-scroll-dom.ts`. Chữ trang ở `lib/i18n/awards-information-copy.ts`. |
 | Fonts | `app/_components/saa-fonts.ts` | Montserrat (400/700) và Montserrat Alternates (700), subset latin + vietnamese, `next/font/google`. |
-| Migrations | `supabase/migrations/20261008045411_create_awards.sql`, `supabase/migrations/20261008045415_create_profiles.sql` | Tạo `public.awards`, `public.profiles`, bật RLS, policy, `REVOKE`/`GRANT` tường minh; trigger `on_auth_user_created` + backfill cho profile. |
-| Seed | `supabase/seeds/common/01-awards.sql` | Upsert 6 giải thưởng (`on conflict (slug) do update`); chạy khi `supabase db reset` (theo `[db.seed] sql_paths`, `supabase/config.toml:58-63`). |
+| Migrations | `supabase/migrations/20261008045411_create_awards.sql`, `supabase/migrations/20261008045415_create_profiles.sql`, `supabase/migrations/20261009021753_add_award_details_and_prizes.sql` | Tạo `public.awards`, `public.profiles`, bật RLS, policy, `REVOKE`/`GRANT` tường minh; trigger `on_auth_user_created` + backfill cho profile; migration thứ ba chỉ thêm năm cột chi tiết vào `awards` và bảng `award_prizes` (RLS + GRANT cùng mẫu). |
+| Seed | `supabase/seeds/common/01-awards.sql`, `supabase/seeds/common/02-award-details.sql` | Upsert 6 giải thưởng (`on conflict (slug) do update`); `02` (chạy sau `01` theo tên tệp) cập nhật cột chi tiết theo `slug` và upsert `award_prizes` theo `(award_slug, sort_order)`; chạy khi `supabase db reset` (theo `[db.seed] sql_paths`, `supabase/config.toml:58-63`). |
 
 Ghi chú về `cacheComponents`: mọi thứ phụ thuộc request (cookie `NEXT_LOCALE`, `searchParams`, `getClaims()` vì đọc đồng hồ, truy vấn DB) nằm trong `<Suspense>`; hàm phụ thuộc phiên gọi `connection()` ngoài `try` trước khi đọc (`lib/supabase/current-user.ts:34`, `lib/awards/get-awards.ts:20`) và `unstable_rethrow` trong `catch` để không nuốt tín hiệu prerender. Không dùng `export const dynamic/revalidate`.
 
@@ -128,7 +130,8 @@ Hai bảng trong schema `public` (chi tiết cột/ràng buộc: `data-model.md`
 
 | Bảng | MODEL | Cột chính | RLS / quyền |
 |------|-------|-----------|-------------|
-| `public.awards` | `MODEL001_Award` | `slug` (PK), `title_vi`, `title_en`, `description_vi`, `image_path` (đường dẫn dưới `/public`, ví dụ `/home/awards/<slug>.png`), `sort_order` (smallint) | RLS bật. Policy `awards_select_public` cho `anon`, `authenticated`. `GRANT select` cho hai vai đó; `service_role` đủ quyền (`supabase/migrations/20261008045411_create_awards.sql:26-36`). |
+| `public.awards` | `MODEL001_Award` | `slug` (PK), `title_vi`, `title_en`, `description_vi`, `image_path` (đường dẫn dưới `/public`, ví dụ `/home/awards/<slug>.png`), `sort_order` (smallint); từ F004 thêm `detail_description_vi`, `quantity`, `unit_vi`, `unit_en`, `nav_label` (nullable) | RLS bật. Policy `awards_select_public` cho `anon`, `authenticated`. `GRANT select` cho hai vai đó; `service_role` đủ quyền (`supabase/migrations/20261008045411_create_awards.sql:26-36`). Migration F004 không đổi policy hay quyền. |
+| `public.award_prizes` | `MODEL003_AwardPrize` | `(award_slug, sort_order)` (PK; `award_slug` FK → `awards.slug` cascade), `amount_vnd` (integer, ≥ 0), `note_vi`, `note_en` (nullable) | RLS bật. Policy `award_prizes_select_public` cho `anon`, `authenticated`; thu hồi hết rồi `GRANT select` cho hai vai đó, `service_role` đủ quyền (`supabase/migrations/20261009021753_add_award_details_and_prizes.sql:46-57`). |
 | `public.profiles` | `MODEL002_Profile` | `id` (uuid PK, FK `auth.users(id)` `on delete cascade`), `role` (`'user'` \| `'admin'`, mặc định `'user'`), `created_at`, `updated_at` | RLS bật. Policy `profiles_select_own` chỉ cho `authenticated` đọc dòng của mình (`(select auth.uid()) = id`). Chỉ `GRANT select` cho `authenticated`; không có quyền/policy ghi cho người dùng. `service_role` đủ quyền (`supabase/migrations/20261008045415_create_profiles.sql:27-37`). |
 
 - Dòng `profiles` do trigger `after insert on auth.users` tạo (hàm `public.handle_new_user`, `security definer`, `search_path = ''`, `on conflict do nothing`); `role` luôn lấy mặc định, không bao giờ từ metadata người dùng. Migration có backfill cho tài khoản đã tồn tại (`:60-63`).
@@ -141,7 +144,7 @@ Hai bảng trong schema `public` (chi tiết cột/ràng buộc: `data-model.md`
 
 Phát hiện khi đối chiếu code, không sửa trong phạm vi tài liệu này:
 
-- Link tới trang chưa tồn tại (không có `page.tsx`): `/profile`, `/admin` (`app/_components/header-behaviour/account-region.tsx:70-71`), `/awards-information` (`lib/awards/award-card-mapping.ts`, hero, header, footer), `/sun-kudos`, `/standards` (header/footer/kudos). Phía server của `/admin` chưa có nên BR-004 (kiểm tra role ở route admin) chưa thực thi được.
+- Link tới trang chưa tồn tại (không có `page.tsx`): `/profile`, `/admin` (`app/_components/header-behaviour/account-region.tsx:70-71`), `/sun-kudos`, `/standards` (header/footer/kudos). (`/awards-information` đã có page từ F004.) Phía server của `/admin` chưa có nên BR-004 (kiểm tra role ở route admin) chưa thực thi được.
 - Asset được tham chiếu nhưng không có trong `public/`: `/login/key-visual.png` (`app/login/_components/login-screen.tsx:34`) và `/login/flag-gb.svg` (`app/_components/site/language-selector.tsx:15`). Trang chủ có `public/home/key-visual.png` nhưng login trỏ vào `/login/`.
 - `@supabase/supabase-js` chỉ được import trong `e2e/` (`e2e/support/supabase-session.ts`, `e2e/supabase-schema-rls.spec.ts`); code ứng dụng chỉ dùng `@supabase/ssr`.
 

@@ -61,8 +61,8 @@ key entities, and DB writes for a Dev/QA/SA audience.
 - **FR-101** Mở địa chỉ gốc của ứng dụng thì thấy trang chủ SAA, không cần đăng nhập; việc đưa trang chủ vào phạm vi làm mới phiên là điều kiện tiên quyết do F001 sở hữu.
 - **FR-102** Header cố định ở đầu cửa sổ: logo bên trái, ba liên kết ở giữa (chỉ hiện từ khổ 1024 điểm ảnh trở lên), bên phải là bộ chọn ngôn ngữ và vùng tài khoản; vùng tài khoản luôn giữ chỗ cố định để header không dịch chuyển.
 - **FR-103** Bấm logo ở header hoặc footer thì về trang chủ và, nếu đang ở trang chủ, cuộn lên đầu.
-- **FR-104** "About SAA 2025" ở header luôn ở trạng thái đang chọn (chữ vàng, gạch chân) và bấm thì cuộn lên đầu; "Awards Information" và "Sun* Kudos" sáng nền khi rê chuột và dẫn tới trang tương ứng.
-- **FR-105** Footer gồm logo, bốn liên kết (About SAA 2025, Awards Information, Sun* Kudos, Tiêu chuẩn chung) và dòng bản quyền; liên kết About SAA 2025 cuộn lên đầu trang.
+- **FR-104** "About SAA 2025" ở header ở trạng thái đang chọn (chữ vàng, gạch chân) khi người xem đang ở trang chủ — header mặc định chọn liên kết này, còn trang khác (ví dụ Awards Information, F004) chọn liên kết trỏ về chính nó và bấm thì cuộn lên đầu; "Awards Information" và "Sun* Kudos" sáng nền khi rê chuột và dẫn tới trang tương ứng.
+- **FR-105** Footer gồm logo, bốn liên kết (About SAA 2025, Awards Information, Sun* Kudos, Tiêu chuẩn chung) và dòng bản quyền, không liên kết nào ở kiểu đang chọn trên trang chủ; liên kết About SAA 2025 cuộn lên đầu trang.
 
 ### Homepage (2xx)
 

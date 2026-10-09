@@ -189,14 +189,15 @@ Trang cuộn dọc gồm sáu vùng nối tiếp: header cố định ở đầu
 | external | mở địa chỉ gốc của ứng dụng | — | TBD (draft) |
 | SCR001_Login | đăng nhập Google thành công (cập nhật F001: đích đổi từ `/todo` sang `/`) | có phiên hợp lệ | TBD (draft) |
 | SCR001_Login | mở màn hình Login khi đã đăng nhập (cập nhật F001) | có phiên hợp lệ | TBD (draft) |
-| TBD (draft): các trang Awards Information, Sun* Kudos, Tiêu chuẩn chung | logo hoặc "About SAA 2025" | trang đó đã được xây | TBD (draft) |
+| SCR004_AwardsInformation | logo hoặc "About SAA 2025" ở header hoặc footer của trang đó | — | `app/_components/site/site-header.tsx:26,40-46`, `app/_components/site/site-footer.tsx:24,37-43` |
+| TBD (draft): các trang Sun* Kudos, Tiêu chuẩn chung | logo hoặc "About SAA 2025" | trang đó đã được xây | TBD (draft) |
 
 ### Exits
 
 | Action | Element | Condition | Destination | Result | Source |
 |--------|---------|-----------|-------------|--------|--------|
-| Mở trang giải thưởng | E03, E13, E23 (Awards Information) | — | TBD (draft): màn hình Awards Information (route dự kiến `/awards-information`, chưa xây) | redirect | TBD (draft) |
-| Mở hạng mục giải thưởng | E17 (ảnh, tiêu đề, "Chi tiết") | — | TBD (draft): màn hình Awards Information kèm neo là mã định danh hạng mục | redirect; thiếu mã thì không kèm neo | TBD (draft) |
+| Mở trang giải thưởng | E03, E13, E23 (Awards Information) | — | SCR004_AwardsInformation (route `/awards-information`) | redirect | `app/_components/site/site-header.tsx:48-54`, `app/_components/site/site-footer.tsx:45-51`, `app/_components/home/hero-section.tsx:69` |
+| Mở hạng mục giải thưởng | E17 (ảnh, tiêu đề, "Chi tiết") | — | SCR004_AwardsInformation kèm neo là mã định danh hạng mục (`/awards-information#<slug>`) | redirect; thiếu mã thì không kèm neo | `lib/awards/award-card-mapping.ts:60` |
 | Mở trang Sun* Kudos | E04, E14, E20, E23 (Sun* Kudos) | — | TBD (draft): màn hình Sun* Kudos (route dự kiến `/sun-kudos`, chưa xây) | redirect | TBD (draft) |
 | Mở trang Tiêu chuẩn chung | E23 | — | TBD (draft): màn hình Tiêu chuẩn chung (route dự kiến `/standards`, chưa xây) | redirect | TBD (draft) |
 | Về đầu trang | E01, E02, E22, E23 (About SAA 2025) | đang ở trang chủ | (stays on screen) | cuộn lên đầu | TBD (draft) |

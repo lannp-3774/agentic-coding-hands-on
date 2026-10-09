@@ -68,7 +68,7 @@ flowchart LR
 `FR-101` `FR-201` `FR-202` `FR-203` `FR-204` `FR-205` `BR-003` `DEC-001` `US003` `US004` `US007` · `SCR003_Homepage/REG001_AccountRegion`
 
 **Who** · Khách, người dùng đã đăng nhập, admin *(gate A0 — § 4.4: BR-004 — ẩn/hiện chỉ là UX)*
-**FE** · `HomeContent` đặt hai slot vào `SiteHeader`: `bellSlot` (trái bộ chọn ngôn ngữ) và `accountSlot` (phải, bọc trong khung cố định 96x40) — `app/_components/home/home-content.tsx:37-42`, `app/_components/site/site-header.tsx:46-52`. `AccountBellRegion` bọc `SignedInBell` trong `<Suspense fallback={null}>` (không placeholder, nên chuông xuất hiện không đẩy bộ chọn ngôn ngữ); `AccountRegion` bọc `AccountControl` trong `<Suspense fallback={<AccountSlotSkeleton />}>` (khối 96x40 không có chữ nên người đã đăng nhập không thấy "Login" nhấp nháy — FR-205) — `app/_components/header-behaviour/account-region.tsx:24-42`, `app/_components/site/account-slot-parts.tsx:9-11`. Khách: `GuestLoginLink` là `next/link` tới `/login`, nút chữ cao 40 (FR-101); đã đăng nhập: `NotificationBell` là `<button>` 40x40 có `aria-label`, không handler, không badge, không panel (FR-201, FR-202) — `account-slot-parts.tsx:14-33`.
+**FE** · `HomeContent` đặt hai slot vào `SiteHeader`: `bellSlot` (trái bộ chọn ngôn ngữ) và `accountSlot` (phải, bọc trong khung cố định 96x40) — `app/_components/home/home-content.tsx:37-42`, `app/_components/site/site-header.tsx:61-68`. `AccountBellRegion` bọc `SignedInBell` trong `<Suspense fallback={null}>` (không placeholder, nên chuông xuất hiện không đẩy bộ chọn ngôn ngữ); `AccountRegion` bọc `AccountControl` trong `<Suspense fallback={<AccountSlotSkeleton />}>` (khối 96x40 không có chữ nên người đã đăng nhập không thấy "Login" nhấp nháy — FR-205) — `app/_components/header-behaviour/account-region.tsx:24-42`, `app/_components/site/account-slot-parts.tsx:9-11`. Khách: `GuestLoginLink` là `next/link` tới `/login`, nút chữ cao 40 (FR-101); đã đăng nhập: `NotificationBell` là `<button>` 40x40 có `aria-label`, không handler, không badge, không panel (FR-201, FR-202) — `account-slot-parts.tsx:14-33`.
 **Request** · cookie phiên Supabase và cookie `NEXT_LOCALE` (nhãn lấy từ `getDictionary(locale).accountMenu`) — `lib/i18n/dictionary.ts:14-22,48-55,60-67`
 **BE** · cả `SignedInBell` và `AccountControl` gọi `getCurrentUser()` (A4); hàm bọc `cache()` nên một request chỉ đọc phiên và vai trò một lần dù hai vùng cùng gọi — `account-region.tsx:44-62`, `lib/supabase/current-user.ts:32`. `AccountControl` truyền `triggerLabel`, danh sách mục đã lọc theo vai trò và `signOut` cho `AccountMenu` (A2); `role` không đi xuống trình duyệt, chỉ danh sách mục đã lọc đi xuống (FR-203) — `account-region.tsx:56-60`, `app/_components/header-behaviour/account-menu.tsx:8-15`.
 **Rule** · quyết định vùng này hiện gì:
@@ -82,7 +82,7 @@ flowchart LR
 | **DEC-001** | render | `user != null` và `role == "admin"` (DISC-001 giá trị `admin`) | như trên, menu thêm Trang quản trị/Admin Dashboard giữa Hồ sơ và Đăng xuất | `account-region.tsx:71` |
 
 **Result** · read-only — **no DB write**. Hiển thị đúng một trong ba trạng thái của DEC-001; admin cũng thấy chuông giống `user`. Nhãn đổi theo VN/EN ("Đăng nhập"/"Login", "Hồ sơ"/"Profile", "Trang quản trị"/"Admin Dashboard", "Thông báo"/"Notifications", "Tài khoản"/"Account"); `/profile` và `/admin` hiện chưa có page nên bấm tới 404. Trạng thái khách là mặc định khi lỗi (fail closed ở A4).
-**Source:** `app/_components/header-behaviour/account-region.tsx:24-73` → `app/_components/site/account-slot-parts.tsx:9-33` → `app/_components/site/site-header.tsx:46-52`
+**Source:** `app/_components/header-behaviour/account-region.tsx:24-73` → `app/_components/site/account-slot-parts.tsx:9-33` → `app/_components/site/site-header.tsx:61-68`
 
 <!-- No diagram: dưới ngưỡng — read-only, đồng bộ, rẽ nhánh dạng bảng DEC-001 (diagram sẽ ép các điều kiện song song thành một chuỗi giả). -->
 
@@ -208,7 +208,7 @@ sequenceDiagram
 | `useMenuDisclosure` | trạng thái và listener mở/đóng | A2 | `lib/ui/use-menu-disclosure.ts:23-74` |
 | `signOut` | Server Action đăng xuất | A3 | `lib/auth/actions.ts:19-33` |
 | `getCurrentUser` | đọc claims + vai trò, fail closed | A1, A4 | `lib/supabase/current-user.ts:32-83` |
-| `SiteHeader` (F002) | cung cấp `bellSlot` và `accountSlot` cùng khung 96x40 | A1 | `app/_components/site/site-header.tsx:11-55` |
+| `SiteHeader` (F002) | cung cấp `bellSlot` và `accountSlot` cùng khung 96x40 | A1 | `app/_components/site/site-header.tsx:11-71` |
 | `handle_new_user` | trigger SQL tạo hồ sơ | A5 | `supabase/migrations/20261008045415_create_profiles.sql:41-58` |
 
 ### 4.2 Data Model
@@ -412,7 +412,7 @@ Bằng chứng tự động đã có trong repo: `e2e/homepage-account-menu.spec
 ### 5.2 Assumptions
 
 - *(A4)* Vai trò đọc bằng truy vấn `profiles` dưới RLS ngay sau `getClaims()`, không dùng custom access token hook: một truy vấn cho mỗi request của người đã đăng nhập; chỉ xem lại khi cần vai trò ở proxy hoặc khi truy vấn thành điểm nghẽn đo được.
-- *(A1, A4)* Proxy làm mới phiên cho `/` (matcher `["/", "/login"]`, thuộc F001/BL003) là điều kiện để trang chủ công khai không làm người đã đăng nhập mất phiên khi token xoay vòng — `proxy.ts:18`. Lập luận về token xoay vòng là suy luận, chưa chạy thật *[INFERRED]*.
+- *(A1, A4)* Proxy làm mới phiên cho `/` (matcher `["/", "/login", "/awards-information"]`, thuộc F001/BL003) là điều kiện để trang chủ công khai không làm người đã đăng nhập mất phiên khi token xoay vòng — `proxy.ts:18`. Lập luận về token xoay vòng là suy luận, chưa chạy thật *[INFERRED]*.
 - *(A3)* `scope: "local"` là quyết định sản phẩm đã chốt; code khớp quyết định — `lib/auth/actions.ts:22`.
 - *(A5)* Cột `updated_at` không có trigger cập nhật vì không ai sửa hồ sơ trong phạm vi này (YAGNI) — `supabase/migrations/20261008045415_create_profiles.sql:18-23`.
 - *(A1)* Luồng đăng nhập Google hoàn tất (callback) là của F001; hồ sơ `role = user` xuất hiện ở lần đăng nhập đầu nhờ A5, nên F003 chỉ đọc kết quả (liên quan US013 của F001).
@@ -436,7 +436,7 @@ Bằng chứng tự động đã có trong repo: `e2e/homepage-account-menu.spec
 | A2 | 6 | `AccountMenu`, `useMenuDisclosure` | `app/_components/header-behaviour/account-menu.tsx:16-33`, `lib/ui/use-menu-disclosure.ts:23-74` | trạng thái mở/đóng |
 | A2, A3 | 7 | `AccountMenuView` | `app/_components/site/account-menu-view.tsx:12-61` | nút + menu + form đăng xuất |
 | A3 | 8 | `signOut` | `lib/auth/actions.ts:19-33` | Server Action đăng xuất |
-| A1 | 9 | `SiteHeader` (F002) | `app/_components/site/site-header.tsx:46-52` | khung 96x40 cho slot tài khoản |
+| A1 | 9 | `SiteHeader` (F002) | `app/_components/site/site-header.tsx:61-68` | khung 96x40 cho slot tài khoản |
 
 #### Data Flow
 

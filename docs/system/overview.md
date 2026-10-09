@@ -8,7 +8,7 @@
 
 my-app là website sự kiện "SAA 2025 — Sun* Annual Awards 2025" (`app/layout.tsx:16-19`), chạy trên một ứng dụng Next.js 16.4 duy nhất. Hiện có hai màn hình thật: trang chủ công khai `/` (hero, đồng hồ đếm ngược tới sự kiện, lưới giải thưởng đọc từ DB, khối Kudos, header/footer, chọn ngôn ngữ vi/en) và màn hình đăng nhập `/login` (Login with Google). Route handler `/auth/callback` nhận kết quả OAuth và đổi mã lấy session. Header trang chủ có menu tài khoản (Profile / Admin / Logout) và chuông thông báo (chỉ UI) cho người đã đăng nhập; mục Admin chỉ hiện khi vai trò đọc từ `public.profiles` đúng bằng `admin`.
 
-Không có tầng API riêng: Server Component đọc dữ liệu trực tiếp qua Supabase client theo từng request (`lib/supabase/server.ts`), thao tác ghi đi qua 3 Server Action (`signInWithGoogle`, `signOut`, `setLocale`). Dữ liệu nằm ở 2 bảng Postgres có RLS (`awards`, `profiles`). Các đường dẫn `/profile`, `/admin`, `/awards-information`, `/sun-kudos`, `/standards` được liên kết trong UI nhưng **chưa có page** trong code. Route `/todo` cũ đã bị xoá (working tree 2026-10-08).
+Không có tầng API riêng: Server Component đọc dữ liệu trực tiếp qua Supabase client theo từng request (`lib/supabase/server.ts`), thao tác ghi đi qua 3 Server Action (`signInWithGoogle`, `signOut`, `setLocale`). Dữ liệu nằm ở 3 bảng Postgres có RLS (`awards`, `award_prizes`, `profiles`). Các đường dẫn `/profile`, `/admin`, `/sun-kudos`, `/standards` được liên kết trong UI nhưng **chưa có page** trong code. Route `/todo` cũ đã bị xoá (working tree 2026-10-08).
 
 For architecture diagrams and tech stack details, see [architecture.md](architecture.md).
 
@@ -19,7 +19,7 @@ graph TB
     Browser["Browser<br/>(Client Components: GoogleButton, AccountMenu,<br/>LanguageSelector, LiveCountdown, HtmlLangScript)"]
 
     subgraph NextApp["Next.js 16.4 server (Node runtime) — app/"]
-        Proxy["proxy.ts<br/>matcher: / và /login<br/>→ lib/supabase/proxy-session.ts::updateSession"]
+        Proxy["proxy.ts<br/>matcher: /, /login và /awards-information<br/>→ lib/supabase/proxy-session.ts::updateSession"]
         Pages["Server Components<br/>app/page.tsx (/)  ·  app/login/page.tsx (/login)"]
         Callback["Route Handler<br/>app/auth/callback/route.ts (GET)"]
         Actions["Server Actions<br/>signInWithGoogle · signOut · setLocale"]
@@ -28,7 +28,7 @@ graph TB
 
     subgraph Supa["Supabase"]
         Auth["Supabase Auth<br/>(GoTrue, Google provider, JWT claims)"]
-        PG[("Postgres<br/>public.awards · public.profiles<br/>RLS bật trên cả hai")]
+        PG[("Postgres<br/>public.awards · public.award_prizes · public.profiles<br/>RLS bật trên cả ba")]
     end
 
     Google["Google OAuth"]
@@ -52,7 +52,7 @@ graph TB
 Ranh giới chính:
 
 - **Một tiến trình Next.js** phục vụ cả HTML (Server Components), route handler và Server Action; không có service nền, queue hay job định kỳ (scout-report: `queue-worker`, `scheduled-job`, `webhook` = none).
-- **`proxy.ts`** (tên mới của middleware trong Next 16) chỉ chạy cho `/` và `/login` (`proxy.ts:17-19`): làm mới token Supabase vào cookie phản hồi, và là nơi duy nhất redirect theo session (`GET|HEAD /login` đã đăng nhập → `/`, `lib/supabase/proxy-session.ts:99-102`). Không có route nào bị chặn đối với khách.
+- **`proxy.ts`** (tên mới của middleware trong Next 16) chỉ chạy cho `/`, `/login` và `/awards-information` (`proxy.ts:18-20`): làm mới token Supabase vào cookie phản hồi, và là nơi duy nhất redirect theo session (`GET|HEAD /login` đã đăng nhập → `/`, `lib/supabase/proxy-session.ts:99-102`). Không có route nào bị chặn đối với khách.
 - **Supabase** cung cấp cả xác thực (Google OAuth) lẫn dữ liệu. Ứng dụng không có Supabase client phía trình duyệt: cookie session là `httpOnly` và chỉ code server đọc (`lib/supabase/session-cookie-options.ts`).
 - **Client Component** chỉ dùng cho tương tác UI (nút Google, menu tài khoản, chọn ngôn ngữ, đồng hồ đếm ngược, đồng bộ `<html lang>`, cuộn lên đầu trang) — 8 file `"use client"`.
 - **Hạ tầng test/dev** (không thuộc sản phẩm): Playwright e2e (`e2e/`, `playwright.config.ts`), Supabase CLI local (`supabase/config.toml`).
@@ -169,12 +169,12 @@ sequenceDiagram
 ## Security Overview
 
 - **Authentication**: Đăng nhập duy nhất bằng Google qua Supabase Auth, luồng OAuth PKCE (`signInWithOAuth` → `/auth/callback` → `exchangeCodeForSession`). Session ở cookie `httpOnly`, `sameSite: lax`, `secure` khi `NODE_ENV=production`. Nhận diện người dùng bằng `getClaims()`; lỗi xác minh/mạng/thiếu env đều coi là khách (log, không trả 500). Cấu hình provider Google dùng biến `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` trong `supabase/config.toml` (thay thế từ môi trường, không có giá trị trong repo).
-- **Authorization**: Không có route nào bị chặn đối với khách; trang chủ công khai. Phân quyền theo dữ liệu bằng RLS: `awards` cho `select` đối với `anon` và `authenticated`; `profiles` chỉ cho `authenticated` đọc dòng của mình (`(select auth.uid()) = id`); quyền bảng được `revoke all` rồi `grant` tường minh, `service_role` mới được ghi. Vai trò `admin` chỉ hiển thị mục menu; kiểm tra thực thi cho `/admin` chưa có (route chưa build).
+- **Authorization**: Không có route nào bị chặn đối với khách; trang chủ công khai. Phân quyền theo dữ liệu bằng RLS: `awards` và `award_prizes` cho `select` đối với `anon` và `authenticated`; `profiles` chỉ cho `authenticated` đọc dòng của mình (`(select auth.uid()) = id`); quyền bảng được `revoke all` rồi `grant` tường minh, `service_role` mới được ghi. Vai trò `admin` chỉ hiển thị mục menu; kiểm tra thực thi cho `/admin` chưa có (route chưa build).
 - **Data Encryption**: Code không tự mã hoá dữ liệu. Mã hoá truyền tải (HTTPS) và lưu trữ do hạ tầng triển khai và Supabase đảm nhiệm — không cấu hình trong repo (local: `api.tls` tắt, URL `http://127.0.0.1:54321`). Cookie `secure` chỉ bật ở production. Không có dữ liệu nhạy cảm nào do ứng dụng lưu ngoài `profiles.role`; email chỉ đọc từ claims.
 - **API Security**: Không có REST/GraphQL API tự viết. Redirect dùng đường dẫn cố định trên origin của request (`/`, `/login?error=cancelled|failed`), bỏ qua `next`/`redirect_to` nên không có open redirect; `/login` chỉ phản ánh mã lỗi nằm trong allow-list (`cancelled`, `failed`). Server Action chịu kiểm tra Origin/Host CSRF của Next; `signInWithGoogle` tự dựng `redirectTo` từ Origin hợp lệ hoặc Host đã qua regex, Supabase còn đối chiếu với danh sách `additional_redirect_urls`. `setLocale` allow-list `vi|en` trước khi ghi cookie. `proxy.ts` chỉ redirect `GET|HEAD` để không phá Server Action `signOut`. Biến môi trường server-only: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SAA_COUNTDOWN_TARGET` — không biến nào mang tiền tố `NEXT_PUBLIC_`. Không thấy rate limiting hay header bảo mật (CSP…) cấu hình trong ứng dụng; chỉ có `auth.rate_limit` của Supabase local.
 
 ## Scalability
 
-- **Current Capacity**: Chưa có số liệu tải, benchmark hay giới hạn nào trong code/cấu hình. Quy mô hiện tại rất nhỏ: 2 route hiển thị, 2 bảng, 6 dòng `awards` seed, một truy vấn `awards` và tối đa một cặp truy vấn `getClaims` + `profiles` cho mỗi request trang chủ.
+- **Current Capacity**: Chưa có số liệu tải, benchmark hay giới hạn nào trong code/cấu hình. Quy mô hiện tại rất nhỏ: 3 route hiển thị, 3 bảng, 6 dòng `awards` và 7 dòng `award_prizes` seed, một truy vấn `awards` (trang chủ), một truy vấn lồng `awards` + `award_prizes` (trang Awards Information) và tối đa một cặp truy vấn `getClaims` + `profiles` cho mỗi request trang chủ.
 - **Scaling Strategy**: Ứng dụng không giữ state trong tiến trình (session ở cookie, locale ở cookie, dữ liệu ở Postgres) nên có thể nhân bản ngang. Mỗi request tạo Supabase client riêng, `getCurrentUser` dùng React `cache()` để chia sẻ một lần tra cứu giữa các vùng header. Vỏ trang tĩnh được prerender nhờ `cacheComponents`, phần động stream qua Suspense. Chưa có cache dữ liệu `awards` giữa các request (đọc DB mỗi lần, `connection()` ép động); nếu tải tăng, `awards` là ứng viên đầu tiên cho cache vì là dữ liệu công khai gần như tĩnh.
 - **Performance Targets**: Không định nghĩa chỉ tiêu (latency, LCP…) trong code. Tối ưu hiện có là `next/font` (`display: swap`), `next/image`, Suspense + skeleton cho vùng tài khoản/lưới giải thưởng, và đồng hồ đếm ngược chỉ cập nhật khi đổi phút (`msUntilNextChange`) thay vì mỗi giây.

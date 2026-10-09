@@ -70,15 +70,15 @@ flowchart LR
 `FR-101` `FR-102` `FR-103` `FR-104` `FR-105` `FR-201` `FR-205` `FR-206` `FR-207` `FR-208` `BR-004` `BR-006` `US008` `US009` `US010` · `SCR003_Homepage`
 
 **Who** · Người xem trang chủ, khách hoặc đã đăng nhập *(gate A0 — § 4.4)*
-**FE** · `app/page.tsx:7-15` là vỏ tĩnh: `SaaPageShell` (`app/_components/site/saa-page-shell.tsx:5-14`) bọc một `<Suspense>` có khung chờ nền tối cao bằng màn hình (`app/page.tsx:10`) quanh `HomeContent`. `HomeContent` (`app/_components/home/home-content.tsx:27-61`) gắn `HtmlLangSync`, `SamePageScrollTop` (A5), header, `<main>` (hero, Root Further, mục giải thưởng, Kudos), nút widget và footer. Header cố định (`app/_components/site/site-header.tsx:14`): logo trái (`:18-28`), ba liên kết `/`, `/awards-information`, `/sun-kudos` chỉ hiện từ khổ `lg` trở lên (`:30`, `hidden … lg:flex`), liên kết `/` luôn mang `aria-current="page"` và kiểu "đang chọn" (`:32-34`); bên phải là chuông, bộ chọn ngôn ngữ (A4) và ô vùng tài khoản có kích thước cố định `h-10 w-24` (`:46-52`), hai vùng F003 cắm qua `AccountBellRegion` và `AccountRegion` (`app/_components/home/home-content.tsx:39,41`). Hero (`app/_components/home/hero-section.tsx:10-85`): ảnh key visual `/home/key-visual.png` (`:15-23`), lớp phủ tối (`:25-28`), `<h1>` là ảnh logo kèm chữ ẩn "ROOT FURTHER" cho trình đọc màn hình (`:32-43`), khối thông tin sự kiện (A2, `:52-63`) và hai nút kêu gọi tới `/awards-information` và `/sun-kudos` dùng chung kiểu rê chuột/lấy tiêu điểm (`:7-8,69-80`). Root Further (`app/_components/home/root-further-section.tsx:9-45`) tách mỗi mục thành dòng, đặt câu trích sau đoạn thứ ba (`:5,11-13`). Kudos (`app/_components/home/kudos-section.tsx:6-55`) có nút "Chi tiết" tới `/sun-kudos` (`:36-42`). Widget là `<button type="button">` cố định góc phải dưới, có `aria-label`, không có sự kiện bấm (`app/_components/home/widget-button.tsx:6-25`). Footer (`app/_components/site/site-footer.tsx:8-51`): logo, bốn liên kết (`:28-42`), dòng bản quyền (`:46-48`).
+**FE** · `app/page.tsx:7-15` là vỏ tĩnh: `SaaPageShell` (`app/_components/site/saa-page-shell.tsx:5-14`) bọc một `<Suspense>` có khung chờ nền tối cao bằng màn hình (`app/page.tsx:10`) quanh `HomeContent`. `HomeContent` (`app/_components/home/home-content.tsx:27-61`) gắn `HtmlLangSync`, `SamePageScrollTop` (A5), header, `<main>` (hero, Root Further, mục giải thưởng, Kudos), nút widget và footer. Header cố định (`app/_components/site/site-header.tsx:22`): logo trái (`:26-36`), ba liên kết `/`, `/awards-information`, `/sun-kudos` chỉ hiện từ khổ `lg` trở lên (`:38`, `hidden … lg:flex`), liên kết `/` mang `aria-current="page"` và kiểu "đang chọn" khi `currentPage` là `about`, giá trị mặc định nên trang chủ không truyền prop (`:11-19,40-46`; từ F004 các trang khác truyền `currentPage` để chọn liên kết của chính chúng); bên phải là chuông, bộ chọn ngôn ngữ (A4) và ô vùng tài khoản có kích thước cố định `h-10 w-24` (`:61-68`), hai vùng F003 cắm qua `AccountBellRegion` và `AccountRegion` (`app/_components/home/home-content.tsx:39,41`). Hero (`app/_components/home/hero-section.tsx:10-85`): ảnh key visual `/home/key-visual.png` (`:15-23`), lớp phủ tối (`:25-28`), `<h1>` là ảnh logo kèm chữ ẩn "ROOT FURTHER" cho trình đọc màn hình (`:32-43`), khối thông tin sự kiện (A2, `:52-63`) và hai nút kêu gọi tới `/awards-information` và `/sun-kudos` dùng chung kiểu rê chuột/lấy tiêu điểm (`:7-8,69-80`). Root Further (`app/_components/home/root-further-section.tsx:9-45`) tách mỗi mục thành dòng, đặt câu trích sau đoạn thứ ba (`:5,11-13`). Kudos (`app/_components/home/kudos-section.tsx:6-55`) có nút "Chi tiết" tới `/sun-kudos` (`:36-42`). Widget là `<button type="button">` cố định góc phải dưới, có `aria-label`, không có sự kiện bấm (`app/_components/home/widget-button.tsx:6-25`). Footer (`app/_components/site/site-footer.tsx:15-68`): logo, bốn liên kết (`:37-59`; kiểu "đang chọn" chỉ áp khi prop `currentPage` được truyền, trang chủ không truyền), dòng bản quyền (`:63-65`).
 **Request** · cookie `NEXT_LOCALE`; không có tham số
 **BE** · `getLocale()` (`lib/i18n/get-locale.ts:9-12`) đọc cookie, `getDictionary(locale)` (`lib/i18n/dictionary.ts:71-73`) trả chữ giao diện; `HomeContent` còn gọi `parseCountdownTarget` cho A2 (`app/_components/home/home-content.tsx:28-31`). Không có lời gọi dịch vụ ngoài ở A1 — dữ liệu giải thưởng thuộc A3, nội dung vùng tài khoản thuộc F003. Nội dung dài (Root Further, câu trích, đoạn Kudos) là hằng số tiếng Việt dùng chung cho cả hai ngôn ngữ (`lib/i18n/home-copy.ts:38-52`).
 **Rule**
-- **BR-004 — Liên kết tới trang chưa xây dùng địa chỉ dự kiến.** Header, hero, Kudos và footer trỏ `/awards-information`, `/sun-kudos`, `/standards`; trang chưa có thì Next trả 404 mặc định, không có trang lỗi riêng. *(§ 4.4)*
+- **BR-004 — Liên kết tới trang chưa xây dùng địa chỉ dự kiến.** Header, hero, Kudos và footer trỏ `/awards-information`, `/sun-kudos`, `/standards`; `/awards-information` đã có page từ F004 (2026-10-09), hai đích còn lại chưa có nên Next trả 404 mặc định, không có trang lỗi riêng. *(§ 4.4)*
 - **BR-006 — Ngôn ngữ chỉ là `vi` hoặc `en` (mặc định `vi`); EN chỉ dịch chữ giao diện.** Nhãn liên kết, nút, tiêu đề mục và bản quyền đổi theo từ điển; Root Further, câu trích và đoạn Kudos giữ tiếng Việt. *(§ 4.4)*
 
 **Result** · Chỉ đọc, không ghi DB. Người xem thấy đủ các khối của trang; footer dùng lại câu bản quyền của màn hình Login (`lib/i18n/dictionary.ts:47,59`).
-**Source:** `app/page.tsx:7-15` → `app/_components/home/home-content.tsx:27-61` → `app/_components/site/site-header.tsx:11-55` → `app/_components/home/hero-section.tsx:10-85` → `app/_components/home/root-further-section.tsx:9-45` → `app/_components/home/kudos-section.tsx:6-55` → `app/_components/home/widget-button.tsx:6-25` → `app/_components/site/site-footer.tsx:8-51`
+**Source:** `app/page.tsx:7-15` → `app/_components/home/home-content.tsx:27-61` → `app/_components/site/site-header.tsx:11-71` → `app/_components/home/hero-section.tsx:10-85` → `app/_components/home/root-further-section.tsx:9-45` → `app/_components/home/kudos-section.tsx:6-55` → `app/_components/home/widget-button.tsx:6-25` → `app/_components/site/site-footer.tsx:15-68`
 
 <!-- Không vẽ sequenceDiagram: dưới ngưỡng (chỉ đọc, không ghi bảng nào, không bất đồng bộ). -->
 
@@ -89,7 +89,7 @@ flowchart LR
 `FR-103` `FR-104` `FR-105` `DEC-002` `US016` · `SCR003_Homepage`
 
 **Who** · Người xem trang chủ *(gate A0 — § 4.4)*
-**FE** · `SamePageScrollTop` không vẽ gì (`app/_components/header-behaviour/same-page-scroll-top.tsx:17-31`), gắn một lần ở `app/_components/home/home-content.tsx:36`; bao logo và "About SAA 2025" ở header (`app/_components/site/site-header.tsx:18,32`) lẫn footer (`app/_components/site/site-footer.tsx:15,28`) mà không cần prop trên các liên kết.
+**FE** · `SamePageScrollTop` không vẽ gì (`app/_components/header-behaviour/same-page-scroll-top.tsx:17-31`), gắn một lần ở `app/_components/home/home-content.tsx:36`; bao logo và "About SAA 2025" ở header (`app/_components/site/site-header.tsx:26,41`) lẫn footer (`app/_components/site/site-footer.tsx:24,38`) mà không cần prop trên các liên kết (trang chủ giữ nguyên hành vi này; F004 chỉ thêm prop `currentPage` cho kiểu "đang chọn").
 **Request** · sự kiện `click` của trình duyệt; không có tham số mạng
 **BE** · không có lời gọi máy chủ; chỉ gọi `window.scrollTo({ top: 0, left: 0, behavior: "instant" })` (`app/_components/header-behaviour/same-page-scroll-top.tsx:23`). Không gọi `preventDefault` nên điều hướng của `next/link` vẫn chạy.
 **Rule** · quyết định có cuộn hay không:
@@ -147,7 +147,7 @@ flowchart LR
 **Rule**
 - **BR-003 — Nội dung và thứ tự thẻ đến từ dữ liệu.** Không viết cứng tên giải trong giao diện; thứ tự là `sort_order` tăng dần do truy vấn. `lib/awards/get-awards.ts:24-27`
 - **BR-005 — Liên kết thẻ là Awards Information kèm neo slug.** Mỗi thẻ trỏ `/awards-information#<slug>` với slug được `encodeURIComponent`; slug trống (sau `trim`) thì chỉ `/awards-information`. `lib/awards/award-card-mapping.ts:54,60`
-- **BR-004 — Liên kết tới trang chưa xây dùng địa chỉ dự kiến.** `/awards-information` chưa có page nên bấm thẻ ra 404 mặc định; phần neo `#<slug>` chưa có nơi nhận. *(§ 4.4)*
+- **BR-004 — Liên kết tới trang chưa xây dùng địa chỉ dự kiến.** `/awards-information` đã có page từ F004 (2026-10-09) nên bấm thẻ mở trang đó; phần neo `#<slug>` do F004 xử lý (trang tới đúng khối giải và chọn mục menu tương ứng). *(§ 4.4)*
 - **BR-006 — EN chỉ dịch chữ giao diện.** Ở EN tiêu đề thẻ lấy `title_en` (rơi về `title_vi` nếu trống); mô tả luôn là `description_vi` vì chưa có bản tiếng Anh. *(§ 4.4)*
 
 | DEC | subtype | Condition | What the user sees | Source |
@@ -197,7 +197,7 @@ flowchart LR
 | A3 | `image_path` rỗng, tương đối, bắt đầu `//` hoặc có `\` | dùng ảnh `/home/logo.png` thay thế *(ALG-003)* |
 | A3 | `title_en` trống ở EN | dùng `title_vi` *(BR-006)* |
 | A3 | Mô tả dài hơn 2 dòng | cắt bằng dấu ba chấm, không đổi chiều cao thẻ |
-| A1 · A3 | Bấm liên kết tới `/awards-information`, `/sun-kudos`, `/standards` khi chưa xây | trình duyệt hiện trang 404 mặc định của Next *(BR-004)* |
+| A1 · A3 | Bấm liên kết tới `/sun-kudos`, `/standards` khi chưa xây (`/awards-information` đã có page từ F004) | trình duyệt hiện trang 404 mặc định của Next *(BR-004)* |
 | A1 | Khổ dưới `lg` (nhỏ hơn 1024px) | ba liên kết điều hướng ở header không hiện; logo, bộ chọn ngôn ngữ và vùng tài khoản vẫn hiện; footer vẫn đủ bốn liên kết |
 | A1 | Vùng tài khoản chưa xác định xong trạng thái đăng nhập | ô cố định `h-10 w-24` giữ chỗ nên header không dịch chuyển (nội dung do F003) |
 | A1 · A4 | Cookie `NEXT_LOCALE` có giá trị lạ | coi là `vi` *(BR-006)* |
@@ -214,9 +214,9 @@ flowchart LR
 | `HomePage` | vỏ tĩnh: `SaaPageShell` + `<Suspense>` quanh `HomeContent` | A1 | `app/page.tsx` |
 | `SaaPageShell` | nền, màu chữ, biến font dùng chung cho trang SAA | A1 | `app/_components/site/saa-page-shell.tsx` |
 | `HomeContent` | đọc locale + mốc đếm ngược, ghép header/hero/mục/footer, đặt ranh giới `<Suspense>` của lưới | A1, A2, A3 | `app/_components/home/home-content.tsx` |
-| `SiteHeader` | header cố định: logo, ba liên kết (đánh dấu "đang chọn"), ba slot chuông / ngôn ngữ / tài khoản | A1, A4, A5 | `app/_components/site/site-header.tsx` |
+| `SiteHeader` | header cố định: logo, ba liên kết (liên kết trỏ về trang hiện tại đánh dấu "đang chọn" theo prop `currentPage`, mặc định `about` nên trang chủ không truyền gì), ba slot chuông / ngôn ngữ / tài khoản | A1, A4, A5 | `app/_components/site/site-header.tsx` |
 | `AccountBellRegion`, `AccountRegion` | hai vùng header do F003 sở hữu (`SCR003_Homepage/REG001_AccountRegion`); F002 chỉ cắm vào slot | A1 | `app/_components/header-behaviour/account-region.tsx` |
-| `SiteFooter` | logo, bốn liên kết, bản quyền | A1, A5 | `app/_components/site/site-footer.tsx` |
+| `SiteFooter` | logo, bốn liên kết, bản quyền; prop `currentPage` tuỳ chọn, bỏ trống (trang chủ) thì không liên kết nào ở kiểu đang chọn | A1, A5 | `app/_components/site/site-footer.tsx` |
 | `HeroSection` | ảnh nền, tiêu đề, khối sự kiện, hai nút kêu gọi, chứa slot đồng hồ | A1, A2 | `app/_components/home/hero-section.tsx` |
 | `LiveCountdown`, `CountdownTiles` | đồng hồ đếm ngược client + ba ô + nhãn "Coming soon" | A2 | `app/_components/home/countdown.tsx`, `app/_components/home/countdown-tiles.tsx` |
 | `useCountdown` | hook `useSyncExternalStore` theo phút | A2 | `lib/countdown/use-countdown.ts` |
@@ -267,13 +267,13 @@ None.
 
 **A0 · FR-601 / BR-007 — Trang chủ công khai cho mọi người xem.**
 Cross-cutting: áp dụng cho toàn trang, không thuộc riêng action nào. `app/page.tsx` không kiểm tra phiên và `proxy.ts` không bao giờ chuyển hướng ở `/`: matcher chứa `/` chỉ để làm mới token (khách đi tiếp, `redirectTarget` chỉ chuyển hướng người đã đăng nhập khỏi `/login`). Khách và người đã đăng nhập thấy cùng nội dung chung, chỉ vùng tài khoản khác nhau (F003). Ở tầng dữ liệu, `awards` chỉ cho `select` với `anon` và `authenticated` nên người xem không ghi được (PERM009).
-**Source:** `app/page.tsx:7-15` · `proxy.ts:17-18` · `lib/supabase/proxy-session.ts:99-105` · `supabase/migrations/20261008045411_create_awards.sql:26-36`
+**Source:** `app/page.tsx:7-15` · `proxy.ts:18-19` · `lib/supabase/proxy-session.ts:99-105` · `supabase/migrations/20261008045411_create_awards.sql:26-36`
 
 #### Bin 2 — used by ≥2 named actions
 
 **BR-004 — Liên kết tới trang chưa xây dùng địa chỉ dự kiến.**
 Used in: **A1** · **A3**. Các đích là `/awards-information` (kèm `#<slug>` ở thẻ), `/sun-kudos`, `/standards`; trang đích chưa tồn tại nên 404 mặc định của Next là chấp nhận được. Hệ quả: công cụ kiểm tra liên kết hỏng sẽ báo lỗi tới khi các trang được xây.
-**Source:** `app/_components/site/site-header.tsx:36,40` · `app/_components/site/site-footer.tsx:32,36,40` · `app/_components/home/hero-section.tsx:69,75` · `app/_components/home/kudos-section.tsx:37` · `lib/awards/award-card-mapping.ts:27,60`
+**Source:** `app/_components/site/site-header.tsx:49,56` · `app/_components/site/site-footer.tsx:46,53,57` · `app/_components/home/hero-section.tsx:69,75` · `app/_components/home/kudos-section.tsx:37` · `lib/awards/award-card-mapping.ts:27,60`
 ```text
 destinations = { awards: "/awards-information", kudos: "/sun-kudos", standards: "/standards" }
 href(nav|cta|footer|kudos) = destinations[key]        # page may not exist yet -> 404 accepted
@@ -359,7 +359,7 @@ card.href  = trim(slug) ? "/awards-information#" + encodeURIComponent(trim(slug)
 SAA_COUNTDOWN_TARGET = <ISO-8601 có múi giờ>   # server-only, mốc sự kiện cho A2; mẫu ở .env.example:18; thiếu/sai -> 00 00 00 (BR-001)
 SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY         # server-only, đọc bởi createClient cho A3 (tên biến, không có giá trị ở đây)
 NEXT_LOCALE (cookie)                            # vi | en, path=/, 1 năm, sameSite=lax (A4)
-proxy matcher ["/", "/login"]                   # thêm "/" để làm mới phiên khi mở trang chủ; F001 (SessionProxy) sở hữu
+proxy matcher ["/", "/login", "/awards-information"]                   # thêm "/" để làm mới phiên khi mở trang chủ; F001 (SessionProxy) sở hữu; "/awards-information" thêm bởi F004
 supabase/migrations/20261008045411_create_awards.sql   # bảng awards + RLS + GRANT; tách khỏi profiles của F003
 supabase/seeds/common/01-awards.sql             # upsert 6 hạng mục theo slug (chỉ chạy khi db reset local)
 public/home/awards/<slug>.png                   # ảnh thẻ 336x336 đã ghép nền (Storage bucket không dùng)
@@ -377,7 +377,7 @@ public/home/awards/<slug>.png                   # ảnh thẻ 336x336 đã ghép
 Bộ kiểm thử Playwright hiện có phủ trang chủ: `e2e/homepage-layout-and-content.spec.ts` (bố cục, header, hero, Kudos, widget, footer, cuộn logo), `e2e/homepage-countdown.spec.ts` (đồng hồ với giờ giả), `e2e/homepage-awards.spec.ts` (nhãn `@supabase`, cần Supabase local đã `db reset`), `e2e/homepage-language.spec.ts` (bộ chọn ngôn ngữ). Ca đồng hồ dùng `page.clock` nên giờ máy chủ không ảnh hưởng (số chỉ tính ở trình duyệt).
 
 - **SC-001** *(A1)* `/` không chuyển hướng với khách; thấy header, hero "ROOT FURTHER", Root Further, mục giải thưởng, khối Sun* Kudos, nút widget cố định góc phải dưới và footer (covers FR-101, FR-201, FR-206, FR-207, FR-208, FR-105)
-- **SC-002** *(A1, A5)* "About SAA 2025" tô vàng + gạch chân và bấm thì cuộn lên đầu; rê chuột lên "Awards Information" sáng nền; bấm các liên kết, logo, hai nút kêu gọi dẫn tới `/awards-information`, `/sun-kudos`, `/standards` hoặc đầu trang; footer đủ bốn liên kết và bản quyền (covers FR-102, FR-103, FR-104, FR-105, FR-205, DEC-002, BR-004)
+- **SC-002** *(A1, A5)* "About SAA 2025" tô vàng + gạch chân (mặc định của header khi trang không truyền `currentPage`) và bấm thì cuộn lên đầu; footer ở trang chủ không có liên kết nào ở kiểu đang chọn; rê chuột lên "Awards Information" sáng nền; bấm các liên kết, logo, hai nút kêu gọi dẫn tới `/awards-information`, `/sun-kudos`, `/standards` hoặc đầu trang; footer đủ bốn liên kết và bản quyền (covers FR-102, FR-103, FR-104, FR-105, FR-205, DEC-002, BR-004)
 - **SC-003** *(A2)* Với giờ giả trước mốc, ba ô hai chữ số đúng số ngày/giờ/phút, "Coming soon" hiện và khối sự kiện đúng chữ theo Figma; sau `runFor("01:00")` phút giảm một; với giờ ≥ mốc hiện `00 00 00` và "Coming soon" ẩn (covers FR-202, FR-203, FR-204, BR-002, DEC-001)
 - **SC-004** *(A2)* `parseCountdownTarget` trả epoch ms cho chuỗi hợp lệ có múi giờ và `null` cho `undefined`, chuỗi rỗng, chuỗi sai định dạng, chuỗi không có múi giờ; log một lần cho mỗi giá trị sai (covers FR-002, BR-001)
 - **SC-005** *(A3)* Sáu thẻ đúng thứ tự `sort_order`; 3 cột ở khung `lg` trở lên, 2 cột nhỏ hơn; mô tả cắt ở 2 dòng; bấm ảnh, tiêu đề, "Chi tiết" đều tới `/awards-information#<slug>`; hover nâng thẻ (covers FR-001, FR-301, FR-302, FR-303, FR-304, FR-305, BR-003, BR-005)
@@ -391,7 +391,7 @@ Bộ kiểm thử Playwright hiện có phủ trang chủ: `e2e/homepage-layout-
 
 **Acceptance Scenarios:**
 
-1. **Given** khách ở `/` (khổ `lg` trở lên), **When** bấm "Awards Information" ở header, **Then** URL là `/awards-information` (Next trả 404 vì chưa có page).
+1. **Given** khách ở `/` (khổ `lg` trở lên), **When** bấm "Awards Information" ở header, **Then** URL là `/awards-information` và trang Awards Information (F004) hiện ra, liên kết đó ở header đang chọn.
 2. **Given** khách ở `/`, **When** bấm "ABOUT AWARDS", **Then** URL là `/awards-information`.
 
 #### US009 *(A1)*
@@ -458,7 +458,7 @@ Bộ kiểm thử Playwright hiện có phủ trang chủ: `e2e/homepage-layout-
 ### 5.2 Assumptions
 
 - *(A1)* Nội dung dài (đoạn Root Further, câu trích, mô tả sáu giải thưởng, đoạn Kudos) được lấy nguyên văn từ khung Figma i87tDx10uM khi triển khai (`lib/i18n/home-copy.ts:3-6`, `supabase/seeds/common/01-awards.sql:2`); spec này không chép lại.
-- *(A0, A1)* `proxy.ts` khớp `/` (`proxy.ts:17-18`) nên token xoay vòng ở trang công khai được ghi vào cookie phản hồi; F001 (SessionProxy) sở hữu thay đổi này, F002 chỉ dựa vào đó.
+- *(A0, A1)* `proxy.ts` khớp `/` (`proxy.ts:18-19`) nên token xoay vòng ở trang công khai được ghi vào cookie phản hồi; F001 (SessionProxy) sở hữu thay đổi này, F002 chỉ dựa vào đó.
 - *(A2)* `useSyncExternalStore` chỉ dùng snapshot server khi dựng và hydrate nên không đọc `Date.now()` lúc prerender (`lib/countdown/use-countdown.ts:16-25`); đây là suy luận từ ngữ nghĩa React, spec này không chạy `next build`.
 - *(A2)* `SAA_COUNTDOWN_TARGET` được đọc trong `HomeContent`, nằm sau `await getLocale()` (đọc cookie) nên chạy ở thời điểm request, không bị nướng lúc dựng; đổi mốc cần khởi động lại tiến trình máy chủ để nạp lại biến môi trường nhưng không cần dựng lại (`app/_components/home/home-content.tsx:28-31`). Chưa chạy thực tế để xác nhận.
 - *(A3)* Ảnh giải thưởng là tệp tĩnh dưới `/public` (`public/home/awards/<slug>.png`), `image_path` lưu đường dẫn gốc; mô tả luôn tiếng Việt vì bảng không có `description_en` (`supabase/migrations/20261008045411_create_awards.sql:19`).
@@ -480,7 +480,7 @@ Bộ kiểm thử Playwright hiện có phủ trang chủ: `e2e/homepage-layout-
 | — | 2 | seed 6 hạng mục | `supabase/seeds/common/01-awards.sql:4-28` | dữ liệu local cho lưới |
 | A1 | 3 | `HomePage` | `app/page.tsx:7-15` | vỏ tĩnh + `<Suspense>` |
 | A1-A3 | 4 | `HomeContent` | `app/_components/home/home-content.tsx:27-67` | ghép trang, đọc locale và mốc |
-| A1 | 5 | `SiteHeader`, `SiteFooter` | `app/_components/site/site-header.tsx:11-55`, `app/_components/site/site-footer.tsx:8-51` | header cố định và footer |
+| A1 | 5 | `SiteHeader`, `SiteFooter` | `app/_components/site/site-header.tsx:11-71`, `app/_components/site/site-footer.tsx:15-68` | header cố định và footer |
 | A1, A2 | 6 | `HeroSection` | `app/_components/home/hero-section.tsx:10-85` | hero, sự kiện, hai nút kêu gọi |
 | A2 | 7 | `parseCountdownTarget`, `useCountdown`, `countdown-math` | `lib/countdown/parse-countdown-target.ts:26-41`, `lib/countdown/use-countdown.ts:36-79`, `lib/countdown/countdown-math.ts:15-40` | đồng hồ đếm ngược |
 | A3 | 8 | `getAwards`, `toAwardCards` | `lib/awards/get-awards.ts:18-45`, `lib/awards/award-card-mapping.ts:34-69` | đọc và ánh xạ giải thưởng |

@@ -2,7 +2,7 @@
 
 **Project**: my-app (SAA 2025 — Sun* Annual Awards 2025)
 **Generated**: 2026-10-08
-**Analysis Scope**: `app/` (page, `_components/`, `login/`, `auth/callback/route.ts`), `lib/` (auth, awards, countdown, i18n, supabase, ui), `proxy.ts`, `supabase/migrations/*.sql`. Tổng hợp từ user-stories.md (US001..US021), screen-list.md, route-list.md, data-model.md, behavior-logic.md, permissions-matrix.md.
+**Analysis Scope**: `app/` (page, `_components/`, `login/`, `auth/callback/route.ts`), `lib/` (auth, awards, countdown, i18n, supabase, ui), `proxy.ts`, `supabase/migrations/*.sql`. Tổng hợp từ user-stories.md (US001..US027), screen-list.md, route-list.md, data-model.md, behavior-logic.md, permissions-matrix.md.
 
 **Code Format**: All codes MUST follow `F###_NameSlug` format (e.g., F001_Auth, F002_UserProfile)
 **Screen Code Format**: All screen codes MUST follow `SCR###_NameSlug` format (e.g., SCR001_LoginForm)
@@ -21,7 +21,7 @@
 
 **Cross-reference**: See ScreenList Regions subsection for region definitions and the `REG###_NameSlug` registry.
 
-> Ghi chú mã chuẩn: ba mã F001_LoginWithGoogle, F002_HomepageSaa, F003_AccountMenuAdminRole là mã chuẩn (canonical) đã khoá, không đánh số lại, không thêm F### khác. Việc phân cụm bên dưới đối chiếu với `code-formats.md § Feature Clustering Rule` và cho kết quả trùng với ba mã chuẩn (xem verdict từng tên ở `> Note:` trong mục Feature Details).
+> Ghi chú mã chuẩn: bốn mã F001_LoginWithGoogle, F002_HomepageSaa, F003_AccountMenuAdminRole, F004_AwardsInformation (thêm 2026-10-09) là mã chuẩn (canonical) đã khoá, không đánh số lại, không thêm F### khác. Việc phân cụm bên dưới đối chiếu với `code-formats.md § Feature Clustering Rule` và cho kết quả trùng với các mã chuẩn (xem verdict từng tên ở `> Note:` trong mục Feature Details).
 
 ## Feature Hierarchy
 
@@ -38,6 +38,7 @@
 | F001_LoginWithGoogle | Login with Google | mixed | TypeScript | my-app | P1 |
 | F002_HomepageSaa | Homepage SAA | ui | TypeScript, SQL | my-app | P0 |
 | F003_AccountMenuAdminRole | Account Menu & Admin Role | ui | TypeScript, SQL | my-app | P1 |
+| F004_AwardsInformation | Awards Information | ui | TypeScript, SQL | my-app | P1 |
 
 ## Feature Details
 
@@ -92,7 +93,7 @@
 ### F002_HomepageSaa: Homepage SAA
 
 **Type**: ui
-**Description**: Hiển thị trang chủ công khai `/` của SAA 2025 cho mọi tác nhân (khách, người dùng, admin hành vi giống nhau). Đầu vào: request GET `/` kèm cookie ngôn ngữ `NEXT_LOCALE`, biến môi trường `SAA_COUNTDOWN_TARGET` và bảng `awards`. Xử lý: Server Component đọc ngôn ngữ, mốc đếm ngược và danh mục giải thưởng (RLS cho đọc công khai) rồi ghép vỏ trang (header, hero, đếm ngược, "Root Further", lưới giải thưởng, khối Kudos, footer); bộ chọn ngôn ngữ ghi cookie `NEXT_LOCALE` qua `setLocale`; các liên kết điều hướng ra `/awards-information`, `/sun-kudos`, `/standards` (đích chưa xây). Đầu ra: trang chủ đúng ngôn ngữ với đồng hồ đếm ngược tự cập nhật và lưới giải thưởng theo `sort_order`. Vỏ SCR003_Homepage thuộc F002; vùng tài khoản trên header (REG001_AccountRegion) nhường F003.
+**Description**: Hiển thị trang chủ công khai `/` của SAA 2025 cho mọi tác nhân (khách, người dùng, admin hành vi giống nhau). Đầu vào: request GET `/` kèm cookie ngôn ngữ `NEXT_LOCALE`, biến môi trường `SAA_COUNTDOWN_TARGET` và bảng `awards`. Xử lý: Server Component đọc ngôn ngữ, mốc đếm ngược và danh mục giải thưởng (RLS cho đọc công khai) rồi ghép vỏ trang (header, hero, đếm ngược, "Root Further", lưới giải thưởng, khối Kudos, footer); bộ chọn ngôn ngữ ghi cookie `NEXT_LOCALE` qua `setLocale`; các liên kết điều hướng ra `/awards-information` (trang của F004), `/sun-kudos`, `/standards` (hai đích sau chưa xây). Đầu ra: trang chủ đúng ngôn ngữ với đồng hồ đếm ngược tự cập nhật và lưới giải thưởng theo `sort_order`. Vỏ SCR003_Homepage thuộc F002; vùng tài khoản trên header (REG001_AccountRegion) nhường F003.
 
 **Workspace**: my-app
 **Languages**: TypeScript, SQL (bảng `awards` và seed)
@@ -173,17 +174,57 @@
 > Note: US003 (liên kết Login của khách) đặt ở F003 vì nó là trạng thái khách của cùng vùng REG001_AccountRegion; US003 cũng trỏ sang SCR001_Login nhưng SCR001_Login thuộc F001 (không nhân đôi sở hữu).
 > Note: Dòng `profiles` role `user` được tạo tự động bởi trigger DB ở lần đăng nhập đầu (US013 của F001); MODEL002_Profile vẫn thuộc F003 vì chỉ F003 đọc `role`.
 
+### F004_AwardsInformation: Awards Information
+
+**Type**: ui
+**Description**: Trang công khai `/awards-information` "Hệ thống giải thưởng SAA 2025" cho khách và người đã đăng nhập đọc sáu giải thưởng (ảnh, tên, mô tả dài, số lượng, các mức giá trị). Đầu vào: request GET `/awards-information` (kèm hoặc không kèm neo `#<slug>`), cookie ngôn ngữ `NEXT_LOCALE`, bảng `awards` (thêm năm cột chi tiết) và bảng mới `award_prizes`. Xử lý: `getAwardDetails` đọc bằng một truy vấn lồng, lọc hàng hỏng, ánh xạ thành khối hiển thị; menu bên trái bấm để cuộn mượt và tự đánh dấu theo khối đang xem hoặc neo (scroll-spy ở trình duyệt); header và footer đánh dấu liên kết "Awards Information" là trang hiện tại. Đầu ra: trang có menu sáu giải và sáu khối, hoặc thông báo "sẽ sớm được cập nhật" khi rỗng hay lỗi.
+
+**Workspace**: my-app
+**Languages**: TypeScript, SQL (migration thêm cột `awards`, bảng `award_prizes` và seed)
+**Components**: 11 thành phần riêng trong SCR004_AwardsInformation (vỏ trang, nội dung, hero, tiêu đề, bộ nạp, bố cục, khối giải, trạng thái rỗng, khung chờ, menu và bản trình bày của menu), cộng các thành phần dùng lại của F002/F003 (header, footer, Kudos, bộ chọn ngôn ngữ, vùng tài khoản)
+
+**Related Screens**:
+- SCR004_AwardsInformation: Awards Information (composite; F004 sở hữu cả màn hình)
+
+**Related User Stories**:
+- US022_OpenAwardsInformationPage: Mở trang Hệ thống giải thưởng
+- US023_ViewAwardDetails: Xem chi tiết sáu giải thưởng
+- US024_JumpToAwardFromMenu: Nhảy tới một giải bằng menu
+- US025_FollowActiveAwardOnScroll: Thấy mục đang xem được tô sáng khi cuộn hoặc mở bằng neo
+- US026_OpenKudosFromAwardsInformation: Đi tới Sun* Kudos từ cuối trang
+- US027_ChangeAwardsInformationLanguage: Đổi ngôn ngữ trang Hệ thống giải thưởng
+
+**Related APIs/Routes**:
+- (GET) /awards-information — ROUTE008
+- (POST) /awards-information [Next-Action: setLocale] — ROUTE009 (handler `setLocale` dùng chung với F001, F002)
+
+**Related Data Models**:
+- MODEL001_Award (mở rộng năm cột chi tiết)
+- MODEL003_AwardPrize
+
+**Related Background Logic**:
+- BL001_SupabaseServerClient: Supabase Server Client (dùng chung; `getAwardDetails` đọc `awards` kèm `award_prizes`)
+- BL003_SessionRefreshProxy: Session Refresh Proxy (matcher thêm `/awards-information` để làm mới phiên; thuộc F001)
+
+**Related Permissions**:
+- PERM008_LocaleAllowList: Đổi ngôn ngữ chỉ nhận giá trị trong danh sách cho phép (dùng chung với F001, F002)
+- PERM009_AwardsPublicReadServiceWrite: Bảng `awards`: đọc công khai, ghi chỉ `service_role` (nay gồm cả cột chi tiết)
+- PERM012_AwardPrizesPublicReadServiceWrite: Bảng `award_prizes`: đọc công khai, ghi chỉ `service_role`
+
+> Note: Trạng thái đang chọn của header và footer (prop `currentPage` của SiteHeader/SiteFooter, mã của F002) do F004 thêm; trang chủ không truyền prop nên giữ nguyên hành vi.
+> Note: Mã US của F004 được cấp lại thành US022..US027 theo dãy toàn cục (spec của feature ghi US022..US027).
+
 ---
 
 ## Summary
 
-- **Total Features**: 3
-- **Total Screens**: 2 màn hình đang hoạt động (SCR001_Login, SCR003_Homepage) + 1 bản ghi đã gỡ (SCR002_Todo, tombstone, không tính) + 2 vùng (SCR003_Homepage/REG001_AccountRegion, SCR003_Homepage/REG002_AwardsGrid)
-- **Total User Stories**: 21 (F001: 6, F002: 8, F003: 7)
-- **Total Routes**: 7 (ROUTE001..ROUTE007; ROUTE003 và ROUTE006 dùng chung F001 và F002)
-- **Total Data Models**: 2
+- **Total Features**: 4
+- **Total Screens**: 3 màn hình đang hoạt động (SCR001_Login, SCR003_Homepage, SCR004_AwardsInformation) + 1 bản ghi đã gỡ (SCR002_Todo, tombstone, không tính) + 2 vùng (SCR003_Homepage/REG001_AccountRegion, SCR003_Homepage/REG002_AwardsGrid)
+- **Total User Stories**: 27 (F001: 6, F002: 8, F003: 7, F004: 6)
+- **Total Routes**: 9 (ROUTE001..ROUTE009; ROUTE003, ROUTE006 và ROUTE009 dùng chung F001, F002 và F004 theo route-list)
+- **Total Data Models**: 3
 - **Total Background Logic**: 3 (BL001 dùng chung ba feature)
-- **Total Permissions**: 11 (PERM008 dùng chung F001 và F002)
+- **Total Permissions**: 12 (PERM008 dùng chung F001, F002 và F004)
 - **Languages Detected**: TypeScript, SQL
 
 ## Cross-Reference Validation

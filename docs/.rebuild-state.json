@@ -13,7 +13,7 @@
   },
   "fcode_index_sha": "8e4b4014a79014e88b7a600b902c3639b09d9e091fc5624b0dde91737a582a06",
   "last_api_contracts_run_sha": "",
-  "last_feature_spec_run_sha": "4c651f1a70c86ea76cf5657a8235dde3b9c81f18",
+  "last_feature_spec_run_sha": "b28c60350ef1f1fa368069126812cf9f2f35b769",
   "last_flows_run_sha": "",
   "last_glossary_run_sha": "",
   "last_rebuild_sha": "4c651f1a70c86ea76cf5657a8235dde3b9c81f18",
@@ -25,7 +25,8 @@
   "screen_spec_shas": {
     "SCR001": "91bb4c50e90be9dd949112a33051aedcf01c872b97f396285376765407e3665c",
     "SCR002": "23ac84c178819ec59a31c96793adb5f8c32def0a23ebffda932bc840be8274d9",
-    "SCR003": "31330849acadf04b1c1af3cf441f578b2b31f303000cdb5da829f1b6ffe61ac0"
+    "SCR003": "d7d22729e1c0d4e0c4149ddb43b4c9abd8a659d9aae4305d2066dd46208c69a2",
+    "SCR004": "539b94911bcd292e19b00448a41aded05b9388dc6c84be618a972b2363afbe2b"
   },
   "translations": {}
 }

@@ -8,5 +8,6 @@ Every feature in this product. Open one and read it end-to-end via its reading g
 - [F001_LoginWithGoogle](F001_LoginWithGoogle/)
 - [F002_HomepageSaa](F002_HomepageSaa/)
 - [F003_AccountMenuAdminRole](F003_AccountMenuAdminRole/)
+- [F004_AwardsInformation](F004_AwardsInformation/)
 
 <!-- end-generated -->

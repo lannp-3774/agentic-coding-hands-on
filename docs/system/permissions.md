@@ -1,7 +1,7 @@
 ---
 status: implemented
-authored_by: rebuild-spec
-reconciled_from: takumi forward-draft
+authored_by: takumi
+created: 2026-10-09
 lang: vi
 ---
 
@@ -9,7 +9,7 @@ lang: vi
 
 **Project**: my-app (SAA 2025 — Sun* Annual Awards 2025)
 **Generated**: 2026-10-08
-**Analysis Scope**: Đăng nhập Google (`/login`, `/auth/callback`), trang chủ công khai (`/`), menu tài khoản và vai trò admin (`profiles.role`), quyền truy cập dữ liệu của hai bảng `awards` và `profiles`. Các route `/profile`, `/admin`, `/awards-information`, `/sun-kudos`, `/standards` có liên kết nhưng chưa có page trong code.
+**Analysis Scope**: Đăng nhập Google (`/login`, `/auth/callback`), trang chủ công khai (`/`), trang Awards Information công khai (`/awards-information`), menu tài khoản và vai trò admin (`profiles.role`), quyền truy cập dữ liệu của ba bảng `awards`, `award_prizes` và `profiles`. Các route `/profile`, `/admin`, `/sun-kudos`, `/standards` có liên kết nhưng chưa có page trong code.
 
 > **Curated, plain-language view.** Bản mô tả dễ đọc cho PM, BA và khách hàng, dẫn xuất từ ma trận thô tại [permissions-matrix.md](../generated/permissions-matrix.md). Chi tiết từng điểm kiểm soát và vị trí trong code nằm ở đó, không lặp lại ở đây.
 
@@ -27,12 +27,12 @@ RBAC đơn giản: mỗi người dùng có đúng một vai trò, lưu ở cộ
 
 ## Curated View
 
-- **Anonymous visitor** xem được trang chủ `/` (header hiện liên kết "Login", lưới giải thưởng hiển thị bình thường) và `/login`, bắt đầu được luồng đăng nhập Google và đổi ngôn ngữ vi/en. Không có chuông thông báo, không có menu tài khoản.
-- **Authenticated user** xem được trang chủ với header là chuông thông báo và menu tài khoản (Profile, Đăng xuất). Mở `/login` sẽ bị chuyển sang `/`. Đăng xuất chỉ kết thúc phiên ở trình duyệt đang dùng.
+- **Anonymous visitor** xem được trang chủ `/` (header hiện liên kết "Login", lưới giải thưởng hiển thị bình thường), trang Awards Information `/awards-information` (menu sáu giải, mô tả, số lượng và giá trị của từng giải, khối Sun* Kudos) và `/login`, bắt đầu được luồng đăng nhập Google và đổi ngôn ngữ vi/en. Không có chuông thông báo, không có menu tài khoản.
+- **Authenticated user** xem được trang chủ và trang Awards Information với header là chuông thông báo và menu tài khoản (Profile, Đăng xuất); nội dung chung giống khách. Mở `/login` sẽ bị chuyển sang `/`. Đăng xuất chỉ kết thúc phiên ở trình duyệt đang dùng.
 - **Authenticated admin** làm được mọi việc của user, cộng thêm mục Admin Dashboard trong menu tài khoản. Mục này chỉ là giao diện, không phải kiểm soát truy cập.
 - Mọi tài khoản Google đều được phép đăng nhập: không giới hạn theo tên miền email, không có danh sách cho phép. Tài khoản mới tự được tạo ở lần đăng nhập đầu và mặc định là `user`.
 - Đổi ngôn ngữ (vi/en) dùng được ở mọi trạng thái; lựa chọn lưu trong cookie `NEXT_LOCALE`, không liên quan đến quyền.
-- Ai cũng đọc được danh sách giải thưởng (dữ liệu công khai), nhưng không ai ngoài vận hành ghi được. Mỗi người đăng nhập chỉ đọc được dòng hồ sơ (`profiles`) của chính mình và không tự đổi được vai trò.
+- Ai cũng đọc được danh sách giải thưởng và chi tiết từng giải (mô tả dài, số lượng, các mức giá trị) vì đây là dữ liệu công khai, nhưng không ai ngoài vận hành ghi được. Mỗi người đăng nhập chỉ đọc được dòng hồ sơ (`profiles`) của chính mình và không tự đổi được vai trò.
 - Chưa có giao diện cấp hay thu hồi vai trò admin; chỉ đổi được bằng khoá `service_role` hoặc truy cập trực tiếp CSDL.
 
 ## Access Boundaries
@@ -42,35 +42,37 @@ Ranh giới gồm hai lớp: có phiên đăng nhập hợp lệ hay không, và
 Theo từng đường dẫn:
 
 - `/`: mở cho mọi người. Khách không bao giờ bị chuyển hướng; header khác nhau theo trạng thái đăng nhập. Proxy vẫn chạy ở đây để làm mới phiên.
+- `/awards-information`: mở cho mọi người, giống trang chủ. Khách và người đã đăng nhập thấy cùng nội dung; không ai bị chuyển hướng. Địa chỉ này được thêm vào phạm vi của proxy (matcher) chỉ để làm mới phiên khi token xoay vòng, không thêm quy tắc chuyển hướng nào. Phần `#<mã giải>` trên địa chỉ chỉ chạy ở trình duyệt, không liên quan đến quyền; neo không khớp giải nào bị bỏ qua, không lỗi.
 - `/login`: khách vào được. Người đã đăng nhập mở bằng `GET` hoặc `HEAD` sẽ bị chuyển sang `/` (307). Đây là quy tắc chuyển hướng duy nhất của proxy; người đã đăng nhập bấm đăng nhập lần nữa bằng `POST` trực tiếp thì không bị từ chối.
 - `/auth/callback`: công khai vì đây là nơi phiên được tạo ra. Chỉ một `code` hợp lệ từ Supabase mới tạo được phiên; ngược lại chuyển về `/login?error=cancelled` hoặc `/login?error=failed`. Đích khi thành công luôn là `/`, không đọc từ tham số URL nên không có open redirect.
 - `/todo`: đã gỡ ngày 2026-10-08 (màn hình SCR002_Todo chỉ còn là bản ghi đã gỡ), truy cập trả 404.
-- `/profile`, `/awards-information`, `/sun-kudos`, `/standards`: có liên kết trong giao diện nhưng chưa có page, trả 404 cho mọi vai trò; chưa có quy tắc quyền để ghi.
+- `/profile`, `/sun-kudos`, `/standards`: có liên kết trong giao diện nhưng chưa có page, trả 404 cho mọi vai trò; chưa có quy tắc quyền để ghi.
 - `/admin`: có liên kết trong menu của admin nhưng chưa có page, trả 404 cho mọi vai trò, và **chưa có kiểm tra phía server**. Khi xây trang này phải tự kiểm tra vai trò ở server (qua `getCurrentUser()`), vì ẩn mục menu hay chặn ở proxy đều không đủ.
 
 Theo hành động (Server Action):
 
 - Đăng nhập Google: công khai, không cần phiên. Action chỉ dựng URL quay về trên đúng host mà người dùng đang duyệt; không xác định được host hợp lệ thì báo lỗi thay vì đoán. Supabase còn đối chiếu URL quay về với danh sách cho phép.
 - Đăng xuất: ai gọi cũng được, vì chỉ tác động lên cookie phiên của chính người gọi. Không có phiên thì không làm gì. Luôn kết thúc ở `/login`; lỗi chỉ ghi log.
-- Đổi ngôn ngữ: ai cũng gọi được, nhưng chỉ nhận `vi` hoặc `en`; giá trị khác bị bỏ qua.
+- Đổi ngôn ngữ: ai cũng gọi được, nhưng chỉ nhận `vi` hoặc `en`; giá trị khác bị bỏ qua. Dùng được ở trang chủ, trang Awards Information và màn hình Login với cùng một action.
 
 Theo dữ liệu (Supabase RLS):
 
-- Bảng `awards`: khách và người đã đăng nhập chỉ đọc được; ghi chỉ qua `service_role`.
+- Bảng `awards` (nay có thêm cột chi tiết: mô tả dài, số lượng, đơn vị, nhãn menu): khách và người đã đăng nhập chỉ đọc được; ghi chỉ qua `service_role`. Quyền đọc áp cho cả bảng nên cột mới được đọc công khai như cột cũ.
+- Bảng `award_prizes` (các mức giá trị của từng giải): cùng mẫu với `awards` — khách và người đã đăng nhập chỉ đọc được; ghi chỉ qua `service_role`.
 - Bảng `profiles`: khách không có quyền; người đã đăng nhập chỉ đọc dòng của mình; không ai ngoài `service_role` ghi được. Vai trò tuyệt đối không suy ra từ `user_metadata` (người dùng tự ghi được).
 
 Hai điểm kiểm soát phía server và một điểm chỉ là giao diện:
 
-- Proxy (`proxy.ts`) làm mới phiên bằng cách xác thực chữ ký JWT (`getClaims()`) ở `/` và `/login`, nhưng không phải rào chắn bảo vệ route: mọi trang và action sau này phải tự kiểm tra lại, không dựa riêng vào proxy.
+- Proxy (`proxy.ts`) làm mới phiên bằng cách xác thực chữ ký JWT (`getClaims()`) ở `/`, `/login` và `/awards-information`, nhưng không phải rào chắn bảo vệ route: mọi trang và action sau này phải tự kiểm tra lại, không dựa riêng vào proxy.
 - `getCurrentUser()` là nguồn xác định người dùng và vai trò phía server. Nó đọc `profiles.role` dưới RLS bằng phiên của chính người dùng nên đổi vai trò có hiệu lực ngay ở request kế tiếp. Hiện chỉ vùng tài khoản trên header dùng nó; chưa trang hay action nào chặn truy cập dựa trên vai trò.
-- Mục "Admin Dashboard" hiện hay ẩn là UX, không phải phân quyền. Danh sách mục menu được lọc ở server nên vai trò không xuống trình duyệt.
+- Mục "Admin Dashboard" hiện hay ẩn là UX, không phải phân quyền. Danh sách mục menu được lọc ở server nên vai trò không xuống trình duyệt. Trạng thái "đang chọn" của các liên kết điều hướng trong header (đổi theo trang hiện tại) cũng chỉ là giao diện.
 
 Quy tắc bắt buộc: phía server không bao giờ tin `getSession()`; chỉ dùng `getClaims()` (hoặc `getUser()`) để biết người dùng là ai.
 
 ## Special Conditions
 
-- **Fail closed**: nếu không xác định được người dùng (thiếu hay sai `SUPABASE_URL`/`SUPABASE_PUBLISHABLE_KEY`, lỗi `getClaims`, lỗi mạng) thì coi là khách, ghi log, không trả lỗi 500; an toàn vì khách không được cấp gì. Nếu tra cứu `profiles.role` lỗi, không có dòng hồ sơ hay giá trị lạ thì coi là `user`, không bao giờ là `admin`.
-- **Session**: lưu bằng cookie Supabase SSR, tên dạng `sb-<ref>-auth-token` (môi trường local: `sb-127-auth-token`, có thể bị tách thành nhiều mảnh nếu dài). Cookie session và cookie PKCE dùng chung thuộc tính `httpOnly`, `sameSite: lax`, `path: /`; `secure` chỉ bật ở production (theo `NODE_ENV`, chốt lúc triển khai). Ứng dụng không có client Supabase phía trình duyệt nên script trang không đọc được token. Access token hết hạn sau 3600 giây; refresh token có xoay vòng (`enable_refresh_token_rotation = true`). Proxy làm mới phiên ở mọi request thuộc matcher, kể cả `/`.
+- **Fail closed**: nếu không xác định được người dùng (thiếu hay sai `SUPABASE_URL`/`SUPABASE_PUBLISHABLE_KEY`, lỗi `getClaims`, lỗi mạng) thì coi là khách, ghi log, không trả lỗi 500; an toàn vì khách không được cấp gì. Nếu tra cứu `profiles.role` lỗi, không có dòng hồ sơ hay giá trị lạ thì coi là `user`, không bao giờ là `admin`. Trang Awards Information cũng fail an toàn theo cách riêng: nếu không đọc được `awards` hoặc `award_prizes`, trang vẫn hiện (khách thấy thông báo "sẽ sớm được cập nhật"), lỗi chỉ ghi log máy chủ.
+- **Session**: lưu bằng cookie Supabase SSR, tên dạng `sb-<ref>-auth-token` (môi trường local: `sb-127-auth-token`, có thể bị tách thành nhiều mảnh nếu dài). Cookie session và cookie PKCE dùng chung thuộc tính `httpOnly`, `sameSite: lax`, `path: /`; `secure` chỉ bật ở production (theo `NODE_ENV`, chốt lúc triển khai). Ứng dụng không có client Supabase phía trình duyệt nên script trang không đọc được token. Access token hết hạn sau 3600 giây; refresh token có xoay vòng (`enable_refresh_token_rotation = true`). Proxy làm mới phiên ở mọi request thuộc matcher, kể cả `/` và `/awards-information`.
 - **Đăng xuất**: chỉ kết thúc phiên ở trình duyệt này (phạm vi `local`), không thu hồi phiên ở thiết bị khác. Nút nằm trong menu tài khoản.
 - **PKCE**: cookie verifier tạm thời được ghi khi bấm "Login with Google" và dùng một lần ở `/auth/callback`.
 - **Vai trò**: `profiles.role` mặc định `user`; dòng hồ sơ do trigger trên `auth.users` tạo khi có tài khoản mới (vai trò luôn lấy giá trị mặc định, không lấy từ metadata). Tài khoản admin cho E2E được dựng bằng helper dùng `SUPABASE_SECRET_KEY`; biến này chỉ E2E đọc, ứng dụng không đọc.

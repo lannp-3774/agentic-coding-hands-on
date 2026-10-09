@@ -45,14 +45,14 @@ Cardinality Contract that governs how these items are counted live in the **Dev 
 
 | Code | Name | Trigger | Payload | File Schema |
 |------|------|---------|---------|--------------|
-| BL001_SupabaseServerClient | Supabase Server Client | Gọi mỗi request từ Server Component, Server Action hoặc Route Handler cần Supabase (getAwards, getCurrentUser, signInWithGoogle, signOut, callback GET) | — | N/A — not a file-exchange type |
+| BL001_SupabaseServerClient | Supabase Server Client | Gọi mỗi request từ Server Component, Server Action hoặc Route Handler cần Supabase (getAwards, getAwardDetails, getCurrentUser, signInWithGoogle, signOut, callback GET) | — | N/A — not a file-exchange type |
 | BL002_OAuthCallbackExchange | OAuth Callback Exchange | `GET /auth/callback` khi Supabase/Google redirect trình duyệt về, kèm `?code=` hoặc `?error=` | — | N/A — not a file-exchange type |
 
 ### Type: middleware
 
 | Code | Name | Trigger | Payload | File Schema |
 |------|------|---------|---------|--------------|
-| BL003_SessionRefreshProxy | Session Refresh Proxy | Mọi request khớp `config.matcher` (`/`, `/login`), chạy trước khi route render | — | N/A — not a file-exchange type |
+| BL003_SessionRefreshProxy | Session Refresh Proxy | Mọi request khớp `config.matcher` (`/`, `/login`, `/awards-information`), chạy trước khi route render | — | N/A — not a file-exchange type |
 
 ---
 
@@ -101,7 +101,7 @@ Aggregating multiple source files into a single BL item violates Rule C1 and wil
 ## BL001_SupabaseServerClient: Supabase Server Client
 
 **Type**: integration
-**Trigger**: Gọi mỗi request từ Server Component, Server Action hoặc Route Handler cần Supabase (callers: `lib/awards/get-awards.ts:23`, `lib/supabase/current-user.ts:37`, `app/login/actions.ts:39`, `lib/auth/actions.ts:21`, `app/auth/callback/route.ts:46`)
+**Trigger**: Gọi mỗi request từ Server Component, Server Action hoặc Route Handler cần Supabase (callers: `lib/awards/get-awards.ts:23`, `lib/awards/get-award-details.ts:29`, `lib/supabase/current-user.ts:37`, `app/login/actions.ts:39`, `lib/auth/actions.ts:21`, `app/auth/callback/route.ts:46`)
 **Payload**: — (không phải loại event/notification)
 **File Schema**: N/A — not a file-exchange type
 **Source File**: lib/supabase/server.ts
@@ -118,7 +118,7 @@ Quy tắc: mỗi request tạo một client riêng, không dùng chung giữa c�
 ### Related Modules
 
 - lib/supabase (`session-cookie-options.ts`, `supabase-env.ts`)
-- lib/awards (`get-awards.ts`)
+- lib/awards (`get-awards.ts`, `get-award-details.ts`)
 - lib/supabase (`current-user.ts`)
 - app/login (`actions.ts`)
 - lib/auth (`actions.ts`)
@@ -127,6 +127,7 @@ Quy tắc: mỗi request tạo một client riêng, không dùng chung giữa c�
 ### Related Routes
 
 - (GET) / — ROUTE001 (đọc `awards`, `getCurrentUser` khi render)
+- (GET) /awards-information — ROUTE008 (đọc `awards` kèm `award_prizes`)
 - (POST) / [Next-Action: signOut] — ROUTE002
 - (POST) /login [Next-Action: signInWithGoogle] — ROUTE005
 - (GET) /auth/callback — ROUTE007
@@ -175,7 +176,7 @@ Kết quả luôn là 302 tới đường dẫn cố định trên chính origin
 ## BL003_SessionRefreshProxy: Session Refresh Proxy
 
 **Type**: middleware
-**Trigger**: Mọi request khớp `config.matcher = ["/", "/login"]` của `proxy.ts`, chạy trước khi route render (`proxy.ts:9,17-19`)
+**Trigger**: Mọi request khớp `config.matcher = ["/", "/login", "/awards-information"]` của `proxy.ts`, chạy trước khi route render (`proxy.ts:9,18-20`)
 **Payload**: — (không phải loại event/notification)
 **File Schema**: N/A — not a file-exchange type
 **Source File**: lib/supabase/proxy-session.ts
@@ -185,9 +186,9 @@ Kết quả luôn là 302 tới đường dẫn cố định trên chính origin
 
 Chuỗi xử lý request (Next.js 16 `proxy.ts`, trước đây là middleware) do `proxy(request)` uỷ quyền cho `updateSession(request)` (`proxy.ts:9-11`, `lib/supabase/proxy-session.ts:30`). Thứ tự: (1) `hasVerifiedSession` tạo `createServerClient` trên cookie của request rồi gọi `supabase.auth.getClaims()` để làm mới token; cookie mới được gom vào `pending` (và phản chiếu lên request để Server Component cùng request đọc được token mới) (`proxy-session.ts:60-97`); (2) `redirectTarget` quyết định chuyển hướng; (3) gắn cookie và header đã gom vào response, kể cả khi là redirect, nếu không sẽ mất token mới và gây vòng đăng xuất (`proxy-session.ts:43-50`).
 
-Quy tắc chuyển hướng duy nhất: chỉ `GET`/`HEAD` và `pathname === "/login"` khi đã có claims hợp lệ → 307 `/` (`proxy-session.ts:99-105`); `POST` (Server Action) luôn đi tiếp để không làm hỏng lời gọi `signOut` khi phiên đã hết hạn. Không route nào bị chặn đối với khách: khách ở `/` và `/login` đi tiếp bình thường. Mọi lỗi (không có claims, claims lỗi, mạng lỗi, thiếu hoặc sai biến môi trường Supabase) đều coi là khách, request đi tiếp, ghi log `[proxy]`, không bao giờ trả 500 (`proxy-session.ts:82-96`). Đích chuyển hướng là đường dẫn cố định trên origin của request, không dùng query nên không thành open redirect. Phần quy tắc chuyển hướng `/login` → `/` được mô tả ở Permissions; ở đây chỉ ghi phần làm mới phiên.
+Quy tắc chuyển hướng duy nhất: chỉ `GET`/`HEAD` và `pathname === "/login"` khi đã có claims hợp lệ → 307 `/` (`proxy-session.ts:99-105`); `POST` (Server Action) luôn đi tiếp để không làm hỏng lời gọi `signOut` khi phiên đã hết hạn. Không route nào bị chặn đối với khách: khách ở `/`, `/login` và `/awards-information` đi tiếp bình thường. Mọi lỗi (không có claims, claims lỗi, mạng lỗi, thiếu hoặc sai biến môi trường Supabase) đều coi là khách, request đi tiếp, ghi log `[proxy]`, không bao giờ trả 500 (`proxy-session.ts:82-96`). Đích chuyển hướng là đường dẫn cố định trên origin của request, không dùng query nên không thành open redirect. Phần quy tắc chuyển hướng `/login` → `/` được mô tả ở Permissions; ở đây chỉ ghi phần làm mới phiên.
 
-[SIGNAL_INFERRED] — Intent matched: middleware, chuỗi xử lý request chạy trước route, làm mới cookie phiên (token refresh là hạ tầng, không phải kiểm soát truy cập). No-row reason: stack Next.js 16 (`proxy.ts`, trước là `middleware.ts`), không có dòng Next.js trong bảng theo stack. Observed pattern: `proxy.ts` hàm async `proxy(request)` (khai báo công khai) với `config.matcher = ["/", "/login"]` uỷ quyền cho `updateSession(request)` (`proxy-session.ts:30-52`).
+[SIGNAL_INFERRED] — Intent matched: middleware, chuỗi xử lý request chạy trước route, làm mới cookie phiên (token refresh là hạ tầng, không phải kiểm soát truy cập). No-row reason: stack Next.js 16 (`proxy.ts`, trước là `middleware.ts`), không có dòng Next.js trong bảng theo stack. Observed pattern: `proxy.ts` hàm async `proxy(request)` (khai báo công khai) với `config.matcher = ["/", "/login", "/awards-information"]` uỷ quyền cho `updateSession(request)` (`proxy-session.ts:30-52`).
 
 ### Related Modules
 
@@ -202,6 +203,8 @@ Quy tắc chuyển hướng duy nhất: chỉ `GET`/`HEAD` và `pathname === "/l
 - (GET) /login — ROUTE004
 - (POST) /login [Next-Action: signInWithGoogle] — ROUTE005
 - (POST) /login [Next-Action: setLocale] — ROUTE006
+- (GET) /awards-information — ROUTE008
+- (POST) /awards-information [Next-Action: setLocale] — ROUTE009
 
 ---
 
@@ -233,7 +236,7 @@ Document client-side patterns found in the codebase. For each, record: pattern t
 
 **Extraction signature:** timer wrapper around a handler — `setTimeout`, `clearTimeout`, `debounce(fn, ms)`, `throttle(fn, ms)`, `useDebounce`, `useDebouncedCallback`
 
-N/A — no debounce or throttle patterns detected. (`lib/countdown/use-countdown.ts:61` dùng `setTimeout` để căn nhịp đồng hồ cục bộ, không bọc handler người dùng.)
+Có một mẫu throttle/debounce (F004): trình nghe `scroll` của menu giải thưởng chỉ đặt lại mục đang chọn tối đa một lần mỗi khung hình bằng `requestAnimationFrame` (`app/_components/awards-nav-behaviour/use-awards-nav-active-slug.ts:119-122`), và một hẹn giờ nhàn rỗi 150 ms (`:11,17-30`) nhả "ghim" mục vừa bấm khi không còn sự kiện cuộn (dự phòng cho trình duyệt không có `scrollend`; `scrollend`, `wheel`, `touchstart`, `keydown` cũng nhả ghim, `:128-131`). Ngoài ra không có mẫu nào khác. (`lib/countdown/use-countdown.ts:61` dùng `setTimeout` để căn nhịp đồng hồ cục bộ, không bọc handler người dùng.)
 
 ### Optimistic UI
 

@@ -2,7 +2,7 @@
 
 **Project**: my-app (SAA 2025 — Sun* Annual Awards 2025)
 **Generated**: 2026-10-08
-**Analysis Scope**: Các điểm kiểm soát truy cập có thật trong code: `proxy.ts`, `lib/supabase/proxy-session.ts`, `app/auth/callback/route.ts`, `lib/supabase/current-user.ts`, `app/_components/header-behaviour/account-region.tsx`, `lib/auth/actions.ts`, `app/login/actions.ts`, `lib/i18n/actions.ts`, `lib/supabase/session-cookie-options.ts`, RLS trong `supabase/migrations/*.sql`. Route tham chiếu theo `route-list.md` (ROUTE001..007), màn hình theo `screen-list.md` (SCR001_Login, SCR003_Homepage và REG của nó).
+**Analysis Scope**: Các điểm kiểm soát truy cập có thật trong code: `proxy.ts`, `lib/supabase/proxy-session.ts`, `app/auth/callback/route.ts`, `lib/supabase/current-user.ts`, `app/_components/header-behaviour/account-region.tsx`, `lib/auth/actions.ts`, `app/login/actions.ts`, `lib/i18n/actions.ts`, `lib/supabase/session-cookie-options.ts`, RLS trong `supabase/migrations/*.sql`. Route tham chiếu theo `route-list.md` (ROUTE001..009), màn hình theo `screen-list.md` (SCR001_Login, SCR003_Homepage, SCR004_AwardsInformation và REG của chúng).
 
 > **Raw PERM### matrix.** Machine-generated inventory of every permission item with full
 > per-permission detail. The plain-language curated view lives at
@@ -30,13 +30,13 @@
 
 **Note**: Feature mapping is managed in FeatureList.md. This document contains permission items without direct feature references.
 
-> Ghi chú phạm vi: chỉ ghi các kiểm soát **đã được thực thi trong code**. Hai mục UX-only (PERM003, PERM004) được đánh dấu rõ là chỉ ẩn/hiện giao diện, không phải rào chắn phía server. Dự án không có feature flag, experiment, locale-gate hay kiểm tra quyền sở hữu giữa người dùng. Các route `/profile`, `/admin`, `/awards-information`, `/sun-kudos`, `/standards` có liên kết nhưng chưa có page trong code nên không có PERM (xem mục "Gaps" ở cuối). `/todo` (SCR002_Todo) đã gỡ ngày 2026-10-08, không còn kiểm soát nào.
+> Ghi chú phạm vi: chỉ ghi các kiểm soát **đã được thực thi trong code**. Hai mục UX-only (PERM003, PERM004) được đánh dấu rõ là chỉ ẩn/hiện giao diện, không phải rào chắn phía server. Dự án không có feature flag, experiment, locale-gate hay kiểm tra quyền sở hữu giữa người dùng. Các route `/profile`, `/admin`, `/sun-kudos`, `/standards` có liên kết nhưng chưa có page trong code nên không có PERM (xem mục "Gaps" ở cuối). `/todo` (SCR002_Todo) đã gỡ ngày 2026-10-08, không còn kiểm soát nào.
 
 ## Permissions Index
 
 | Code | Name | Type | Enforced At |
 |------|------|------|-------------|
-| PERM001_LoginSessionRedirect | Chuyển người đã đăng nhập khỏi `/login` | route-guard | `proxy.ts:17-19`, `lib/supabase/proxy-session.ts:99-105` |
+| PERM001_LoginSessionRedirect | Chuyển người đã đăng nhập khỏi `/login` | route-guard | `proxy.ts:18-20`, `lib/supabase/proxy-session.ts:99-105` |
 | PERM002_OAuthCallbackPublicEntry | Điểm quay về OAuth công khai, đích cố định | route-guard | `app/auth/callback/route.ts:24-60` |
 | PERM005_SessionRoleResolution | Xác định danh tính và vai trò (fail closed) | role-based | `lib/supabase/current-user.ts:32-83` |
 | PERM003_AccountRegionAuthState | Vùng tài khoản đổi giao diện theo trạng thái đăng nhập | screen-permission | `app/_components/header-behaviour/account-region.tsx:44-62` |
@@ -47,6 +47,7 @@
 | PERM009_AwardsPublicReadServiceWrite | Bảng `awards`: đọc công khai, ghi chỉ `service_role` | data-permission | `supabase/migrations/20261008045411_create_awards.sql:26-36` |
 | PERM010_ProfilesSelectOwnServiceWrite | Bảng `profiles`: chỉ đọc dòng của mình, ghi chỉ `service_role` | data-permission | `supabase/migrations/20261008045415_create_profiles.sql:27-63` |
 | PERM011_SessionCookieSecureEnvGate | Cookie session chỉ `secure` ở production | env-gate | `lib/supabase/session-cookie-options.ts:11-16` |
+| PERM012_AwardPrizesPublicReadServiceWrite | Bảng `award_prizes`: đọc công khai, ghi chỉ `service_role` | data-permission | `supabase/migrations/20261009021753_add_award_details_and_prizes.sql:46-57` |
 
 ---
 
@@ -55,30 +56,33 @@
 ### PERM001_LoginSessionRedirect: Chuyển người đã đăng nhập khỏi `/login`
 
 **Type**: route-guard
-**Enforced At**: `proxy.ts:17-19` (matcher `["/", "/login"]`), `lib/supabase/proxy-session.ts:99-105` (`redirectTarget`)
+**Enforced At**: `proxy.ts:18-20` (matcher `["/", "/login", "/awards-information"]`), `lib/supabase/proxy-session.ts:99-105` (`redirectTarget`)
 
 #### Description
 
-`proxy.ts` chạy `updateSession` cho `/` và `/login` (`proxy.ts:9-19`). `updateSession` làm mới phiên Supabase bằng `getClaims()` (xác thực chữ ký JWT, `proxy-session.ts:82`). Quy tắc chuyển hướng **duy nhất** của dự án: request `GET` hoặc `HEAD` tới `/login` mà claims hợp lệ thì trả 307 về `/` (`proxy-session.ts:100-102`). Không route nào bị chặn đối với khách; `/` luôn đi tiếp (`proxy-session.ts:18-21`). Request `POST` (Server Action) không bao giờ bị chuyển hướng để không làm hỏng lời gọi action (`proxy-session.ts:23-25,100`). Đích chuyển hướng là đường dẫn cố định trên cùng origin, không đọc từ query nên không có open redirect (`proxy-session.ts:27-28`). Thiếu/sai `SUPABASE_URL` hoặc `SUPABASE_PUBLISHABLE_KEY`, lỗi `getClaims` hay lỗi mạng đều coi là khách, ghi log, không trả 500 (`proxy-session.ts:54-96`). Đây là fail-safe vì khách không được cấp quyền nào. Proxy không phải rào chắn bảo vệ route: trang và action phải tự kiểm tra lại (`proxy-session.ts:23-25`).
+`proxy.ts` chạy `updateSession` cho `/`, `/login` và `/awards-information` (`proxy.ts:9-20`; `/awards-information` thêm ngày 2026-10-09 bởi F004, chỉ để làm mới phiên). `updateSession` làm mới phiên Supabase bằng `getClaims()` (xác thực chữ ký JWT, `proxy-session.ts:82`). Quy tắc chuyển hướng **duy nhất** của dự án: request `GET` hoặc `HEAD` tới `/login` mà claims hợp lệ thì trả 307 về `/` (`proxy-session.ts:100-102`). Không route nào bị chặn đối với khách; `/` luôn đi tiếp (`proxy-session.ts:18-21`). Request `POST` (Server Action) không bao giờ bị chuyển hướng để không làm hỏng lời gọi action (`proxy-session.ts:23-25,100`). Đích chuyển hướng là đường dẫn cố định trên cùng origin, không đọc từ query nên không có open redirect (`proxy-session.ts:27-28`). Thiếu/sai `SUPABASE_URL` hoặc `SUPABASE_PUBLISHABLE_KEY`, lỗi `getClaims` hay lỗi mạng đều coi là khách, ghi log, không trả 500 (`proxy-session.ts:54-96`). Đây là fail-safe vì khách không được cấp quyền nào. Proxy không phải rào chắn bảo vệ route: trang và action phải tự kiểm tra lại (`proxy-session.ts:23-25`).
 
 #### Related Routes
 
 - ROUTE001 (GET) `/` — đi tiếp với khách và người đã đăng nhập, chỉ làm mới cookie
+- ROUTE008 (GET) `/awards-information` — như ROUTE001: đi tiếp với mọi người, chỉ làm mới cookie
 - ROUTE004 (GET) `/login` — người đã đăng nhập bị 307 về `/`
 - ROUTE005, ROUTE006 (POST) `/login` — không bị chuyển hướng
 - ROUTE002, ROUTE003 (POST) `/` — không bị chuyển hướng
+- ROUTE009 (POST) `/awards-information` — không bị chuyển hướng
 
 #### Related Screens
 
 - SCR001_Login - Login (đích bị chuyển hướng khi đã có phiên)
 - SCR003_Homepage - Homepage (đích chuyển hướng; khách vào tự do)
+- SCR004_AwardsInformation - Awards Information (công khai; proxy chỉ làm mới phiên, không chuyển hướng)
 
 #### Permission Rules
 
 | Role | Allow | Conditions |
 |------|-------|------------|
-| Anonymous visitor | ✓ | `/login`: vào được, không chuyển hướng. `/`: vào được. Lỗi `getClaims`/thiếu env → vẫn coi là khách. |
-| Authenticated user | ✗ (chỉ `/login`) | `GET|HEAD /login` → 307 `/`. `/` vào được. `POST` không bị chuyển hướng. |
+| Anonymous visitor | ✓ | `/login`: vào được, không chuyển hướng. `/` và `/awards-information`: vào được. Lỗi `getClaims`/thiếu env → vẫn coi là khách. |
+| Authenticated user | ✗ (chỉ `/login`) | `GET|HEAD /login` → 307 `/`. `/` và `/awards-information` vào được. `POST` không bị chuyển hướng. |
 | Authenticated admin | ✗ (chỉ `/login`) | Giống Authenticated user; vai trò không ảnh hưởng quy tắc này. |
 
 #### Related Modules
@@ -303,11 +307,13 @@ Server Action `setLocale` công khai; dữ liệu từ client được kiểm b�
 
 - ROUTE003 (POST) `/` [Next-Action: setLocale]
 - ROUTE006 (POST) `/login` [Next-Action: setLocale]
+- ROUTE009 (POST) `/awards-information` [Next-Action: setLocale]
 
 #### Related Screens
 
 - SCR001_Login - Login (LanguageSelector)
 - SCR003_Homepage - Homepage (LanguageSelector)
+- SCR004_AwardsInformation - Awards Information (LanguageSelector)
 
 #### Permission Rules
 
@@ -332,15 +338,17 @@ Server Action `setLocale` công khai; dữ liệu từ client được kiểm b�
 
 #### Description
 
-RLS bật trên `public.awards`. Policy `awards_select_public` cho `anon` và `authenticated` đọc mọi dòng (`using (true)`, `:28-30`). Quyền được viết tường minh: thu hồi hết rồi cấp `select` cho `anon, authenticated` và toàn quyền DML cho `service_role` (`:34-36`). Không có policy hay GRANT `insert/update/delete/truncate` cho người dùng nên không có đường ghi từ app; dữ liệu nạp qua `supabase/seeds/common/01-awards.sql` bằng `service_role`. Dữ liệu là công khai nên ở `/` khách cũng thấy lưới giải thưởng.
+RLS bật trên `public.awards`. Policy `awards_select_public` cho `anon` và `authenticated` đọc mọi dòng (`using (true)`, `:28-30`). Quyền được viết tường minh: thu hồi hết rồi cấp `select` cho `anon, authenticated` và toàn quyền DML cho `service_role` (`:34-36`). Không có policy hay GRANT `insert/update/delete/truncate` cho người dùng nên không có đường ghi từ app; dữ liệu nạp qua `supabase/seeds/common/01-awards.sql` bằng `service_role`. Dữ liệu là công khai nên ở `/` khách cũng thấy lưới giải thưởng. Từ 2026-10-09 bảng có thêm năm cột chi tiết (`detail_description_vi`, `quantity`, `unit_vi`, `unit_en`, `nav_label`, `supabase/migrations/20261009021753_add_award_details_and_prizes.sql:26-31`); migration chỉ thêm cột, không đổi policy hay GRANT nên các cột mới được đọc công khai theo cùng policy `awards_select_public`; trang chủ chọn cột tường minh nên không đọc chúng, còn `/awards-information` đọc chúng qua `getAwardDetails`.
 
 #### Related Routes
 
 - ROUTE001 (GET) `/` — đọc bảng qua `getAwards`
+- ROUTE008 (GET) `/awards-information` — đọc bảng kèm `award_prizes` qua `getAwardDetails`
 
 #### Related Screens
 
 - SCR003_Homepage/REG002_AwardsGrid - AwardsGrid
+- SCR004_AwardsInformation - Awards Information
 
 #### Permission Rules
 
@@ -353,6 +361,7 @@ RLS bật trên `public.awards`. Policy `awards_select_public` cho `anon` và `a
 #### Related Modules
 
 - `lib/awards/get-awards.ts`
+- `lib/awards/get-award-details.ts`
 - MODEL001_Award
 
 ---
@@ -409,17 +418,49 @@ Thuộc tính của mọi cookie `@supabase/ssr` ghi ra (mảnh session và PKCE
 
 ---
 
+### PERM012_AwardPrizesPublicReadServiceWrite: Bảng `award_prizes`: đọc công khai, ghi chỉ `service_role`
+
+**Type**: data-permission
+**Enforced At**: `supabase/migrations/20261009021753_add_award_details_and_prizes.sql:46-57` (RLS bật; policy `award_prizes_select_public`; GRANT tường minh)
+
+#### Description
+
+Cùng mẫu với PERM009. RLS bật trên `public.award_prizes` (`:46`); policy `award_prizes_select_public` cho `anon` và `authenticated` đọc mọi dòng (`using (true)`, `:48-50`). Quyền viết tường minh: thu hồi hết rồi cấp `select` cho `anon, authenticated` và toàn quyền DML cho `service_role` (`:55-57`); không có policy hay GRANT ghi cho người dùng nên không có đường ghi từ app. Dữ liệu (các mức giá trị của từng giải) là công khai nên khách đọc được ở `/awards-information`. Dữ liệu nạp qua `supabase/seeds/common/02-award-details.sql` bằng `service_role`.
+
+#### Related Routes
+
+- ROUTE008 (GET) `/awards-information` — đọc bảng bằng truy vấn lồng từ `awards` qua `getAwardDetails`
+
+#### Related Screens
+
+- SCR004_AwardsInformation - Awards Information
+
+#### Permission Rules
+
+| Role | Allow | Conditions |
+|------|-------|------------|
+| anon | ✓ (select) | Mọi dòng. Không có insert/update/delete. |
+| authenticated | ✓ (select) | Mọi dòng. Không có insert/update/delete. |
+| service_role | ✓ (select, insert, update, delete) | Bỏ qua RLS; dùng cho seed và vận hành. |
+
+#### Related Modules
+
+- `lib/awards/get-award-details.ts`
+- MODEL003_AwardPrize
+
+---
+
 ## Summary
 
-- **Total Permission Items**: 11
-- **By Type**: route-guard: 2, screen-permission: 2, action-permission: 3, data-permission: 2, role-based: 1, resource-ownership: 0, field-permission: 0, api-scope: 0, feature-flag: 0, experiment: 0, env-gate: 1, locale-gate: 0
+- **Total Permission Items**: 12
+- **By Type**: route-guard: 2, screen-permission: 2, action-permission: 3, data-permission: 3, role-based: 1, resource-ownership: 0, field-permission: 0, api-scope: 0, feature-flag: 0, experiment: 0, env-gate: 1, locale-gate: 0
 - **UX-only (không phải rào chắn server)**: PERM003, PERM004
 - **Authorization model**: RBAC đơn giản (`profiles.role` ∈ {`user`, `admin`}) cộng RLS theo vai trò Postgres; không có phân quyền theo sở hữu giữa người dùng.
 
 ### Gaps (ghi nhận, không phải PERM)
 
 - `/admin` chưa có page và chưa có kiểm tra vai trò phía server; hiện chỉ có việc ẩn mục menu (PERM004). Khi xây phải gọi `getCurrentUser()` và từ chối nếu không phải `admin` (yêu cầu từ code: `current-user.ts:26-27`).
-- `/profile`, `/awards-information`, `/sun-kudos`, `/standards` có liên kết nhưng chưa có page, truy cập hiện trả 404; chưa có quy tắc quyền để ghi.
+- `/profile`, `/sun-kudos`, `/standards` có liên kết nhưng chưa có page, truy cập hiện trả 404; chưa có quy tắc quyền để ghi.
 - `getCurrentUser()` mới chỉ phục vụ vùng tài khoản; chưa trang hay action nào chặn truy cập dựa trên vai trò.
 
 ---
@@ -428,8 +469,8 @@ Thuộc tính của mọi cookie `@supabase/ssr` ghi ra (mảnh session và PKCE
 
 - [x] All PERM### codes are unique
 - [x] All PERM### codes are referenced in FeatureList.md
-- [x] All related route references are valid (ROUTE### in RouteList: ROUTE001..007 đều tồn tại; `/admin` chỉ ghi chú là chưa có route)
-- [x] All related screen references are valid (SCR001_Login, SCR003_Homepage, SCR003_Homepage/REG001_AccountRegion, SCR003_Homepage/REG002_AwardsGrid theo ScreenList; PERM003/PERM004 nhắm vùng REG001_AccountRegion — chỉ ẩn/hiện giao diện, UX-only)
+- [x] All related route references are valid (ROUTE### in RouteList: ROUTE001..009 đều tồn tại; `/admin` chỉ ghi chú là chưa có route)
+- [x] All related screen references are valid (SCR001_Login, SCR003_Homepage, SCR003_Homepage/REG001_AccountRegion, SCR003_Homepage/REG002_AwardsGrid, SCR004_AwardsInformation theo ScreenList; PERM003/PERM004 nhắm vùng REG001_AccountRegion — chỉ ẩn/hiện giao diện, UX-only)
 - [x] All related module references are valid
 - [x] No orphaned permission references
 
