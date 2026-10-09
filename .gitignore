@@ -13,6 +13,8 @@
 .mind.*
 mind.*
 plans/**/*
+release-manifest.json
+.repomixignore
 
 # debug
 npm-debug.log*
@@ -27,6 +29,7 @@ yarn-error.log*
 
 # IDE
 .idea/
+.vscode/
 
 # MoMorph / MCP
 .mcp.json
@@ -73,4 +76,5 @@ android/build/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+.playwright-mcp/
 graphify-out/
