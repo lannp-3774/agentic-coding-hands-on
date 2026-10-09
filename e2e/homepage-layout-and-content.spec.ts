@@ -31,6 +31,17 @@ test.describe('Homepage (/) Layout and Content', () => {
     await expect(awardsLink).toHaveAttribute('href', '/awards-information');
   });
 
+  test('header Awards Information link is NOT marked as current on homepage', async ({
+    page,
+  }) => {
+    await page.goto('/', { waitUntil: 'networkidle' });
+    const awardsLink = page.getByRole('banner').getByRole('link', { name: 'Awards Information' });
+    await expect(awardsLink).toBeVisible();
+    // On homepage, only About SAA 2025 should have aria-current="page", not Awards Information
+    const currentAttr = await awardsLink.getAttribute('aria-current');
+    expect(currentAttr).not.toBe('page');
+  });
+
   test('header displays Sun* Kudos link', async ({ page }) => {
     await page.goto('/', { waitUntil: 'networkidle' });
     const kudosLink = page.getByRole('banner').getByRole('link', { name: 'Sun* Kudos' });
@@ -141,5 +152,15 @@ test.describe('Homepage (/) Layout and Content', () => {
 
     const scrollPos = await page.evaluate(() => window.scrollY);
     expect(scrollPos).toBeLessThan(100);
+  });
+
+  test('footer links do NOT have aria-current="page" on homepage', async ({
+    page,
+  }) => {
+    await page.goto('/', { waitUntil: 'networkidle' });
+    const footerNav = page.getByRole('contentinfo');
+    // All footer links should not have aria-current="page"
+    const linksWithCurrent = footerNav.locator('a[aria-current="page"]');
+    await expect(linksWithCurrent).toHaveCount(0);
   });
 });
