@@ -2,8 +2,9 @@ import { unstable_rethrow } from "next/navigation";
 import { connection } from "next/server";
 import { cache } from "react";
 import { createClient } from "./server";
+import { toUserRole, type UserRole } from "./user-role";
 
-export type UserRole = "user" | "admin";
+export type { UserRole } from "./user-role";
 
 export type CurrentUser = {
   id: string;
@@ -57,7 +58,8 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   }
 });
 
-// BR-001/BR-002: only the literal "admin" grants admin; anything else is "user".
+// BR-001/BR-002: only the literal "admin" grants admin; anything else is "user"
+// (the rule lives in `toUserRole`, shared with the F005 prelaunch gate).
 async function readRole(supabase: ServerClient, userId: string): Promise<UserRole> {
   try {
     const { data, error } = await supabase
@@ -73,8 +75,7 @@ async function readRole(supabase: ServerClient, userId: string): Promise<UserRol
       console.warn(`[profiles] no profile row for ${userId}, using "user"`);
       return "user";
     }
-    const role: unknown = data.role;
-    return role === "admin" ? "admin" : "user";
+    return toUserRole(data.role);
   } catch (cause) {
     unstable_rethrow(cause);
     console.error(`[profiles] role lookup threw for ${userId}, using "user": ${errorMessage(cause)}`);

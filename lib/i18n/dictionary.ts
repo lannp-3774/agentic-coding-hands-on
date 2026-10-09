@@ -16,6 +16,9 @@ export type Dictionary = {
   };
   home: HomeCopy & { footer: { copyright: string } };
   awardsInformation: AwardsInformationCopy;
+  countdownPrelaunch: {
+    title: string;
+  };
   accountMenu: {
     login: string;
     profile: string;
@@ -51,6 +54,9 @@ const dictionaries = {
     // The homepage footer reuses the login footer string.
     home: { ...homeCopy.vi, footer: { copyright: viLogin.footer } },
     awardsInformation: awardsInformationCopy.vi,
+    countdownPrelaunch: {
+      title: "Sự kiện sẽ bắt đầu sau",
+    },
     accountMenu: {
       login: "Đăng nhập",
       profile: "Hồ sơ",
@@ -64,6 +70,9 @@ const dictionaries = {
     login: enLogin,
     home: { ...homeCopy.en, footer: { copyright: enLogin.footer } },
     awardsInformation: awardsInformationCopy.en,
+    countdownPrelaunch: {
+      title: "Event starts in",
+    },
     accountMenu: {
       login: "Login",
       profile: "Profile",
