@@ -11,9 +11,10 @@ export async function proxy(request: NextRequest) {
 }
 
 // Must stay a static literal (analyzed at build time). `"/"` matches the root
-// only. It is matched so token rotation on the public homepage lands in a
-// response cookie (Server Components cannot write cookies) — guests there are
-// never redirected. `/_next/*`, assets and other routes are not matched.
+// only. `"/"` and `"/awards-information"` are public pages, matched for session
+// refresh only so token rotation lands in a response cookie (Server Components
+// cannot write cookies) — guests there are never redirected. `/_next/*`, assets
+// and other routes are not matched.
 export const config = {
-  matcher: ["/", "/login"],
+  matcher: ["/", "/login", "/awards-information"],
 };

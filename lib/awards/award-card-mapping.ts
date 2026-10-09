@@ -64,6 +64,6 @@ export function toAwardCards(rows: readonly AwardRow[], locale: Locale): AwardCa
 
 // Root-relative path under /public; rejects blanks, relative paths, URLs and
 // protocol-relative "//host" values (next/image would throw or fetch remotely).
-function isLocalPath(path: string): boolean {
+export function isLocalPath(path: string): boolean {
   return path.startsWith("/") && !path.startsWith("//") && !path.includes("\\");
 }

@@ -12,8 +12,12 @@ export type SiteNavCopy = {
   standards: string;
 };
 
+// Which nav link is the current page. Optional; the header defaults to "about", the footer to none.
+export type SitePage = "about" | "awards";
+
 export type SiteHeaderProps = {
   nav: Pick<SiteNavCopy, "about" | "awards" | "kudos">;
+  currentPage?: SitePage;
   // Rendered left of the language selector (Figma: bell, language, account); signed-in only.
   bellSlot?: ReactNode;
   languageSlot: ReactNode;
@@ -22,6 +26,7 @@ export type SiteHeaderProps = {
 
 export type SiteFooterProps = {
   nav: SiteNavCopy;
+  currentPage?: SitePage;
   copyright: string;
 };
 

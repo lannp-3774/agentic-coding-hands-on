@@ -8,7 +8,15 @@ const NAV_LINK =
 const NAV_LINK_SELECTED =
   "border-b border-[#FFEA9E] text-[#FFEA9E] [text-shadow:0_4px_4px_rgba(0,0,0,0.25),0_0_6px_#FAE287]";
 
-export function SiteHeader({ nav, bellSlot, languageSlot, accountSlot }: SiteHeaderProps) {
+export function SiteHeader({
+  nav,
+  currentPage = "about",
+  bellSlot,
+  languageSlot,
+  accountSlot,
+}: SiteHeaderProps) {
+  const aboutCurrent = currentPage === "about";
+  const awardsCurrent = currentPage === "awards";
   return (
     // mm:2167:9091
     <header className="fixed inset-x-0 top-0 z-30 flex h-16 items-center justify-between bg-[#101417]/80 px-4 md:h-20 md:px-12 xl:px-36">
@@ -29,11 +37,19 @@ export function SiteHeader({ nav, bellSlot, languageSlot, accountSlot }: SiteHea
         {/* mm:I2167:9091;178:653 */}
         <nav className="hidden items-center gap-6 lg:flex">
           {/* mm:I2167:9091;186:1579 */}
-          <Link href="/" aria-current="page" className={`${NAV_LINK} ${NAV_LINK_SELECTED}`}>
+          <Link
+            href="/"
+            aria-current={aboutCurrent ? "page" : undefined}
+            className={aboutCurrent ? `${NAV_LINK} ${NAV_LINK_SELECTED}` : NAV_LINK}
+          >
             {nav.about}
           </Link>
           {/* mm:I2167:9091;186:1587 */}
-          <Link href="/awards-information" className={NAV_LINK}>
+          <Link
+            href="/awards-information"
+            aria-current={awardsCurrent ? "page" : undefined}
+            className={awardsCurrent ? `${NAV_LINK} ${NAV_LINK_SELECTED}` : NAV_LINK}
+          >
             {nav.awards}
           </Link>
           {/* mm:I2167:9091;186:1593 */}

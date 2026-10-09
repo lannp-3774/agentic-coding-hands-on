@@ -1,3 +1,7 @@
+import {
+  awardsInformationCopy,
+  type AwardsInformationCopy,
+} from "./awards-information-copy";
 import { homeCopy, type HomeCopy } from "./home-copy";
 import type { Locale } from "./locales";
 
@@ -11,6 +15,7 @@ export type Dictionary = {
     footer: string;
   };
   home: HomeCopy & { footer: { copyright: string } };
+  awardsInformation: AwardsInformationCopy;
   accountMenu: {
     login: string;
     profile: string;
@@ -45,6 +50,7 @@ const dictionaries = {
     login: viLogin,
     // The homepage footer reuses the login footer string.
     home: { ...homeCopy.vi, footer: { copyright: viLogin.footer } },
+    awardsInformation: awardsInformationCopy.vi,
     accountMenu: {
       login: "Đăng nhập",
       profile: "Hồ sơ",
@@ -57,6 +63,7 @@ const dictionaries = {
   en: {
     login: enLogin,
     home: { ...homeCopy.en, footer: { copyright: enLogin.footer } },
+    awardsInformation: awardsInformationCopy.en,
     accountMenu: {
       login: "Login",
       profile: "Profile",
