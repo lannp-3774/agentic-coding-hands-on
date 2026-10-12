@@ -36,7 +36,7 @@ key entities, and DB writes for a Dev/QA/SA audience.
 |----|------------|------------------------|-----------------|---------------|-------------------|---------|
 | CAP-01 | Xem đồng hồ đếm ngược | Mở trang đếm ngược, đọc tiêu đề theo ngôn ngữ đã chọn, thấy số ngày, giờ, phút còn lại tự cập nhật | US028 | FR-201, FR-202, FR-203, FR-204, FR-205, FR-206, FR-207 | BR-005, BR-008, DEC-003 | SCR005_CountdownPrelaunch |
 | CAP-02 | Giữ site sau trang đếm ngược trước giờ mở | Khách và người dùng thường bị đưa về trang đếm ngược khi mở bất kỳ trang nào, admin duyệt bình thường, trang đăng nhập luôn mở; vận hành đặt mốc | US029, US030, US033 | FR-001, FR-002, FR-101, FR-102, FR-103, FR-601, FR-602 | BR-001, BR-002, BR-003, BR-004, BR-006, DEC-001 | N/A — cổng nằm trên mọi trang, màn hình duy nhất của feature đã tính ở CAP-01 |
-| CAP-03 | Vào site khi tới giờ | Đồng hồ chạm 0 thì tự vào trang chủ; sau mốc mở trang đếm ngược thì được đưa về trang chủ; mọi trang mở bình thường | US031, US032 | FR-104, FR-105, FR-401 | BR-007, DEC-002 | N/A — dùng màn hình đã tính ở CAP-01 và trang chủ của F002 |
+| CAP-03 | Vào site khi tới giờ | Đồng hồ chạm 0 thì tự vào trang chủ; sau mốc trang đếm ngược vẫn mở được bằng URL (hiện 00 00 00); mọi trang mở bình thường | US031, US032 | FR-104, FR-105, FR-401 | BR-007, DEC-002 | N/A — dùng màn hình đã tính ở CAP-01 và trang chủ của F002 |
 
 ## 3. Open Decisions
 
@@ -99,7 +99,7 @@ Cả chín quyết định đã chốt ngày 2026-10-09 (clarifications.md; D008
 - Mỗi lần tải trang, trình duyệt chỉ tự chuyển sang trang chủ nhiều nhất một lần và thay chỗ trang đếm ngược trong lịch sử (BR-007)
 - Số đếm và lúc tự chuyển sang trang chủ đều theo giờ máy chủ; đồng hồ máy người xem lệch không làm sai kết quả (BR-008)
 - Trước mốc: người không phải admin mở trang nào cũng ra trang đếm ngược, admin xem bình thường, trang đăng nhập luôn mở; từ mốc trở đi không ai bị chuyển (DEC-001)
-- Mở trang đếm ngược: trước mốc thấy đồng hồ; từ mốc trở đi, hoặc khi mốc hỏng, được đưa về trang chủ (DEC-002)
+- Mở trang đếm ngược: trước mốc thấy đồng hồ; từ mốc trở đi, hoặc khi mốc hỏng, vẫn thấy trang với 00 00 00, không bị chuyển đi (DEC-002)
 - Đồng hồ: chưa sẵn sàng thì hiện "--"; còn thời gian thì hiện phần còn lại; tới mốc hoặc không có mốc thì hiện 00 và tự vào trang chủ (DEC-003)
 
 ## 6. Screens

@@ -22,7 +22,7 @@ appendix — jump in only when a § 3 block points you there. Mã của feature 
 
 ## 1. Technical Overview
 
-Trước mốc ra mắt, `proxy.ts` chuyển mọi trang (trừ `/login`, `/auth/callback`) về `/countdown` bằng phản hồi 307; admin (`profiles.role = 'admin'`) đi qua. Mốc đọc từ một dòng duy nhất của bảng mới `site_settings` (cột `prelaunch_ends_at`, đọc công khai, chỉ `service_role` ghi); thiếu, sai hoặc không đọc được thì site mở (fail open). Trang `/countdown` là Server Component đọc cùng mốc rồi giao cho client hai con số: mốc (`targetMs`) và giờ máy chủ lúc render (`serverNowMs`); client tính độ lệch một lần khi mount rồi đếm theo giờ máy chủ, dùng lại phép tính phút của đồng hồ trang chủ (`lib/countdown/**`), và tự `router.replace("/")` đúng lúc giờ máy chủ chạm mốc; sau mốc, chính proxy chuyển `/countdown` về `/`. Đồng hồ trang chủ vẫn dùng biến môi trường `SAA_COUNTDOWN_TARGET`, không đụng tới.
+Trước mốc ra mắt, `proxy.ts` chuyển mọi trang (trừ `/login`, `/auth/callback`) về `/countdown` bằng phản hồi 307; admin (`profiles.role = 'admin'`) đi qua. Mốc đọc từ một dòng duy nhất của bảng mới `site_settings` (cột `prelaunch_ends_at`, đọc công khai, chỉ `service_role` ghi); thiếu, sai hoặc không đọc được thì site mở (fail open). Trang `/countdown` là Server Component đọc cùng mốc rồi giao cho client hai con số: mốc (`targetMs`) và giờ máy chủ lúc render (`serverNowMs`); client tính độ lệch một lần khi mount rồi đếm theo giờ máy chủ, dùng lại phép tính phút của đồng hồ trang chủ (`lib/countdown/**`), và tự `router.replace("/")` đúng lúc giờ máy chủ chạm mốc; sau mốc, `/countdown` vẫn mở được bằng URL và hiện `00 00 00`. Đồng hồ trang chủ vẫn dùng biến môi trường `SAA_COUNTDOWN_TARGET`, không đụng tới.
 
 ```mermaid
 flowchart LR
@@ -147,26 +147,25 @@ flowchart LR
 
 ### 3.3 CAP-03 — Vào site khi tới giờ
 
-#### A4 · Chuyển `/countdown` về trang chủ khi site đã mở
-`GET` `HEAD` `/countdown` → `` `decidePrelaunchGate` `` *(nhánh `/countdown`, `lib/prelaunch/prelaunch-gate-decision.ts:51-53`; cùng hàm `ALG-002` với A2, được gọi từ `lib/supabase/proxy-session.ts:143-155`)*
+#### A4 · `/countdown` luôn mở được bằng URL
+`GET` `HEAD` `/countdown` → `` `decidePrelaunchGate` `` *(`/countdown` nằm trong `EXEMPT_PATHS`, `lib/prelaunch/prelaunch-gate-decision.ts:13`; cùng hàm `ALG-002` với A2, được gọi từ `lib/supabase/proxy-session.ts:143-154`)*
 `FR-105` `BR-001` `BR-002` `BR-004` `DEC-002` `ALG-002` `INT-001` `US032` · `SCR005_CountdownPrelaunch`
 
 **Who** · Bất kỳ ai mở `/countdown` *(gate A0 — § 4.4)*
-**FE** · *không có giao diện riêng* — phản hồi 307 tới `/`.
-**Request** · `GET`/`HEAD` `/countdown`; đọc mốc song song với `getClaims()` như A2.
-**BE** · `ALG-002` với địa chỉ `/countdown`: khoá thì `{ kind: "next" }` (A1 render), mở hoặc mốc không dùng được thì `{ kind: "redirect", to: "/" }` *(§ 4.5)*; `prelaunchGateTarget` trả đích đó (`lib/supabase/proxy-session.ts:154-155`). Không đọc vai trò: `/countdown` hiện cho mọi vai trò khi đang khoá. Trang A1 không tự chuyển hướng ở phía server (`app/countdown/_components/countdown-prelaunch-content.tsx:8-13`); phần đua (mốc qua giữa lúc proxy chạy và lúc trang render) do A5 xử lý bằng `00 00 00` rồi về `/`.
+**FE** · trang đếm ngược (A1) ở mọi trạng thái; khi site đã mở thì hiện `00 00 00` và ở lại.
+**Request** · `GET`/`HEAD` `/countdown`.
+**BE** · `ALG-002` coi `/countdown` là đường dẫn miễn trừ nên luôn trả `{ kind: "next" }`, không xét mốc, không đọc vai trò *(§ 4.5)*. Đây là dự án thử nghiệm nên mọi trang phải mở được bằng URL; vì vậy proxy không còn chuyển `/countdown` về `/` khi site đã mở. Trang A1 không tự chuyển hướng ở phía server (`app/countdown/_components/countdown-prelaunch-content.tsx:8-14`); ở client, A5 chỉ chuyển về `/` khi đồng hồ đang chạy rồi chạm 0, còn trang render lúc site đã mở thì đứng yên ở `00 00 00`.
 **Rule**
-- **BR-001 — Site chỉ khoá khi mốc đọc được và còn ở tương lai.** Trang đếm ngược chỉ có nghĩa khi còn khoá; từ mốc trở đi nó không còn nội dung nên đẩy về `/`. *(§ 4.4)*
-- **BR-002 — Mốc không dùng được thì coi như không khoá.** `/countdown` cũng về `/`, không trang trống. *(§ 4.4)*
-- **BR-004 — Chuyển hướng an toàn.** 307, đích là hằng `/`, chỉ `GET`/`HEAD`. *(§ 4.4)*
+- **BR-001 — Site chỉ khoá khi mốc đọc được và còn ở tương lai.** Khoá hay mở, `/countdown` vẫn được phục vụ. *(§ 4.4)*
+- **BR-002 — Mốc không dùng được thì coi như không khoá.** `/countdown` hiện `00 00 00`, không trang trống, không chuyển hướng. *(§ 4.4)*
 
 | DEC | subtype | Condition | What the user sees | Source |
 |---|---|---|---|---|
-| **DEC-002** | flow | đường dẫn `/countdown` VÀ khoá | trang đếm ngược (A1), cho mọi vai trò kể cả admin | `lib/prelaunch/prelaunch-gate-decision.ts:51-52` |
-| **DEC-002** | flow | đường dẫn `/countdown` VÀ mở | 307 `/`; trang chủ như thường | `lib/prelaunch/prelaunch-gate-decision.ts:52` |
-| **DEC-002** | flow | đường dẫn `/countdown` VÀ mốc thiếu / `NULL` / sai / không đọc được | 307 `/` (fail open); log `[prelaunch]`, trừ `NULL` thì im lặng | `lib/prelaunch/prelaunch-gate-decision.ts:49,52` `lib/prelaunch/read-prelaunch-ends-at.ts:32-66` |
+| **DEC-002** | flow | đường dẫn `/countdown` VÀ khoá | trang đếm ngược (A1), cho mọi vai trò kể cả admin | `lib/prelaunch/prelaunch-gate-decision.ts:13,42` |
+| **DEC-002** | flow | đường dẫn `/countdown` VÀ mở | trang đếm ngược hiện `00 00 00`, không chuyển hướng | `lib/prelaunch/prelaunch-gate-decision.ts:13,42` `lib/countdown/use-prelaunch-countdown.ts:45` |
+| **DEC-002** | flow | đường dẫn `/countdown` VÀ mốc thiếu / `NULL` / sai / không đọc được | trang đếm ngược hiện `00 00 00` (fail open); log `[prelaunch]`, trừ `NULL` thì im lặng | `lib/countdown/use-prelaunch-countdown.ts:45` `lib/prelaunch/read-prelaunch-ends-at.ts:32-66` |
 
-**Result** · Chỉ đọc, không ghi DB. Người mở `/countdown` sau mốc vào thẳng trang chủ.
+**Result** · Chỉ đọc, không ghi DB. Người mở `/countdown` sau mốc vẫn thấy trang đếm ngược ở `00 00 00`.
 **Source:** `lib/prelaunch/prelaunch-gate-decision.ts:7-9,51-53` → `lib/supabase/proxy-session.ts:143-155`
 
 <!-- Không vẽ sequenceDiagram: dưới ngưỡng (không ghi bảng, đồng bộ). Phần phân nhánh là bảng DEC-002. -->
@@ -180,7 +179,7 @@ flowchart LR
 **Who** · Người đang mở `/countdown` *(gate A0 — § 4.4)*
 **FE** · Không có giao diện riêng: khi ba khối vừa hiện `00` thì trình duyệt chuyển trang; người xem thấy trang chủ thay cho trang đếm ngược.
 **Request** · không gọi máy chủ riêng; việc điều hướng là một yêu cầu `GET /` mà A2 sẽ đánh giá.
-**BE** · `useEffect` trong hook (`lib/countdown/use-prelaunch-countdown.ts:44-48`): khi `reached` gọi `router.replace("/")` (`:47`). `reached` được suy ra từ trạng thái của `useCountdown` hiện có, không thêm trường mới: `values[0] !== COUNTDOWN_PLACEHOLDER && !showComingSoon`, tức đã hydrate (không còn `--`) và hết thời gian (`:40`; `ALG-001`: số phút bằng 0 chỉ khi `now ≥ mốc`, với `now = Date.now() + clockOffsetMs` theo `ALG-003`, tức giờ máy chủ). Cờ chặn gọi lại là `redirectedForRef` mang giá trị `serverNowMs` đã chuyển (`:43,45-46`), nên mỗi lần máy chủ render một `serverNowMs` mới thì được chuyển lại đúng một lần. `replace` để nút Back không quay về trang vừa tự bỏ. Đích là hằng `HOME_PATH = "/"` (`:9`), không đọc từ URL. `targetMs = null` cũng tính là đã tới 0 nên đi cùng đường (`BR-002`).
+**BE** · `useEffect` trong hook (`lib/countdown/use-prelaunch-countdown.ts:44-48`): khi `reached` gọi `router.replace("/")` (`:47`). `reached` được suy ra từ trạng thái của `useCountdown` hiện có, không thêm trường mới: `values[0] !== COUNTDOWN_PLACEHOLDER && !showComingSoon`, tức đã hydrate (không còn `--`) và hết thời gian (`:40`; `ALG-001`: số phút bằng 0 chỉ khi `now ≥ mốc`, với `now = Date.now() + clockOffsetMs` theo `ALG-003`, tức giờ máy chủ). Cờ chặn gọi lại là `redirectedForRef` mang giá trị `serverNowMs` đã chuyển (`:43,45-46`), nên mỗi lần máy chủ render một `serverNowMs` mới thì được chuyển lại đúng một lần. `replace` để nút Back không quay về trang vừa tự bỏ. Đích là hằng `HOME_PATH = "/"` (`:9`), không đọc từ URL. `targetMs = null` cũng tính là đã tới 0 (`BR-002`). Ngoại lệ (`DEC-002`): nếu lúc render site đã mở (`targetMs = null` hoặc `targetMs <= serverNowMs`, cờ `openOnArrival`) thì không chuyển hướng, để `/countdown` luôn xem được bằng URL.
 **Rule**
 - **BR-007 — Trình duyệt chuyển sang `/` nhiều nhất một lần cho mỗi lần máy chủ render trang.** Cờ `ref` theo `serverNowMs` chặn gọi lại: Cache Components giữ state và ref của component (Activity) khi một điều hướng render lại `/countdown`, nên offset và cờ cùng bám `serverNowMs` — lần render mới đo lại và được chuyển thêm một lần, lần hiển thị lại thì không (`lib/countdown/use-prelaunch-countdown.ts:22-27,36,43-48`). Nhờ BR-008 trình duyệt chuyển đúng lúc giờ máy chủ chạm mốc nên máy chủ không còn thấy site khoá; chỉ còn lại độ trễ mạng giữa lúc máy chủ render và lúc trang mount (RISK-02 ở functional-spec § 11), và sai số đó làm đồng hồ chạy chậm chứ không nhanh nên không gây vòng lặp.
 - **BR-008 — Đồng hồ đếm theo giờ máy chủ, không theo đồng hồ máy người xem.** Chạm 0 nghĩa là giờ máy chủ chạm mốc, nên người xem chuyển sang `/` đúng lúc cổng thật sự mở dù đồng hồ máy lệch. *(§ 4.4)*
@@ -436,7 +435,7 @@ Chính sách kiểm thử: `e2e-red-first` (chuyển hướng, cổng và tự �
 
 - **SC-001** *(A2)* Khi mốc ở tương lai: khách mở `/`, `/awards-information`, `/profile` (chưa có page) đều nhận 307 về `/countdown`; `/login` và `/auth/callback` mở được; tải ảnh nền và font của trang đếm ngược không bị chuyển hướng (covers FR-101, FR-102, DEC-001, BR-004)
 - **SC-002** *(A2)* Khi mốc ở tương lai: admin đã đăng nhập mở `/` và `/awards-information` thấy trang thật; người dùng thường đã đăng nhập bị 307 về `/countdown`; hồ sơ không tra được cũng bị chuyển (covers FR-103, FR-601, BR-003)
-- **SC-003** *(A2, A4)* Khi mốc ở quá khứ hoặc `NULL` hoặc dòng thiếu: mọi trang mở bình thường cho khách; `/countdown` nhận 307 về `/`; hành vi F001–F004 không đổi (covers FR-104, FR-105, BR-001, BR-002, DEC-001, DEC-002)
+- **SC-003** *(A2, A4)* Khi mốc ở quá khứ hoặc `NULL` hoặc dòng thiếu: mọi trang mở bình thường cho khách; `/countdown` nhận 200 và hiện `00 00 00`; hành vi F001–F004 không đổi (covers FR-104, FR-105, BR-001, BR-002, DEC-001, DEC-002)
 - **SC-004** *(A1)* Trang `/countdown` có nền, tiêu đề VN/EN đúng chữ, ba khối `DAYS`/`HOURS`/`MINUTES`; mốc cách 1 ngày 2 giờ 3 phút hiện `01 02 03`; còn hơn 99 ngày hiện đủ số; tới mốc hiện `00 00 00` (covers FR-201, FR-202, FR-203, FR-204, FR-205, FR-206, BR-005, ALG-001, DEC-003)
 - **SC-005** *(A5)* Mốc cách vài giây: trang tự chuyển sang `/` khi đồng hồ chạm 0, URL cuối là `/`, nút Back không quay lại `/countdown`; không chuyển trước mốc (covers FR-401, BR-007, BR-004)
 - **SC-006** *(A3)* Với vai trò `anon` và `authenticated`, `select` trên `site_settings` thành công còn `insert`, `update`, `delete` bị từ chối; `service_role` ghi được; ghi giá trị không phải thời điểm bị DB từ chối (covers FR-001, FR-002)
@@ -485,8 +484,8 @@ Chính sách kiểm thử: `e2e-red-first` (chuyển hướng, cổng và tự �
 
 **Acceptance Scenarios:**
 
-1. **Given** mốc ở quá khứ, **When** mở `/countdown`, **Then** nhận 307 về `/`.
-2. **Given** dòng cài đặt có `prelaunch_ends_at = NULL`, **When** mở `/countdown`, **Then** nhận 307 về `/`.
+1. **Given** mốc ở quá khứ, **When** mở `/countdown`, **Then** nhận 200, trang hiện `00 00 00` và URL vẫn là `/countdown`.
+2. **Given** dòng cài đặt có `prelaunch_ends_at = NULL`, **When** mở `/countdown`, **Then** nhận 200, không chuyển hướng.
 
 #### US033 *(A3)*
 
@@ -533,7 +532,7 @@ Operator (service_role) -> UPDATE site_settings.prelaunch_ends_at -> (stored as 
 Request (GET/HEAD page) -> proxy: skip exempt | read moment (anon, no-store) || getClaims -> decide
    -> locked & guest      -> 307 /countdown
    -> locked & signed-in  -> read profiles.role (user session) -> admin: next | else: 307 /countdown
-   -> open | moment null  -> next   (/countdown -> 307 /)
+   -> open | moment null  -> next   (/countdown: always next)
 GET /countdown (locked)  -> Server Component: targetMs + serverNowMs (Date.now() after connection())
    -> client mount: clockOffsetMs = serverNowMs - Date.now() -> useCountdown(targetMs, clockOffsetMs)
    -> server-time minutes reach 0 -> router.replace("/") -> proxy re-evaluates with the same server clock
