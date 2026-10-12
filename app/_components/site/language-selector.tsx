@@ -130,7 +130,9 @@ export function LanguageSelector({
                 role="menuitem"
                 autoFocus={selected}
                 onClick={() => select(option.locale)}
-                className={`flex h-14 w-[110px] cursor-pointer items-center justify-center gap-1 rounded-sm text-white transition-colors duration-200 hover:bg-[#FFEA9E]/20 focus-visible:bg-[#FFEA9E]/20 focus-visible:outline-none ${selected ? "bg-[#FFEA9E]/20" : ""}`}
+                // Figma variants: selected I525:11713;362:6085 (108px, 2px radius),
+                // option I525:11713;362:6128 (110px, 4px radius on its button).
+                className={`flex h-14 cursor-pointer items-center justify-center gap-1 text-white transition-colors duration-200 hover:bg-[#FFEA9E]/20 focus-visible:bg-[#FFEA9E]/20 focus-visible:outline-none ${selected ? "w-[108px] rounded-xs bg-[#FFEA9E]/20" : "w-[110px] rounded-sm"}`}
               >
                 <Image src={option.flag} alt="" width={24} height={24} />
                 <span className="text-base leading-6 font-bold tracking-[0.15px]">
