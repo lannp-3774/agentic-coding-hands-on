@@ -28,6 +28,9 @@ const getServerOffset = () => 0;
  *   the offset and the once-flag both follow `serverNowMs`: a fresh render
  *   re-measures and may redirect once more, a re-shown one does not.
  * - BR-002: a `null` target counts as reached.
+ * - DEC-002: a page rendered when the site was already open (`null` target
+ *   or target at/before `serverNowMs`) shows 00 00 00 and stays, so
+ *   /countdown remains viewable by URL; only a live countdown redirects.
  */
 export function usePrelaunchCountdown(
   targetMs: number | null,
@@ -38,14 +41,16 @@ export function usePrelaunchCountdown(
   const { values, showComingSoon } = useCountdown(targetMs, clockOffsetMs);
   // DEC-003: reached only once hydrated (no `--`) and nothing is left.
   const reached = values[0] !== COUNTDOWN_PLACEHOLDER && !showComingSoon;
+  // Both props come from the server render: no clock read here.
+  const openOnArrival = targetMs === null || targetMs <= serverNowMs;
 
   const router = useRouter();
   const redirectedForRef = useRef<number | null>(null);
   useEffect(() => {
-    if (!reached || redirectedForRef.current === serverNowMs) return;
+    if (!reached || openOnArrival || redirectedForRef.current === serverNowMs) return;
     redirectedForRef.current = serverNowMs;
     router.replace(HOME_PATH);
-  }, [reached, serverNowMs, router]);
+  }, [reached, openOnArrival, serverNowMs, router]);
 
   return values;
 }

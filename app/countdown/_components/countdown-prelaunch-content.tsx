@@ -8,8 +8,9 @@ import { PrelaunchCountdownLive } from "./prelaunch-countdown-live";
 /**
  * F005 A1: /countdown body. Request-time on purpose, so it renders inside the
  * page's <Suspense>. No header, footer or language selector (FR-206) and no
- * server-side redirect: the proxy (A4) moves viewers away once the gate opens,
- * and the client (A5) handles the race where the moment passes mid-render.
+ * server-side redirect: once the site is open the page still renders (00 00 00,
+ * DEC-002); the client (A5) moves a viewer to / only when a live countdown
+ * reaches 0.
  */
 export async function CountdownPrelaunchContent() {
   // Opt in to request-time rendering before any clock, cookie or DB read.

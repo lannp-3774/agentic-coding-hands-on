@@ -28,8 +28,8 @@ const GUEST: VerifiedSession = { userId: null, client: null };
  *   2. GET|HEAD /login + valid claims -> 307 / (BR-005, DEC-001, unchanged);
  *   3. the F005 prelaunch gate (A2, A4; DEC-001, DEC-002) on every other
  *      GET|HEAD: while locked, everyone but an admin -> 307 /countdown;
- *      once open, /countdown -> 307 /. A missing or unreadable moment means
- *      open (BR-002), so guests on public pages are never redirected then.
+ *      /countdown itself is always served (DEC-002). A missing or unreadable
+ *      moment means open (BR-002), so guests are never redirected then.
  * Everything else continues with the refreshed cookies attached.
  *
  * The gate is a launch gate, not access control (FR-602): it fails open and
@@ -152,7 +152,6 @@ async function prelaunchGateTarget(
     nowMs: Date.now(),
   });
   if (decision.kind === "next") return null;
-  if (decision.kind === "redirect") return decision.to;
 
   if (!session.userId || !session.client) return COUNTDOWN_PATH;
   const role = await readGateUserRole(session.client, session.userId);
