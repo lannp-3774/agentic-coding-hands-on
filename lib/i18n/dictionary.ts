@@ -4,6 +4,9 @@ import {
 } from "./awards-information-copy";
 import { homeCopy, type HomeCopy } from "./home-copy";
 import type { Locale } from "./locales";
+import { sunKudosBoardCopy } from "./sun-kudos-copy";
+import type { SunKudosCopy } from "./sun-kudos-copy-types";
+import { sunKudosPanelsCopy } from "./sun-kudos-panels-copy";
 
 export type Dictionary = {
   login: {
@@ -16,6 +19,7 @@ export type Dictionary = {
   };
   home: HomeCopy & { footer: { copyright: string } };
   awardsInformation: AwardsInformationCopy;
+  sunKudos: SunKudosCopy;
   countdownPrelaunch: {
     title: string;
   };
@@ -54,6 +58,7 @@ const dictionaries = {
     // The homepage footer reuses the login footer string.
     home: { ...homeCopy.vi, footer: { copyright: viLogin.footer } },
     awardsInformation: awardsInformationCopy.vi,
+    sunKudos: { ...sunKudosBoardCopy.vi, ...sunKudosPanelsCopy.vi },
     countdownPrelaunch: {
       title: "Sự kiện sẽ bắt đầu sau",
     },
@@ -70,6 +75,7 @@ const dictionaries = {
     login: enLogin,
     home: { ...homeCopy.en, footer: { copyright: enLogin.footer } },
     awardsInformation: awardsInformationCopy.en,
+    sunKudos: { ...sunKudosBoardCopy.en, ...sunKudosPanelsCopy.en },
     countdownPrelaunch: {
       title: "Event starts in",
     },

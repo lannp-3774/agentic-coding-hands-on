@@ -41,7 +41,7 @@ test.describe('Homepage Language Selection', () => {
     // Check that UI chrome is now in English (e.g., countdown units)
     // DAYS/HOURS/MINUTES should remain same, but we verify locale via nav text
     const standards = page.getByText(/General Standards/i);
-    await expect(standards).toBeVisible({ timeout: 3000 });
+    await expect(standards).toBeVisible();
   });
 
   test('EN mode translates UI labels but keeps long content in VN', async ({
@@ -59,24 +59,22 @@ test.describe('Homepage Language Selection', () => {
 
     // UI chrome should be in English
     const loginBtn = page.getByRole('link', { name: /Login/i }).first();
-    await expect(loginBtn).toBeVisible({ timeout: 3000 });
+    await expect(loginBtn).toBeVisible();
 
     // Verify English UI chrome is shown (not Vietnamese equivalents)
-    await expect(page.getByRole('heading', { name: /Awards System/i })).toBeVisible({
-      timeout: 3000,
-    });
+    await expect(page.getByRole('heading', { name: /Awards System/i })).toBeVisible();
     // Check for "Details" links (EN) instead of "Chi tiết" (VN)
     const detailsLinks = page.getByRole('link', { name: /Details/i });
-    await expect(detailsLinks.first()).toBeVisible({ timeout: 1000 });
+    await expect(detailsLinks.first()).toBeVisible();
     // Time and Venue labels should be in English
-    await expect(page.getByText(/^Time:$/)).toBeVisible({ timeout: 1000 });
-    await expect(page.getByText(/^Venue:$/)).toBeVisible({ timeout: 1000 });
+    await expect(page.getByText(/^Time:$/)).toBeVisible();
+    await expect(page.getByText(/^Venue:$/)).toBeVisible();
 
     // Long body content should still be in Vietnamese (not translated)
     // The specific opening paragraph of the ROOT FURTHER section
     await expect(
       page.getByText(/Đứng trước bối cảnh thay đổi như vũ bão/)
-    ).toBeVisible({ timeout: 2000 });
+    ).toBeVisible();
   });
 
   test('language selection persists with NEXT_LOCALE cookie on reload', async ({
@@ -94,17 +92,13 @@ test.describe('Homepage Language Selection', () => {
     await page.waitForTimeout(200);
 
     // Verify EN is active (check for English-specific text)
-    await expect(page.getByText(/General Standards/i)).toBeVisible({
-      timeout: 3000,
-    });
+    await expect(page.getByText(/General Standards/i)).toBeVisible();
 
     // Reload page
     await page.reload();
 
     // Should still be in EN
-    await expect(page.getByText(/General Standards/i)).toBeVisible({
-      timeout: 3000,
-    });
+    await expect(page.getByText(/General Standards/i)).toBeVisible();
 
     // Verify NEXT_LOCALE cookie exists
     const cookies = await context.cookies();

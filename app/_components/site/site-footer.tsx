@@ -15,6 +15,7 @@ const FOOTER_LINK_SELECTED = `${FOOTER_LINK_BASE} rounded-none bg-[#FFEA9E]/10 [
 export function SiteFooter({ nav, currentPage, copyright }: SiteFooterProps) {
   const aboutCurrent = currentPage === "about";
   const awardsCurrent = currentPage === "awards";
+  const kudosCurrent = currentPage === "kudos";
   return (
     // mm:5001:14800
     <footer className="relative z-10 flex flex-col items-center justify-between gap-6 border-t border-[#2E3940] px-4 py-10 md:px-12 xl:flex-row xl:px-[90px]">
@@ -50,7 +51,11 @@ export function SiteFooter({ nav, currentPage, copyright }: SiteFooterProps) {
             {nav.awards}
           </Link>
           {/* mm:I5001:14800;342:1412 */}
-          <Link href="/sun-kudos" className={FOOTER_LINK}>
+          <Link
+            href="/sun-kudos"
+            aria-current={kudosCurrent ? "page" : undefined}
+            className={kudosCurrent ? FOOTER_LINK_SELECTED : FOOTER_LINK}
+          >
             {nav.kudos}
           </Link>
           {/* mm:I5001:14800;1161:9487 */}

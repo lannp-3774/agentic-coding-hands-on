@@ -2,7 +2,7 @@
 
 **Project**: my-app (SAA 2025 — Sun* Annual Awards 2025)
 **Generated**: 2026-10-08
-**Analysis Scope**: `app/` (page, layout, route handler, `_components/`), `lib/` (auth, awards, countdown, i18n, supabase, ui), `proxy.ts`. Nguồn màn hình: `route-view` (Next.js 16.4 App Router) — mỗi file `page.tsx` phục vụ một URL riêng là một ứng viên SCR, đối chiếu `route-list.md` (ROUTE001..009). SCR004_AwardsInformation (F004) thêm 2026-10-09. SCR005_CountdownPrelaunch (F005, bản nháp trước khi có mã) thêm 2026-10-09.
+**Analysis Scope**: `app/` (page, layout, route handler, `_components/`), `lib/` (auth, awards, countdown, i18n, supabase, ui), `proxy.ts`. Nguồn màn hình: `route-view` (Next.js 16.4 App Router) — mỗi file `page.tsx` phục vụ một URL riêng là một ứng viên SCR, đối chiếu `route-list.md` (ROUTE001..009). SCR004_AwardsInformation (F004) thêm 2026-10-09. SCR005_CountdownPrelaunch (F005, bản nháp trước khi có mã) thêm 2026-10-09. SCR006_SunKudosLiveBoard (F006–F009, bản nháp trước khi có mã) thêm 2026-10-12.
 
 **Code Format**: All codes MUST follow `SCR###_NameSlug` format (e.g., SCR001_LoginForm, SCR002_Dashboard) | `SCR###/REG###` for region-scoped references within a composite screen
 
@@ -16,7 +16,7 @@
 
 **Region Deprecation**: Regions table MAY include a `status` column with values `active` | `deprecated`. Deprecated regions keep their REG### number reserved (no renumbering); downstream refs remain valid; reviewer emits WARNING (not critical) until spec-wide cleanup.
 
-> Ghi chú về mã màn hình: SCR001_Login, SCR002_Todo, SCR003_Homepage, SCR004_AwardsInformation, SCR005_CountdownPrelaunch là mã chuẩn, ổn định, không đánh số lại. SCR002_Todo đã bị gỡ ngày 2026-10-08 (xoá `app/todo/**`) và được giữ làm bản ghi đã gỡ (tombstone) để dãy mã liền mạch; nó không tính vào số màn hình đang hoạt động và không có route, không có file nguồn.
+> Ghi chú về mã màn hình: SCR001_Login, SCR002_Todo, SCR003_Homepage, SCR004_AwardsInformation, SCR005_CountdownPrelaunch, SCR006_SunKudosLiveBoard là mã chuẩn, ổn định, không đánh số lại. SCR002_Todo đã bị gỡ ngày 2026-10-08 (xoá `app/todo/**`) và được giữ làm bản ghi đã gỡ (tombstone) để dãy mã liền mạch; nó không tính vào số màn hình đang hoạt động và không có route, không có file nguồn.
 
 <!-- ANTI-COMPRESSION RULE: One SCR per distinct view/page file. Do NOT collapse a namespace or
      wildcard route (e.g. /admin/system/*) into a single composite SCR. ≥2 view files under one
@@ -32,6 +32,7 @@
 | SCR003_Homepage | Homepage | composite | 14 | 5 |
 | SCR004_AwardsInformation | Awards Information | composite | 17 | 4 |
 | SCR005_CountdownPrelaunch | Countdown Prelaunch | atomic | 5 | 4 |
+| SCR006_SunKudosLiveBoard | Sun* Kudos - Live board | composite | 10 | 4 |
 
 ---
 
@@ -278,10 +279,68 @@ loading (`--` trước khi hydrate), running, empty (mốc thiếu, trống ho�
 
 ---
 
+## SCR006_SunKudosLiveBoard: Sun* Kudos - Live board
+
+**Type**: composite
+
+### Description
+
+Bảng kudos công khai `/sun-kudos` (MoMorph "Sun* Kudos - Live board", screenId MaZUn5xHXZ) của F006_KudosBoardBrowse: header cố định với "Sun* Kudos" đang chọn, banner "Hệ thống ghi nhận và cảm ơn", thanh gửi kudos và thanh "Tìm kiếm profile Sunner" (vẽ đúng Figma, chưa làm gì), khối Highlight (hai nút lọc Hashtag / Phòng ban, carousel tối đa 5 thẻ theo số tim, mũi tên và bộ đếm `n/tổng`), vùng Spotlight, cột All Kudos (mới nhất trước, tự nạp thêm 10 thẻ khi cuộn gần cuối) cạnh sidebar, footer, và thông báo nhỏ khi chép liên kết. Không cần đăng nhập; khách bấm avatar, tên hoặc chi tiết thì chuyển tới `/login`.
+
+Luồng dữ liệu và lời gọi dịch vụ (bản nháp trước khi có mã — tên handler là tên dự kiến, chưa có file:line):
+- Vỏ tĩnh bọc `<Suspense>`; nội dung đọc cookie ngôn ngữ, bộ lọc `hashtag` / `department` trên địa chỉ trang và người dùng hiện tại, rồi đọc Highlight (5 kudos nhiều tim nhất), trang đầu All Kudos, danh sách giá trị lọc, dữ liệu Spotlight và sidebar ngay trong Server Component.
+- Trang kế của All Kudos: `GET /api/kudos` (cursor + bộ lọc), dùng chung hàm áp bộ lọc với lần đọc đầu.
+- Thả tim / rút tim (vùng của F007_KudosHearts): Server Action `likeKudos` / `unlikeKudos` trên `/sun-kudos`.
+- `proxy.ts` (BL003_SessionRefreshProxy) khớp `/sun-kudos` như mọi page route: làm mới cookie phiên; khi site khoá người không phải admin bị chuyển 307 về `/countdown` (SCR005_CountdownPrelaunch).
+
+> Note: Loại composite do bước promote của F006–F009 ghi: vỏ màn hình thuộc F006_KudosBoardBrowse; vùng nút tim trên thẻ thuộc F007_KudosHearts, vùng Spotlight thuộc F008_KudosSpotlight, vùng sidebar thuộc F009_KudosPersonalSidebar. Chưa khai báo REG### cho ba vùng này (chưa có mã nguồn để dẫn file:line); muốn tách thì chạy `/tkm:rebuild-spec --artifact screen-list` sau khi code xong. Route ROUTE### và MODEL### của màn hình chưa cấp. Đặc tả chi tiết: `docs/screens/SCR006_SunKudosLiveBoard/spec.md`.
+
+### Components
+
+| Component | Type | Purpose |
+|-----------|------|---------|
+| Header và footer dùng lại (`currentPage="kudos"`) | navigation | Logo, ba liên kết, bộ chọn ngôn ngữ, vùng tài khoản; "Sun* Kudos" đang chọn |
+| Banner key visual | image, heading | Ảnh nền, tiêu đề "Hệ thống ghi nhận và cảm ơn", logo "SAA 2025 KUDOS"; chỉ để xem |
+| Thanh gửi kudos và thanh tìm hồ sơ | button | Vẽ đúng Figma, bấm chưa làm gì |
+| Nút lọc Hashtag và Phòng ban | select | Đặt / bỏ bộ lọc trên địa chỉ trang; đổi lọc thì Highlight về thẻ 1 và All Kudos nạp lại |
+| Carousel Highlight | list | Tối đa 5 thẻ, số tim giảm dần; thẻ hai bên mờ, không bấm được; mũi tên và bộ đếm `n/tổng` |
+| Thẻ kudos (Highlight và All Kudos) | card | Người gửi → người nhận (avatar, tên, phòng ban, 0–3 sao, nhãn Hero), giờ gửi `HH:mm - MM/DD/YYYY`, nhãn tiêu đề, nội dung, hashtag, ảnh (All Kudos), vùng nút tim, "Copy Link", "Xem chi tiết" (Highlight) |
+| Danh sách All Kudos | list | Mới nhất trước, nạp thêm 10 thẻ khi cuộn gần cuối; dòng lỗi kèm "Thử lại" |
+| Vùng Spotlight | region | Bảng tên người nhận (F008_KudosSpotlight) |
+| Sidebar | region | Thống kê cá nhân và 10 Sunner nhận quà mới nhất (F009_KudosPersonalSidebar) |
+| Thông báo chép liên kết | message | "Link copied — ready to share!" hoặc dòng lỗi, tự tắt sau 3 giây |
+
+### Data Displayed
+
+- Data Entity 1: kudos (tên tạm; MODEL### chưa cấp) — nội dung, tiêu đề, giờ gửi, số tim `like_count`
+- Data Entity 2: sunners (tên tạm; MODEL### chưa cấp) — người gửi, người nhận, phòng ban, số kudos nhận (hạng Hero)
+- Data Entity 3: hashtags, kudos_hashtags, departments, kudos_images (tên tạm; MODEL### chưa cấp)
+- Data Entity 4: Cookie `NEXT_LOCALE` (ngôn ngữ hiện tại) và bộ lọc `hashtag` / `department` trên địa chỉ trang
+
+### Routes/URLs
+
+- `/sun-kudos` (GET; ROUTE### chưa cấp), kèm searchParams `hashtag`, `department`
+- `GET /api/kudos` (trang kế của All Kudos; ROUTE### chưa cấp)
+- Server Action `likeKudos` / `unlikeKudos` trên `/sun-kudos` (F007_KudosHearts)
+- Chỉ liên kết, chưa xây: `/sun-kudos/[id]`, `/profiles/[id]`
+
+### Related Screens
+
+- SCR003_Homepage: Homepage (navigation — liên kết "Sun* Kudos" ở header, footer và khối Kudos)
+- SCR004_AwardsInformation: Awards Information (navigation — liên kết "Sun* Kudos" ở header, footer và nút "Chi tiết" của khối Sun* Kudos)
+- SCR001_Login: Login (navigation — khách bấm avatar, tên hoặc chi tiết)
+- SCR005_CountdownPrelaunch: Countdown Prelaunch (navigation — khi site khoá, người không phải admin bị chuyển về đây)
+
+### States
+
+loading (Highlight, nút lọc, All Kudos lần đầu, nạp thêm), filtering, empty ("Hiện tại chưa có Kudos nào." cho Highlight và All Kudos), error (đọc lần đầu: như empty ở phần lỗi; nạp thêm: dòng lỗi kèm "Thử lại"; chép liên kết), success (chép liên kết), end of list
+
+---
+
 ## Summary
 
-- **Total Screens**: 4 (đang hoạt động: SCR001_Login, SCR003_Homepage, SCR004_AwardsInformation, SCR005_CountdownPrelaunch (F005, chưa có mã)); SCR002_Todo đã gỡ, không tính
-- **Composite Screens**: 2 (SCR003_Homepage, 2 vùng REG; SCR004_AwardsInformation, chưa khai báo REG)
+- **Total Screens**: 5 (đang hoạt động: SCR001_Login, SCR003_Homepage, SCR004_AwardsInformation, SCR005_CountdownPrelaunch (F005, chưa có mã), SCR006_SunKudosLiveBoard (F006–F009, bản nháp trước khi có mã)); SCR002_Todo đã gỡ, không tính
+- **Composite Screens**: 3 (SCR003_Homepage, 2 vùng REG; SCR004_AwardsInformation, chưa khai báo REG; SCR006_SunKudosLiveBoard, chưa khai báo REG)
 - **Atomic Screens**: 2 (SCR001_Login, SCR005_CountdownPrelaunch)
 
 ---
@@ -289,7 +348,7 @@ loading (`--` trước khi hydrate), running, empty (mốc thiếu, trống ho�
 ## Cross-Reference Validation
 
 - [x] All SCR### codes are unique
-- [x] All SCR### codes are referenced in ScreenFlow.md
+- [ ] All SCR### codes are referenced in ScreenFlow.md  <!-- SCR006_SunKudosLiveBoard chưa có trong screen-flow.md (promote 2026-10-12); đồng bộ ở bước giao (Stage 6) -->
 - [x] All related screen references are valid
 - [x] All route URLs are properly formatted  <!-- route-view only; dfm-form: replace with "All invocation edges cite file:line" -->
 - [x] All SCR### codes are referenced in FeatureList.md

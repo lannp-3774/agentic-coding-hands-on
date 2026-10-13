@@ -1,7 +1,7 @@
 ---
 status: implemented
 authored_by: takumi
-created: 2026-10-09
+created: 2026-10-12
 lang: vi
 ---
 
@@ -9,7 +9,7 @@ lang: vi
 
 **Project**: my-app (SAA 2025 — Sun* Annual Awards 2025)
 **Generated**: 2026-10-08
-**Analysis Scope**: Đăng nhập Google (`/login`, `/auth/callback`), trang chủ công khai (`/`), trang Awards Information công khai (`/awards-information`), menu tài khoản và vai trò admin (`profiles.role`), quyền truy cập dữ liệu của các bảng `awards`, `award_prizes`, `profiles` và `site_settings`, cổng prelaunch toàn site và trang đếm ngược `/countdown`. Các route `/profile`, `/admin`, `/sun-kudos`, `/standards` có liên kết nhưng chưa có page trong code.
+**Analysis Scope**: Đăng nhập Google (`/login`, `/auth/callback`), trang chủ công khai (`/`), trang Awards Information công khai (`/awards-information`), menu tài khoản và vai trò admin (`profiles.role`), quyền truy cập dữ liệu của các bảng `awards`, `award_prizes`, `profiles` và `site_settings`, cổng prelaunch toàn site và trang đếm ngược `/countdown`. Bản nháp này thêm Sun* Kudos live board (`/sun-kudos`, `GET /api/kudos`, thả/rút tim, chín bảng Kudos, trigger liên kết Sunner theo email, phân biệt khách và người đăng nhập trên giao diện); mã `PERM###` của phần Kudos là `TBD (draft)`, ma trận generated do Core pass cấp lúc reconcile. Các route `/profile`, `/admin`, `/standards`, `/sun-kudos/[id]`, `/profiles/[id]` có liên kết nhưng chưa có page trong code.
 
 > **Curated, plain-language view.** Bản mô tả dễ đọc cho PM, BA và khách hàng, dẫn xuất từ ma trận thô tại [permissions-matrix.md](../generated/permissions-matrix.md). Chi tiết từng điểm kiểm soát và vị trí trong code nằm ở đó, không lặp lại ở đây.
 
@@ -17,13 +17,14 @@ lang: vi
 
 **System Type**: `rbac`
 
-RBAC đơn giản: mỗi người dùng có đúng một vai trò, lưu ở cột `profiles.role` (`user` hoặc `admin`). Không có quyền chi tiết theo từng hành động, không có kiểm tra quyền sở hữu giữa người dùng với nhau. Ở tầng dữ liệu, Supabase RLS dùng vai trò Postgres (`anon`, `authenticated`, `service_role`) để giới hạn đọc ghi bảng. Cổng prelaunch là lần đầu vai trò `admin` quyết định một việc phía server (ai được vượt cổng); đây là cổng ra mắt, không phải kiểm soát quyền theo trang.
+RBAC đơn giản: mỗi người dùng có đúng một vai trò, lưu ở cột `profiles.role` (`user` hoặc `admin`). Không có quyền chi tiết theo từng hành động. Từ Kudos *(planned)* có thêm một quy tắc theo quyền sở hữu: lượt thích (`kudos_likes`) chỉ ghi và đọc được bởi chính người thích; ngoài ra giữa người dùng với nhau vẫn không có ranh giới dữ liệu riêng. Ở tầng dữ liệu, Supabase RLS dùng vai trò Postgres (`anon`, `authenticated`, `service_role`) để giới hạn đọc ghi bảng. Cổng prelaunch là lần đầu vai trò `admin` quyết định một việc phía server (ai được vượt cổng); đây là cổng ra mắt, không phải kiểm soát quyền theo trang.
 
 **Identified Roles**:
 - Anonymous visitor (khách chưa đăng nhập)
 - Authenticated user (đã đăng nhập bằng tài khoản Google bất kỳ, `profiles.role = 'user'`)
 - Authenticated admin (đã đăng nhập, `profiles.role = 'admin'`)
 - `service_role` (khoá phía vận hành: seed, trigger, đổi vai trò, đổi mốc prelaunch; không phải người dùng cuối)
+- Sunner *(planned)*: hồ sơ người trong dữ liệu Kudos (bảng `sunners`), không phải vai trò. Là danh tính dữ liệu, gắn với tài khoản đăng nhập qua `user_id` do trigger khớp email; một Sunner có thể chưa có tài khoản.
 
 ## Curated View
 
@@ -31,32 +32,40 @@ RBAC đơn giản: mỗi người dùng có đúng một vai trò, lưu ở cộ
 - **Anonymous visitor** (khi site đã mở) xem được trang chủ `/` (header hiện liên kết "Login", lưới giải thưởng hiển thị bình thường), trang Awards Information `/awards-information` (menu sáu giải, mô tả, số lượng và giá trị của từng giải, khối Sun* Kudos) và `/login`, bắt đầu được luồng đăng nhập Google và đổi ngôn ngữ vi/en. Không có chuông thông báo, không có menu tài khoản. Khi site còn khoá, khách chỉ thấy `/countdown` và `/login`.
 - **Authenticated user** xem được trang chủ và trang Awards Information (khi site đã mở) với header là chuông thông báo và menu tài khoản (Profile, Đăng xuất); nội dung chung giống khách. Mở `/login` sẽ bị chuyển sang `/`. Đăng xuất chỉ kết thúc phiên ở trình duyệt đang dùng. Khi site còn khoá, user bị đối xử như khách: về `/countdown`.
 - **Authenticated admin** làm được mọi việc của user, cộng thêm mục Admin Dashboard trong menu tài khoản, và duyệt toàn site khi còn khoá. Mục menu chỉ là giao diện, không phải kiểm soát truy cập.
+- **Sun* Kudos** `/sun-kudos` *(planned, khi site đã mở)*: khách xem toàn bộ nội dung công khai (Highlight, All Kudos, Spotlight, bộ lọc, danh sách 10 Sunner nhận quà mới nhất). Thả tim, mở hồ sơ người dùng, mở chi tiết kudos đều đưa khách tới `/login` (đăng nhập xong về trang chủ, không quay lại trang vừa bấm); khối thống kê cá nhân hiện lời nhắc đăng nhập (dòng chữ và nút "Đăng nhập") thay cho số liệu. Người đăng nhập thả/rút tim ở kudos của người khác và thấy thống kê của chính mình. Admin không có thêm quyền trên trang này.
+- **Tim** *(planned)*: mỗi người một lượt thích mỗi kudos; người gửi không tự thích kudos của mình (nút vô hiệu, DB cũng từ chối). Mỗi lượt thích cộng cho người GỬI kudos +1 tim (+2 vào ngày đặc biệt do vận hành cấu hình); rút thích thu hồi đúng số đã cộng. Không ai ghi trực tiếp được bộ đếm tim hay số kudos nhận.
+- Dữ liệu bảng kudos (Sunner, phòng ban, hashtag, kudos, ảnh, ngày đặc biệt) đọc công khai, chỉ vận hành ghi. Hộp quà (`secret_boxes`): hộp đã mở đọc công khai (cho danh sách 10 Sunner nhận quà), hộp chưa mở chỉ chủ hộp đọc; chỉ vận hành ghi. Ai thích kudos nào không lộ cho người khác (mỗi người chỉ đọc lượt thích của mình); email và mã tài khoản (`user_id`) của Sunner không đọc được qua API công khai.
 - Mọi tài khoản Google đều được phép đăng nhập: không giới hạn theo tên miền email, không có danh sách cho phép. Tài khoản mới tự được tạo ở lần đăng nhập đầu và mặc định là `user`.
 - Đổi ngôn ngữ (vi/en) dùng được ở mọi trạng thái; lựa chọn lưu trong cookie `NEXT_LOCALE`, không liên quan đến quyền.
 - Ai cũng đọc được danh sách giải thưởng và chi tiết từng giải (mô tả dài, số lượng, các mức giá trị) vì đây là dữ liệu công khai, nhưng không ai ngoài vận hành ghi được. Mốc prelaunch (`site_settings`) cũng đọc công khai và chỉ vận hành ghi. Mỗi người đăng nhập chỉ đọc được dòng hồ sơ (`profiles`) của chính mình và không tự đổi được vai trò.
-- Chưa có giao diện cấp hay thu hồi vai trò admin, cũng chưa có giao diện đổi mốc prelaunch; chỉ đổi được bằng khoá `service_role` hoặc truy cập trực tiếp CSDL.
+- Chưa có giao diện cấp hay thu hồi vai trò admin, đổi mốc prelaunch hay cấu hình ngày đặc biệt của tim; chỉ đổi được bằng khoá `service_role` hoặc truy cập trực tiếp CSDL.
 
 ## Access Boundaries
 
-Ranh giới gồm ba lớp: mốc prelaunch đã qua hay chưa (cổng), có phiên đăng nhập hợp lệ hay không, và `profiles.role` có là `admin` hay không. Giữa các người dùng đã đăng nhập không có ranh giới dữ liệu riêng trong phạm vi hiện tại, ngoài việc mỗi người chỉ đọc được hồ sơ của mình.
+Ranh giới gồm ba lớp: mốc prelaunch đã qua hay chưa (cổng), có phiên đăng nhập hợp lệ hay không, và `profiles.role` có là `admin` hay không. Giữa các người dùng đã đăng nhập không có ranh giới dữ liệu riêng trong phạm vi hiện tại, ngoài việc mỗi người chỉ đọc được hồ sơ (`profiles`) và lượt thích (`kudos_likes`, *planned*) của mình.
 
 Theo từng đường dẫn (cổng chỉ áp cho `GET`/`HEAD`; "khi khoá" = mốc prelaunch còn ở tương lai):
 
 - `/`: mở cho mọi người khi site đã mở. Khách không bao giờ bị chuyển hướng; header khác nhau theo trạng thái đăng nhập. Khi khoá: khách và user về `/countdown`, admin vào được. Proxy vẫn chạy ở đây để làm mới phiên.
 - `/awards-information`: mở cho mọi người khi site đã mở, giống trang chủ. Khách và người đã đăng nhập thấy cùng nội dung. Khi khoá: như `/`. Phần `#<mã giải>` trên địa chỉ chỉ chạy ở trình duyệt, không liên quan đến quyền; neo không khớp giải nào bị bỏ qua, không lỗi.
+- `/sun-kudos` *(planned, F006)*: mở cho mọi người khi site đã mở; xem không cần đăng nhập và khách không bị chuyển hướng khi chỉ xem. Khi khoá: như `/`. Bộ lọc `hashtag`/`department` trên URL chỉ là giá trị lọc, không liên quan quyền; giá trị lạ không gây lỗi (cách xử lý `TBD (draft)`). Với khách, avatar, tên, "Xem chi tiết" và nội dung kudos dẫn tới `/login` thay vì `/profiles/[id]` hoặc `/sun-kudos/[id]`; với người đăng nhập dẫn tới đích thật (chưa xây, 404). Khách được chuyển bằng cách chọn `href` theo phiên ở server (`/login` thay cho đích thật; đăng nhập xong về `/`, không có đích quay lại); đây là UX, trang đích khi xây phải tự kiểm lại.
+- `/api/kudos` *(planned, F006)*: `GET` công khai, không cần đăng nhập; trả trang kế của All Kudos với cùng dữ liệu công khai như trang; thông tin "tim của tôi" chỉ có khi có phiên (khách nhận rỗng). Đi qua proxy nên phiên được làm mới và cổng prelaunch áp dụng (`GET`/`HEAD`): khi khoá, khách và user nhận 307 `/countdown`, admin qua. Không có endpoint ghi. `cursor`, `hashtag`, `department` được kiểm tra đầu vào, kích thước trang do server cố định.
+- `/sun-kudos/[id]`, `/profiles/[id]` *(planned, chưa xây)*: được liên kết từ bảng kudos, trả 404 cho mọi vai trò cho tới khi có feature; khi xây phải tự kiểm quyền ở server.
 - `/countdown`: trang đếm ngược, mở cho mọi vai trò kể cả khách, không cần đăng nhập, chỉ khi đang khoá. Từ mốc trở đi (hoặc mốc thiếu, `NULL`, hỏng, không đọc được) bị chuyển sang `/` (307) bằng `GET`/`HEAD`.
 - `/login`: luôn mở cho khách, kể cả khi khoá. Người đã đăng nhập mở bằng `GET` hoặc `HEAD` sẽ bị chuyển sang `/` (307) như trước; khi khoá, user thường tiếp tục bị cổng chuyển sang `/countdown` (hai lần chuyển), admin ở lại `/`. Người đã đăng nhập bấm đăng nhập lần nữa bằng `POST` trực tiếp thì không bị từ chối.
 - `/auth/callback`: luôn công khai vì đây là nơi phiên được tạo ra, kể cả khi khoá; matcher của proxy có khớp đường này nhưng `updateSession` trả tiếp ngay, nên proxy không làm gì (không làm mới phiên, không đọc mốc, không cổng; `lib/supabase/proxy-session.ts:45`). Chỉ một `code` hợp lệ từ Supabase mới tạo được phiên; ngược lại chuyển về `/login?error=cancelled` hoặc `/login?error=failed`. Đích khi thành công luôn là `/` (khi khoá, user thường tiếp tục về `/countdown`, admin vào trang chủ), không đọc từ tham số URL nên không có open redirect.
-- Mọi đường dẫn page khác (kể cả `/profile`, `/admin`, `/sun-kudos`, `/standards` chưa có page): khi khoá, khách và user về `/countdown` thay vì 404, admin thấy 404 như hiện nay; khi đã mở, hành vi như bên dưới. Tệp tĩnh dưới `public/` và `/_next/*` không đi qua cổng nên luôn tải được.
+- Mọi đường dẫn page khác (kể cả `/profile`, `/admin`, `/standards` chưa có page): khi khoá, khách và user về `/countdown` thay vì 404, admin thấy 404 như hiện nay; khi đã mở, hành vi như bên dưới. Tệp tĩnh dưới `public/` và `/_next/*` không đi qua cổng nên luôn tải được.
 - `/todo`: đã gỡ ngày 2026-10-08 (màn hình SCR002_Todo chỉ còn là bản ghi đã gỡ), truy cập trả 404 (khi khoá: như mọi đường dẫn page khác).
-- `/profile`, `/sun-kudos`, `/standards`: có liên kết trong giao diện nhưng chưa có page, trả 404 cho mọi vai trò khi site đã mở; chưa có quy tắc quyền để ghi.
+- `/profile`, `/standards`: có liên kết trong giao diện nhưng chưa có page, trả 404 cho mọi vai trò khi site đã mở; chưa có quy tắc quyền để ghi.
 - `/admin`: có liên kết trong menu của admin nhưng chưa có page, trả 404 cho mọi vai trò khi site đã mở, và **chưa có kiểm tra phía server**. Khi xây trang này phải tự kiểm tra vai trò ở server (qua `getCurrentUser()`), vì ẩn mục menu, chặn ở proxy hay vượt cổng prelaunch đều không đủ: cổng cho admin qua nhưng cũng cho mọi người qua sau mốc.
 
 Theo hành động (Server Action):
 
 - Đăng nhập Google: công khai, không cần phiên. Action chỉ dựng URL quay về trên đúng host mà người dùng đang duyệt; không xác định được host hợp lệ thì báo lỗi thay vì đoán. Supabase còn đối chiếu URL quay về với danh sách cho phép.
 - Đăng xuất: ai gọi cũng được, vì chỉ tác động lên cookie phiên của chính người gọi. Không có phiên thì không làm gì. Luôn kết thúc ở `/login`; lỗi chỉ ghi log.
-- Đổi ngôn ngữ: ai cũng gọi được, nhưng chỉ nhận `vi` hoặc `en`; giá trị khác bị bỏ qua. Dùng được ở trang chủ, trang Awards Information và màn hình Login với cùng một action.
+- Đổi ngôn ngữ: ai cũng gọi được, nhưng chỉ nhận `vi` hoặc `en`; giá trị khác bị bỏ qua. Dùng được ở trang chủ, trang Awards Information, màn hình Login và (từ Kudos, *planned*) trang `/sun-kudos` với cùng một action.
+- Thả tim / rút tim (`likeKudos(id)`, `unlikeKudos(id)`, *planned*, `PERM### TBD (draft)`): cần phiên; action kiểm lại bằng `getCurrentUser()`, không tin việc nút bị ẩn hay vô hiệu. Không có phiên → trả `unauthenticated` và client đưa tới `/login`, không ghi gì. Có phiên → ghi dưới RLS bằng chính phiên của người dùng, không dùng `service_role`. `id` kiểm tra kiểu. Người gửi tự thích → DB từ chối, action trả kết quả có kiểu (không lộ lỗi Postgres thô). Lặp lại không đổi kết quả (thích lần hai, hoặc rút khi chưa thích, đều là no-op).
+- Copy Link chỉ chạy ở trình duyệt, không đi qua server, không cần quyền. Tìm kiếm Spotlight (≤ 100 ký tự) và nút "Mở Secret Box" cũng không có truy vấn hay handler phía server; "Mở Secret Box" và thanh gửi kudos A.1 chưa làm gì.
 - Server Action là `POST` tới chính route nên không bị cổng prelaunch chuyển hướng; cổng không phải chốt chặn của bất kỳ action nào.
 
 Theo dữ liệu (Supabase RLS):
@@ -65,12 +74,17 @@ Theo dữ liệu (Supabase RLS):
 - Bảng `award_prizes` (các mức giá trị của từng giải): cùng mẫu với `awards` — khách và người đã đăng nhập chỉ đọc được; ghi chỉ qua `service_role`.
 - Bảng `site_settings` (một dòng duy nhất nhờ khoá `singleton boolean` kèm `check (singleton)`; cột `prelaunch_ends_at`, `NULL` = cổng tắt): cùng mẫu với `awards` — khách và người đã đăng nhập chỉ đọc được; ghi chỉ qua `service_role` (`supabase/migrations/20261009083754_create_site_settings.sql:31-43`). Mọi cột của bảng đọc công khai nên không để giá trị nhạy cảm ở đây.
 - Bảng `profiles`: khách không có quyền; người đã đăng nhập chỉ đọc dòng của mình; không ai ngoài `service_role` ghi được. Vai trò tuyệt đối không suy ra từ `user_metadata` (người dùng tự ghi được).
+- Nhóm bảng Kudos công khai (`departments`, `hashtags`, `kudos`, `kudos_hashtags`, `kudos_images`, `special_days`; *planned*): khách và người đăng nhập chỉ đọc; ghi chỉ qua `service_role`. `kudos` có thêm cột chữ tự do `title` (nhãn tiêu đề), đọc công khai như các cột khác. Phạm vi này chưa có đường gửi kudos từ client nên không có policy `INSERT` cho người dùng trên `kudos`.
+- Bảng `secret_boxes` *(planned)*: RLS với hai policy `select`: hộp đã mở (`opened_at is not null`) đọc công khai cho `anon`, `authenticated`; hộp chưa mở chỉ chủ hộp đọc (`authenticated`, chủ hộp xác định qua hàm `get_my_sunner()`); không có quyền ghi cho client, ghi chỉ `service_role`.
+- Bảng `sunners` *(planned)*: đọc công khai theo cấp quyền cột, **không gồm `email` và `user_id`** (hai cột chỉ để liên kết, không cấp `select`); ghi chỉ `service_role`. Hàng Sunner của chính người đang đăng nhập chỉ lấy được qua hàm `get_my_sunner()` (`security definer`, `search_path = ''`, chỉ cấp `execute` cho `authenticated`) trả đúng một hàng của `auth.uid()` và không có `email`, `user_id`. `kudos_received_count` và `hearts_total` đọc công khai nhưng chỉ đổi bằng trigger: không `UPDATE` cho `anon`/`authenticated`.
+- Bảng `kudos_likes` *(planned)*: `INSERT` và `DELETE` chỉ cho `authenticated` khi `user_id = (select auth.uid())`; `SELECT` chỉ dòng của mình; không `UPDATE`. Khoá chính `(kudos_id, user_id)` giữ "một lượt thích mỗi người mỗi kudos"; `weight` do trigger quyết, giá trị client gửi bị bỏ qua. Số tim hiển thị lấy từ cột đếm công khai của `kudos`, không từ `kudos_likes`.
+- Hàm trigger của Kudos *(planned)* đều `security definer`, `search_path = ''`, không cấp `EXECUTE` cho `public`, `anon`, `authenticated` nên không gọi được qua RPC; ngoại lệ có chủ ý là `get_my_sunner()` ở trên (cấp cho `authenticated`, chỉ trả hàng của người gọi).
 
 Hai điểm kiểm soát phía server và một điểm chỉ là giao diện:
 
 - Proxy (`proxy.ts`) làm mới phiên bằng cách xác thực chữ ký JWT (`getClaims()`) ở mọi page route: matcher là literal tĩnh `"/((?!_next/|__nextjs|.*\\..*).*)"` (`proxy.ts:22-24`; trước đây chỉ `/`, `/login`, `/awards-information`), không khớp `/_next/*`, `__nextjs*` và mọi đường có dấu chấm (tệp tĩnh); `/auth/callback` khớp nhưng được trả tiếp ngay. Proxy còn áp cổng prelaunch (`lib/supabase/proxy-session.ts:143-160`, `lib/prelaunch/prelaunch-gate-decision.ts:40-56`): chỉ `GET`/`HEAD` (`POST` của Server Action không bao giờ bị cổng), miễn `/login` và `/auth/callback`; đọc mốc bằng khoá publishable (client không cookie, hạn chờ 2 giây, không retry); chỉ khi đang khoá và có phiên đã xác minh mới đọc `profiles.role` bằng phiên của người dùng (hạn chờ 2 giây, không retry) để biết có phải admin — admin là đúng chữ `"admin"` qua hàm `toUserRole` (`lib/supabase/user-role.ts:13-15`); khách không có phiên bị chuyển ngay, không tra `profiles`. Đây không phải rào chắn bảo vệ route: mọi trang và action sau này phải tự kiểm tra lại, không dựa riêng vào proxy.
-- `getCurrentUser()` là nguồn xác định người dùng và vai trò phía server cho Server Component. Nó đọc `profiles.role` dưới RLS bằng phiên của chính người dùng nên đổi vai trò có hiệu lực ngay ở request kế tiếp. Hiện chỉ vùng tài khoản trên header dùng nó; chưa trang hay action nào chặn truy cập dựa trên vai trò ngoài cổng prelaunch của proxy, vốn tự truy vấn vai trò (không gọi được `getCurrentUser()`) nhưng dùng chung hàm thuần `toUserRole` với `getCurrentUser()` để áp đúng một quy tắc: chỉ đúng chữ `admin` mới là admin (`lib/supabase/current-user.ts:78`).
-- Mục "Admin Dashboard" hiện hay ẩn là UX, không phải phân quyền. Danh sách mục menu được lọc ở server nên vai trò không xuống trình duyệt. Trạng thái "đang chọn" của các liên kết điều hướng trong header (đổi theo trang hiện tại) cũng chỉ là giao diện.
+- `getCurrentUser()` là nguồn xác định người dùng và vai trò phía server cho Server Component. Nó đọc `profiles.role` dưới RLS bằng phiên của chính người dùng nên đổi vai trò có hiệu lực ngay ở request kế tiếp. Hiện vùng tài khoản trên header dùng nó, và Kudos *(planned)* dùng nó (trang, sidebar F009, Server Action like/unlike) chỉ để biết có phiên hay không, không dựa vào vai trò; chưa trang hay action nào chặn truy cập dựa trên vai trò ngoài cổng prelaunch của proxy, vốn tự truy vấn vai trò (không gọi được `getCurrentUser()`) nhưng dùng chung hàm thuần `toUserRole` với `getCurrentUser()` để áp đúng một quy tắc: chỉ đúng chữ `admin` mới là admin (`lib/supabase/current-user.ts:78`).
+- Mục "Admin Dashboard" hiện hay ẩn là UX, không phải phân quyền. Danh sách mục menu được lọc ở server nên vai trò không xuống trình duyệt. Trạng thái "đang chọn" của các liên kết điều hướng trong header (đổi theo trang hiện tại) cũng chỉ là giao diện. Tương tự trên `/sun-kudos` *(planned)*: nút tim vô hiệu cho người gửi, lời nhắc đăng nhập thay thống kê cá nhân cho khách và việc khách bấm avatar/tên/chi tiết đi `/login` đều là UX; ràng buộc thật nằm ở Server Action và RLS/trigger.
 
 Quy tắc bắt buộc: phía server không bao giờ tin `getSession()`; chỉ dùng `getClaims()` (hoặc `getUser()`) để biết người dùng là ai.
 
@@ -88,4 +102,10 @@ Quy tắc bắt buộc: phía server không bao giờ tin `getSession()`; chỉ 
 
 > Note: cấu hình OAuth consent screen (chế độ Testing/Production, danh sách test user) nằm ở Google Cloud Console, ngoài repo — không kiểm chứng được từ code.
 - **Chuông thông báo và nút widget nổi**: chỉ là giao diện, chưa có handler, quyền hay dữ liệu đi kèm.
+- **Fail closed (Kudos)** *(planned)*: không xác định được người dùng ở Server Action like/unlike → coi là khách (`unauthenticated`), không ghi. Tài khoản đăng nhập chưa có Sunner (trigger liên kết không chạy hoặc lỗi) không thả tim được: DB từ chối, nút và số tim trở về như trước và hiện thông báo lỗi ngắn; có ca kiểm thử.
+- **Liên kết Sunner theo email** *(planned)*: trigger `after insert on auth.users` khớp `lower(email)` của tài khoản mới với Sunner seed chưa có `user_id`; không khớp thì tạo Sunner mới. Rủi ro: một tài khoản đăng ký với email chưa xác minh có thể nhận danh tính Sunner seed (thống kê và quyền thả tim như Sunner đó). Hướng thiết kế: chỉ liên kết khi email đã được nhà cung cấp xác minh (đăng nhập Google; đăng ký email/mật khẩu chỉ bật ở local) — cách kiểm tại thời điểm trigger chạy `TBD (draft)`, chốt ở technical-spec F006. Tên/ảnh chỉ sao chép một lần lúc liên kết từ `user_metadata` (người dùng tự ghi được), chỉ nhận ảnh `https://`; `user_metadata` không bao giờ quyết định vai trò hay việc liên kết. Trigger giữ tối giản vì lỗi ở đây chặn đăng ký.
+- **Trọng số tim và ngày đặc biệt** *(planned)*: ngày tính theo Asia/Ho_Chi_Minh tại lúc chèn lượt thích; trọng số lưu cùng dòng; rút thích hoàn đúng số đã lưu kể cả khi ngày đặc biệt đã qua. Chưa có giao diện cấu hình; đổi `special_days` chỉ bằng `service_role`.
+- **Xoá kudos** *(ngoài phạm vi)*: nếu `service_role` xoá trực tiếp bằng SQL, lượt thích bị cascade và tổng tim của người gửi giảm đúng trọng số đã lưu của các lượt thích đó (đã chốt là đúng ý).
+- **`secret_boxes` đọc công khai một phần** *(planned, đã chốt)*: D.3 cần đọc công khai nên hộp đã mở (kèm chủ hộp và tên quà) đọc được qua API công khai; hộp chưa mở chỉ chủ hộp đọc, nên không ai suy ra được số hộp chưa mở của người khác.
+- **Cổng prelaunch trên Kudos** *(planned)*: `/sun-kudos` và `GET /api/kudos` bị cổng như mọi `GET`; Server Action like/unlike (`POST`) không bị cổng nên tự kiểm tra phiên.
 - **Không có** feature flag, thử nghiệm A/B hay quy tắc quyền theo ngôn ngữ. Cấu hình `SAA_COUNTDOWN_TARGET` (mốc đếm ngược của trang chủ) chỉ ảnh hưởng nội dung hiển thị, không ảnh hưởng quyền. Mốc prelaunch (`site_settings.prelaunch_ends_at`) thì khác: nó quyết định site có bị khoá hay không, nhưng cũng là dữ liệu cấu hình chứ không phải quyền theo người dùng; hai mốc độc lập nhau. Chi tiết từng điểm kiểm soát xem [permissions-matrix.md](../generated/permissions-matrix.md).

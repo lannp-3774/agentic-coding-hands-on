@@ -85,6 +85,68 @@
         "bl": [],
         "perms": []
       }
+    },
+    {
+      "fcode": "F006",
+      "name": "Kudos Board Browse",
+      "slug": "F006_KudosBoardBrowse",
+      "priority": "P0",
+      "type": "ui",
+      "related": {
+        "screens": [
+          "SCR006_SunKudosLiveBoard"
+        ],
+        "user_stories": [],
+        "routes": [],
+        "models": [],
+        "bl": [],
+        "perms": []
+      }
+    },
+    {
+      "fcode": "F007",
+      "name": "Kudos Hearts",
+      "slug": "F007_KudosHearts",
+      "priority": "P1",
+      "type": "mixed",
+      "related": {
+        "screens": [],
+        "user_stories": [],
+        "routes": [],
+        "models": [],
+        "bl": [],
+        "perms": []
+      }
+    },
+    {
+      "fcode": "F008",
+      "name": "Kudos Spotlight",
+      "slug": "F008_KudosSpotlight",
+      "priority": "P2",
+      "type": "ui",
+      "related": {
+        "screens": [],
+        "user_stories": [],
+        "routes": [],
+        "models": [],
+        "bl": [],
+        "perms": []
+      }
+    },
+    {
+      "fcode": "F009",
+      "name": "Kudos Personal Sidebar",
+      "slug": "F009_KudosPersonalSidebar",
+      "priority": "P2",
+      "type": "ui",
+      "related": {
+        "screens": [],
+        "user_stories": [],
+        "routes": [],
+        "models": [],
+        "bl": [],
+        "perms": []
+      }
     }
   ]
 }

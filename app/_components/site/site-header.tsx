@@ -17,6 +17,7 @@ export function SiteHeader({
 }: SiteHeaderProps) {
   const aboutCurrent = currentPage === "about";
   const awardsCurrent = currentPage === "awards";
+  const kudosCurrent = currentPage === "kudos";
   return (
     // mm:2167:9091
     <header className="fixed inset-x-0 top-0 z-30 flex h-16 items-center justify-between bg-[#101417]/80 px-4 md:h-20 md:px-12 xl:px-36">
@@ -53,7 +54,11 @@ export function SiteHeader({
             {nav.awards}
           </Link>
           {/* mm:I2167:9091;186:1593 */}
-          <Link href="/sun-kudos" className={NAV_LINK}>
+          <Link
+            href="/sun-kudos"
+            aria-current={kudosCurrent ? "page" : undefined}
+            className={kudosCurrent ? `${NAV_LINK} ${NAV_LINK_SELECTED}` : NAV_LINK}
+          >
             {nav.kudos}
           </Link>
         </nav>

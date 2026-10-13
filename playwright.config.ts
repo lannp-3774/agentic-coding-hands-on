@@ -9,6 +9,7 @@ try {
 
 const baseURL = 'http://localhost:3000';
 const PRELAUNCH_GATE_SPECS = /prelaunch-gate-.*\.spec\.ts$/;
+const KUDOS_SERIAL_SPECS = /sun-kudos-serial-.*\.spec\.ts$/;
 
 export default defineConfig({
   testDir: './e2e',
@@ -24,12 +25,20 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-      testIgnore: PRELAUNCH_GATE_SPECS,
+      testIgnore: [PRELAUNCH_GATE_SPECS, KUDOS_SERIAL_SPECS],
     },
     {
       name: 'prelaunch-gate',
       testMatch: PRELAUNCH_GATE_SPECS,
       dependencies: ['chromium'],
+      workers: 1,
+      fullyParallel: false,
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'sun-kudos-serial',
+      testMatch: KUDOS_SERIAL_SPECS,
+      dependencies: ['prelaunch-gate'],
       workers: 1,
       fullyParallel: false,
       use: { ...devices['Desktop Chrome'] },

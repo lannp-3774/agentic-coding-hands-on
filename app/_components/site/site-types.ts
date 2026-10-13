@@ -13,7 +13,7 @@ export type SiteNavCopy = {
 };
 
 // Which nav link is the current page. Optional; the header defaults to "about", the footer to none.
-export type SitePage = "about" | "awards";
+export type SitePage = "about" | "awards" | "kudos";
 
 export type SiteHeaderProps = {
   nav: Pick<SiteNavCopy, "about" | "awards" | "kudos">;

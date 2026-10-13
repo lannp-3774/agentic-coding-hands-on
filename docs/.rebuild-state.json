@@ -13,7 +13,7 @@
   },
   "fcode_index_sha": "8e4b4014a79014e88b7a600b902c3639b09d9e091fc5624b0dde91737a582a06",
   "last_api_contracts_run_sha": "",
-  "last_feature_spec_run_sha": "cf818bff4284e41ddb5a873e9eeb5246d404b5ba",
+  "last_feature_spec_run_sha": "b9a8e8820240cd27838b85ecc3e55594e0b67803",
   "last_flows_run_sha": "",
   "last_glossary_run_sha": "",
   "last_rebuild_sha": "4c651f1a70c86ea76cf5657a8235dde3b9c81f18",
@@ -27,7 +27,8 @@
     "SCR002": "23ac84c178819ec59a31c96793adb5f8c32def0a23ebffda932bc840be8274d9",
     "SCR003": "5800083e812bad3bf56562909544f1587198e8127dc9993c119edf7686ca9cc9",
     "SCR004": "25a38d74310c938b411406c8d20a6994ee774e0e95ba99b6154fa7d54002c580",
-    "SCR005": "4a8be213657afdd88fc675cbba1c20793874261b13fcb455f5c46213a36bd482"
+    "SCR005": "a156cb1e0f5411958437784d2a10b54772e2328b1f733f6232424972e2025a8a",
+    "SCR006": "8d0ffebd376d2fe09b9e70a8a916326fc7ef59993696596d7551a09c624ba4b8"
   },
   "translations": {}
 }

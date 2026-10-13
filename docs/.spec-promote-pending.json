@@ -1,0 +1,41 @@
+{
+  "run_type": "system",
+  "plan_dir": "plans/261012-0856-sun-kudos-live-board",
+  "ts": "2026-10-12T03:59:51Z",
+  "features": [
+    {
+      "fcode": "F006",
+      "run_type": "new",
+      "slug": "F006_KudosBoardBrowse",
+      "from": "plans/261012-0856-sun-kudos-live-board/spec/kudos-board-browse/",
+      "screens": [
+        "SCR006_SunKudosLiveBoard"
+      ]
+    },
+    {
+      "fcode": "F007",
+      "run_type": "new",
+      "slug": "F007_KudosHearts",
+      "from": "plans/261012-0856-sun-kudos-live-board/spec/kudos-hearts/",
+      "screens": []
+    },
+    {
+      "fcode": "F008",
+      "run_type": "new",
+      "slug": "F008_KudosSpotlight",
+      "from": "plans/261012-0856-sun-kudos-live-board/spec/kudos-spotlight/",
+      "screens": []
+    },
+    {
+      "fcode": "F009",
+      "run_type": "new",
+      "slug": "F009_KudosPersonalSidebar",
+      "from": "plans/261012-0856-sun-kudos-live-board/spec/kudos-personal-sidebar/",
+      "screens": []
+    }
+  ],
+  "system_docs": [
+    "docs/system/architecture.md",
+    "docs/system/permissions.md"
+  ]
+}

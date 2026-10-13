@@ -21,7 +21,7 @@
 
 **Cross-reference**: See ScreenList Regions subsection for region definitions and the `REG###_NameSlug` registry.
 
-> Ghi chú mã chuẩn: năm mã F001_LoginWithGoogle, F002_HomepageSaa, F003_AccountMenuAdminRole, F004_AwardsInformation (thêm 2026-10-09), F005_CountdownPrelaunch (thêm 2026-10-09) là mã chuẩn (canonical) đã khoá, không đánh số lại, không thêm F### khác. Việc phân cụm bên dưới đối chiếu với `code-formats.md § Feature Clustering Rule` và cho kết quả trùng với các mã chuẩn (xem verdict từng tên ở `> Note:` trong mục Feature Details).
+> Ghi chú mã chuẩn: năm mã F001_LoginWithGoogle, F002_HomepageSaa, F003_AccountMenuAdminRole, F004_AwardsInformation (thêm 2026-10-09), F005_CountdownPrelaunch (thêm 2026-10-09), cùng F006_KudosBoardBrowse, F007_KudosHearts, F008_KudosSpotlight, F009_KudosPersonalSidebar (thêm 2026-10-12 khi promote bản nháp Sun* Kudos Live board) là mã chuẩn (canonical) đã khoá, không đánh số lại. Việc phân cụm bên dưới đối chiếu với `code-formats.md § Feature Clustering Rule` và cho kết quả trùng với các mã chuẩn (xem verdict từng tên ở `> Note:` trong mục Feature Details).
 
 ## Feature Hierarchy
 
@@ -40,6 +40,10 @@
 | F003_AccountMenuAdminRole | Account Menu & Admin Role | ui | TypeScript, SQL | my-app | P1 |
 | F004_AwardsInformation | Awards Information | ui | TypeScript, SQL | my-app | P1 |
 | F005_CountdownPrelaunch | Countdown Prelaunch | mixed | TypeScript, SQL | my-app | P1 |
+| F006_KudosBoardBrowse | Kudos Board Browse | ui | TypeScript, SQL | my-app | P0 |
+| F007_KudosHearts | Kudos Hearts | mixed | TypeScript, SQL | my-app | P1 |
+| F008_KudosSpotlight | Kudos Spotlight | ui | TypeScript | my-app | P2 |
+| F009_KudosPersonalSidebar | Kudos Personal Sidebar | ui | TypeScript, SQL | my-app | P2 |
 
 ## Feature Details
 
@@ -257,11 +261,168 @@
 
 ---
 
+### F006_KudosBoardBrowse: Kudos Board Browse
+
+**Type**: ui
+**Description**: Trang `/sun-kudos` cho khách và Sunner xem bảng kudos: banner, thanh gửi kudos (A.1), carousel Highlight top 5 theo số tim và dòng All Kudos mới nhất trước, cùng hai bộ lọc Hashtag/Department. Đầu vào: request GET `/sun-kudos` kèm searchParams `hashtag`, `department`, cookie ngôn ngữ, dữ liệu kudos/hashtag/phòng ban/Sunner được seed từ nội dung Figma; trang kế của All Kudos được lấy bằng GET `/api/kudos` (cursor + bộ lọc). Xử lý: Server Component đọc Highlight và trang đầu qua cùng một hàm áp bộ lọc; bộ lọc nằm trên URL, đổi bộ lọc thì carousel về thẻ 1 và danh sách cuộn vô hạn nạp lại; bấm hashtag trên thẻ thì đặt bộ lọc Hashtag; "Copy Link" chép URL tuyệt đối `/sun-kudos/[id]` rồi hiện toast; nhãn danh hiệu Hero và 0–3 sao theo số kudos nhận (0–9 New, 10–19 Rising, 20–49 Super, 50+ Legend); thời gian hiện `HH:mm - MM/DD/YYYY` theo Asia/Ho_Chi_Minh; header và footer đánh dấu "Sun* Kudos" là trang hiện tại. Đầu ra: bảng kudos đã lọc với trạng thái rỗng "Hiện tại chưa có Kudos nào."; liên kết tới `/sun-kudos/[id]` và `/profiles/[id]` (chưa xây, 404) — khách bấm vào avatar, tên hoặc chi tiết thì chuyển tới `/login`; thanh A.1 và nút "Mở Secret Box" hiển thị đúng Figma nhưng chưa làm gì.
+
+Quyền sở hữu: F006 sở hữu vỏ màn hình và nền dữ liệu người/kudos dùng chung (bảng Sunner liên kết với tài khoản đăng nhập, kudos, hashtag, phòng ban, ảnh kudos). Ô nút tim trên thẻ do F007 sở hữu; F006 chỉ chừa chỗ (slot) và khung chờ. Vùng Spotlight và vùng sidebar do F008, F009 sở hữu.
+
+**Workspace**: my-app
+**Languages**: TypeScript, SQL (migration tạo bảng, trigger đếm kudos nhận và liên kết người dùng, seed local)
+**Components**: TBD (draft)
+
+**Related Screens**:
+- SCR006_SunKudosLiveBoard: Sun* Kudos - Live board (composite; F006 sở hữu cả vỏ màn hình)
+
+**Related User Stories**:
+- TBD (draft): Sunner/khách duyệt kudos nổi bật (Highlight), lọc theo Hashtag/Department, cuộn danh sách All Kudos, chép liên kết
+
+**Related APIs/Routes**:
+- (GET) /sun-kudos — ROUTE### TBD (draft)
+- (GET) /api/kudos — ROUTE### TBD (draft)
+- Chỉ liên kết, chưa xây: /sun-kudos/[id], /profiles/[id]
+
+**Related Data Models**:
+- sunners (tên tạm; MODEL### TBD (draft))
+- kudos (tên tạm; MODEL### TBD (draft))
+- hashtags, kudos_hashtags (tên tạm; MODEL### TBD (draft))
+- departments (tên tạm; MODEL### TBD (draft))
+- kudos_images (tên tạm; MODEL### TBD (draft))
+
+**Related Background Logic**:
+- TBD (draft): trigger cập nhật số kudos nhận của Sunner khi thêm/xoá kudos
+- TBD (draft): trigger trên `auth.users` liên kết hoặc tạo Sunner khi có tài khoản mới
+
+**Related Permissions**:
+- TBD (draft): các bảng dữ liệu bảng kudos đọc công khai, ghi chỉ `service_role` (cột `email` và `user_id` của Sunner không lộ; hàng Sunner của chính người xem lấy qua hàm `get_my_sunner()`)
+- TBD (draft): khách bấm avatar, tên, chi tiết thì chuyển tới `/login`
+
+> Note: Verdict tên "Kudos Board Browse" — một kết quả: người xem tìm và đọc kudos họ quan tâm. Carousel Highlight và All Kudos dùng chung bộ lọc, cùng nguồn dữ liệu và cùng thẻ kudos nên tách ra thì không kiểm thử riêng được (chọn gộp). Copy Link và nhãn Hero là thuộc tính của thẻ nên ở lại đây.
+> Note: Các mốc cần xác nhận khi viết spec đã chốt trong clarifications.md: bộ lọc Department theo phòng ban người nhận; một người nhận mỗi kudos; hashtag là danh sách cố định (nhãn tiêu đề là cột chữ tự do `title`); thẻ hai bên của carousel không bấm được; nhãn Hero chỉ trên thẻ và khối người gửi/người nhận, không ở sidebar F009.
+> Note: Phải sửa e2e `awards-information-page.spec.ts` (hiện kỳ vọng `/sun-kudos` là 404), và các docs đang ghi "/sun-kudos chưa xây" (F002, F004, screen-flow, permissions-matrix) khi promote.
+
+---
+
+### F007_KudosHearts: Kudos Hearts
+
+**Type**: mixed
+**Description**: Cho Sunner đã đăng nhập thả tim hoặc rút tim ở kudos của người khác, và tính điểm tim cho NGƯỜI GỬI kudos. Đầu vào: thao tác bấm nút tim trên thẻ kudos (ở Highlight hoặc All Kudos), phiên đăng nhập, bảng `special_days` (seed, chưa có giao diện quản trị). Xử lý: Server Action `likeKudos(id)` / `unlikeKudos(id)` (biểu thị ý định, không phải nút bật/tắt) kiểm tra lại phiên phía máy chủ; khách bị đưa tới `/login`; DB giữ bất biến bằng khoá chính và trigger: một lượt thích mỗi người mỗi kudos, người gửi không tự thích kudos của mình, trọng số do DB quyết (+1, hoặc +2 vào ngày đặc biệt theo giờ Asia/Ho_Chi_Minh), số tim của kudos và tổng tim của người gửi cập nhật cùng giao dịch; bỏ thích thì thu hồi đúng trọng số đã lưu. Đầu ra: nút tim chuyển xám/đỏ và số tim ±1 theo lượt thích của người đang xem; nút của người gửi bị vô hiệu; điểm tim của người gửi đổi đúng trọng số.
+
+Quyền sở hữu: F007 chỉ sở hữu vùng nút tim và hành vi thích; thẻ kudos và danh sách do F006 sở hữu. Cả hai cột đếm tim (`kudos.like_count` và `sunners.hearts_total`) thuộc migration nền của F006 (mặc định 0, Highlight cần `like_count` để sắp xếp); F007 chỉ thêm `kudos_likes`, `special_days` và trigger cập nhật các cột đó.
+
+**Workspace**: my-app
+**Languages**: TypeScript, SQL (migration, trigger, seed ngày đặc biệt)
+**Components**: TBD (draft)
+
+**Related Screens**:
+- TBD (draft): vùng nút tim trên thẻ kudos của màn hình `/sun-kudos` (SCR006_SunKudosLiveBoard; REG### chưa khai báo; feature chỉ sở hữu vùng này; vỏ màn hình do F006 sở hữu)
+
+**Related User Stories**:
+- TBD (draft): Sunner thả tim và rút tim ở kudos của người khác; khách bấm tim được đưa tới đăng nhập
+
+**Related APIs/Routes**:
+- (POST) /sun-kudos [Next-Action: likeKudos] — ROUTE### TBD (draft)
+- (POST) /sun-kudos [Next-Action: unlikeKudos] — ROUTE### TBD (draft)
+
+**Related Data Models**:
+- kudos_likes (tên tạm; MODEL### TBD (draft))
+- special_days (tên tạm; MODEL### TBD (draft))
+- Cột đếm tim `kudos.like_count` và `sunners.hearts_total` (F006 tạo, F007 bảo trì)
+
+**Related Background Logic**:
+- TBD (draft): trigger trước khi chèn lượt thích (chặn tự thích, gán trọng số)
+- TBD (draft): trigger sau khi chèn/xoá lượt thích (cập nhật số tim kudos và tổng tim người gửi)
+
+**Related Permissions**:
+- TBD (draft): `kudos_likes` chỉ ghi được bởi chính người thích; chỉ đọc được dòng của mình (không lộ ai đã thích)
+- TBD (draft): `special_days` đọc công khai, ghi chỉ `service_role`
+- TBD (draft): không có quyền ghi trực tiếp lên bộ đếm từ client
+
+> Note: Verdict tên "Kudos Hearts" — một kết quả: tim của người gửi tăng/giảm đúng theo lượt thích. Tách khỏi F006 vì có bất biến DB riêng, kiểm thử được ở tầng DB và Server Action, và đổi ý định (ghi) khác đọc.
+> Note: Quyết định cố định theo clarifications: người GỬI nhận tim (không phải người nhận như spec C.4.1). Đã chốt: xoá kudos trực tiếp bằng SQL làm giảm tổng tim của người gửi đúng trọng số đã lưu.
+> Note: Phụ thuộc F006 (bảng kudos/Sunner, thẻ kudos).
+
+---
+
+### F008_KudosSpotlight: Kudos Spotlight
+
+**Type**: ui
+**Description**: Bảng Spotlight trên `/sun-kudos` cho khách và Sunner khám phá những người nhận kudos: tên bố trí tự động, tìm kiếm, kéo/thu phóng, mở kudos. Đầu vào: dữ liệu công khai gồm tên người nhận, thời điểm nhận và tổng số kudos từ DB; chuỗi tìm kiếm tối đa 100 ký tự. Xử lý: máy chủ tính bố cục tất định (không ngẫu nhiên) cho tối đa khoảng 300 tên; phía trình duyệt giữ trạng thái dịch chuyển/thu phóng, bật công tắc Pan/Zoom thì kéo và lăn chuột mới tác động, tắt thì trang cuộn bình thường; chuột hoặc bàn phím đặt vào một tên thì hiện tooltip (tên + thời gian nhận); tìm kiếm tô sáng tên khớp và làm mờ phần còn lại; dải "kudos mới nhất" chạy bên dưới. Đầu ra: tổng số kudos, các tên bấm được dẫn tới `/sun-kudos/[id]` (khách cũng xem được; trang đích chưa xây), trạng thái đang tải và trạng thái rỗng.
+
+Quyền sở hữu: F008 chỉ sở hữu vùng Spotlight; chỉ đọc dữ liệu kudos/Sunner của F006, không thêm bảng.
+
+**Workspace**: my-app
+**Languages**: TypeScript
+**Components**: TBD (draft)
+
+**Related Screens**:
+- TBD (draft): vùng Spotlight của màn hình `/sun-kudos` (SCR006_SunKudosLiveBoard; REG### chưa khai báo; feature chỉ sở hữu vùng này; vỏ màn hình do F006 sở hữu)
+
+**Related User Stories**:
+- TBD (draft): khách/Sunner xem bảng Spotlight, tìm tên, kéo và thu phóng, mở kudos từ một tên
+
+**Related APIs/Routes**:
+- TBD (draft): chưa quyết định route riêng; dữ liệu dự kiến đọc ngay trong Server Component của `/sun-kudos`
+
+**Related Data Models**:
+- Dùng lại kudos, sunners của F006; không có bảng mới
+
+**Related Background Logic**:
+- Không có
+
+**Related Permissions**:
+- TBD (draft): dữ liệu Spotlight đọc công khai (kế thừa quyền đọc công khai của F006)
+
+> Note: Verdict tên "Kudos Spotlight" — một kết quả: người xem tìm ra một người nhận trong biển tên và mở kudos của họ. Tách khỏi F006 vì có luồng vào→xử lý→ra riêng (bố cục, tìm kiếm, kéo/thu phóng), tương tác riêng và kiểm thử độc lập được.
+> Note: Mốc cần xác nhận: mỗi kudos là một tên hay mỗi người là một tên; có cần cảm ứng hai ngón (pinch) không.
+> Note: Phụ thuộc F006 (dữ liệu và vỏ trang).
+
+---
+
+### F009_KudosPersonalSidebar: Kudos Personal Sidebar
+
+**Type**: ui
+**Description**: Cột bên (sidebar) của `/sun-kudos`: khối thống kê cá nhân (D.1) cho Sunner đã đăng nhập và danh sách 10 Sunner nhận quà mới nhất (D.3) cho mọi người. Đầu vào: phiên đăng nhập, thống kê của Sunner đang xem (kudos nhận/gửi, tim nhận, hộp quà đã mở/chưa mở) và bảng quà tặng seed. Xử lý: Server Component đọc `getCurrentUser()`; khách thấy lời nhắc đăng nhập thay cho thống kê; người đã đăng nhập thấy số liệu của chính mình và nút "Mở Secret Box" (chưa làm gì); danh sách quà đọc 10 dòng mới nhất. Đầu ra: khối thống kê hoặc lời nhắc đăng nhập, danh sách 10 người nhận quà, hoặc "Chưa có dữ liệu" khi rỗng. Danh sách khuyến mãi trong spec D không có thiết kế nên ngoài phạm vi.
+
+Quyền sở hữu: F009 chỉ sở hữu vùng sidebar. Số liệu cá nhân đọc lại dữ liệu của F006 (kudos nhận/gửi) và F007 (tổng tim).
+
+**Workspace**: my-app
+**Languages**: TypeScript, SQL (migration bảng quà tặng và seed)
+**Components**: TBD (draft)
+
+**Related Screens**:
+- TBD (draft): vùng sidebar của màn hình `/sun-kudos` (SCR006_SunKudosLiveBoard; REG### chưa khai báo; feature chỉ sở hữu vùng này; vỏ màn hình do F006 sở hữu)
+
+**Related User Stories**:
+- TBD (draft): Sunner đã đăng nhập xem thống kê kudos/tim/hộp quà của mình; mọi người xem 10 Sunner nhận quà mới nhất; khách thấy lời nhắc đăng nhập
+
+**Related APIs/Routes**:
+- TBD (draft): chưa quyết định route riêng; dữ liệu dự kiến đọc ngay trong Server Component của `/sun-kudos`
+
+**Related Data Models**:
+- secret_boxes (chủ sở hữu, tên quà, opened_at; MODEL### TBD (draft))
+- Số hộp quà đã mở/chưa mở suy từ `opened_at` của `secret_boxes` (đã chốt)
+- Đọc lại sunners (của F006) qua hàm `get_my_sunner()` cho hàng của chính người xem
+
+**Related Background Logic**:
+- Không có
+
+**Related Permissions**:
+- TBD (draft): thống kê cá nhân chỉ hiện cho chính người đăng nhập (ẩn bằng giao diện, máy chủ kiểm tra lại)
+- TBD (draft): bảng quà tặng: hộp đã mở đọc công khai, hộp chưa mở chỉ chủ hộp đọc; ghi chỉ `service_role`
+
+> Note: Verdict tên "Kudos Personal Sidebar" — một kết quả: Sunner nắm được thành tích kudos của mình và ai vừa nhận quà. Hai khối cùng một vùng sidebar; khối D.3 công khai chỉ là phần phụ trợ, không đủ thành feature riêng (không kiểm thử độc lập có ý nghĩa).
+> Note: Đã chốt: hộp quà đã mở/chưa mở lấy từ `secret_boxes`; "tim nhận" trong khối D.1 là tổng tim người gửi đã kiếm (theo F007).
+> Note: Phụ thuộc F006 (vỏ trang, bảng Sunner) và F007 (tổng tim).
+
+---
+
 ## Summary
 
-- **Total Features**: 5
-- **Total Screens**: 4 màn hình đang hoạt động (SCR001_Login, SCR003_Homepage, SCR004_AwardsInformation, SCR005_CountdownPrelaunch (F005)) + 1 bản ghi đã gỡ (SCR002_Todo, tombstone, không tính) + 2 vùng (SCR003_Homepage/REG001_AccountRegion, SCR003_Homepage/REG002_AwardsGrid)
-- **Total User Stories**: 33 (F001: 6, F002: 8, F003: 7, F004: 6, F005: 6)
+- **Total Features**: 9
+- **Total Screens**: 5 màn hình đang hoạt động (SCR001_Login, SCR003_Homepage, SCR004_AwardsInformation, SCR005_CountdownPrelaunch (F005), SCR006_SunKudosLiveBoard (F006 sở hữu vỏ; F007, F008, F009 sở hữu vùng, REG### chưa khai báo)) + 1 bản ghi đã gỡ (SCR002_Todo, tombstone, không tính) + 2 vùng (SCR003_Homepage/REG001_AccountRegion, SCR003_Homepage/REG002_AwardsGrid)
+- **Total User Stories**: 33 (F001: 6, F002: 8, F003: 7, F004: 6, F005: 6); F006–F009 chưa cấp mã US### toàn cục (functional-spec của bốn feature còn dùng mã US cục bộ của bản nháp)
 - **Total Routes**: 10 (ROUTE001..ROUTE010; ROUTE003, ROUTE006 và ROUTE009 dùng chung F001, F002 và F004 theo route-list; ROUTE010 là F005)
 - **Total Data Models**: 4
 - **Total Background Logic**: 3 (BL001 dùng chung ba feature)

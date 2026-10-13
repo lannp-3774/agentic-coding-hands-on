@@ -82,15 +82,17 @@ test.describe('Awards Information page', () => {
     await expect(detailLink).toHaveAttribute('href', '/sun-kudos');
   });
 
-  test('clicking Kudos Chi tiết button navigates to /sun-kudos (404 default)', async ({
+  test('clicking Kudos Chi tiết button navigates to /sun-kudos and displays the board', async ({
     page,
   }) => {
     await page.goto('/awards-information', { waitUntil: 'networkidle' });
     const detailLink = kudosDetailLink(page);
     // Click and wait for navigation
     await Promise.all([page.waitForNavigation(), detailLink.click()]);
-    // /sun-kudos does not exist yet, so Next serves its default 404
+    // Should navigate to /sun-kudos
     await expect(page).toHaveURL('http://localhost:3000/sun-kudos');
+    // Board should display the "ALL KUDOS" heading
+    await expect(page.getByRole('heading', { name: 'ALL KUDOS', exact: true })).toBeVisible();
   });
 
   test('guest user sees Login button in account region', async ({ page }) => {

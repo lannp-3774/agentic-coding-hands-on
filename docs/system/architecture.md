@@ -1,38 +1,42 @@
 ---
 status: implemented
-authored_by: rebuild-spec
-reconciled_from: takumi forward-draft
+authored_by: takumi
+created: 2026-10-12
 lang: vi
 ---
 
 # Architecture
 
-Kiến trúc AS-BUILT của ứng dụng SAA 2025 (Next.js 16.4 + Supabase): trang chủ công khai `/` (F002), trang Hệ thống giải thưởng công khai `/awards-information` (F004), đăng nhập Google `/login` + `/auth/callback` (F001), menu tài khoản có vai trò admin nằm trong header trang chủ (F003), trang đếm ngược prelaunch `/countdown` cùng cổng prelaunch toàn site trong `proxy.ts` (F005). Route theo `ROUTE001`–`ROUTE010` (xem `route-list.md`), bảng dữ liệu theo `MODEL001_Award`, `MODEL002_Profile`, `MODEL003_AwardPrize`, `MODEL004_SiteSettings` (xem `entities.md`). Tài liệu này đối chiếu bản nháp forward của takumi với code hiện có: mọi đường dẫn bên dưới đều tồn tại trong working tree.
+Kiến trúc AS-BUILT của ứng dụng SAA 2025 (Next.js 16.4 + Supabase): trang chủ công khai `/` (F002), trang Hệ thống giải thưởng công khai `/awards-information` (F004), đăng nhập Google `/login` + `/auth/callback` (F001), menu tài khoản có vai trò admin nằm trong header trang chủ (F003), trang đếm ngược prelaunch `/countdown` cùng cổng prelaunch toàn site trong `proxy.ts` (F005). Route theo `ROUTE001`–`ROUTE010` (xem `route-list.md`), bảng dữ liệu theo `MODEL001_Award`, `MODEL002_Profile`, `MODEL003_AwardPrize`, `MODEL004_SiteSettings` (xem `entities.md`). Bản nháp forward (Stage 1.5) thêm bảng Sun* Kudos live board `/sun-kudos` (F006–F009, mã tạm; mã chính thức cấp lúc promote): route `GET /sun-kudos` và `GET /api/kudos`, hai Server Action thả/rút tim, chín bảng dữ liệu Kudos. Mã `ROUTE###` và `MODEL###` của phần Kudos là `TBD (draft)`. Phần F001–F005 đối chiếu code hiện có: mọi đường dẫn không gắn *(planned)* đều tồn tại trong working tree; đường dẫn gắn *(planned)* là thiết kế, chưa có code.
 
-> Note: `/todo` (SCR002_Todo) đã bị xoá khỏi code (`app/todo/**` không còn); `/profile`, `/admin`, `/sun-kudos`, `/standards` được link tới nhưng **chưa có page** trong `app/` (xem "Known Gaps" ở cuối mục System Architecture).
+> Note: `/todo` (SCR002_Todo) đã bị xoá khỏi code (`app/todo/**` không còn); `/profile`, `/admin`, `/standards` được link tới nhưng **chưa có page** trong `app/` (xem "Known Gaps" ở cuối mục System Architecture). `/sun-kudos` sẽ có page từ F006 *(planned)*; `/sun-kudos/[id]` và `/profiles/[id]` chỉ được link tới, chưa xây (404).
 
 ## System Architecture
 
 Ứng dụng là một Next.js App Router (`cacheComponents: true`, `partialPrefetching: true` — `next.config.ts:8-9`) chạy `http://localhost:3000` (`playwright.config.ts:10`). Mọi lời gọi Supabase đi qua server (Server Component, Server Action, Route Handler, `proxy.ts`): ứng dụng **không có client Supabase phía trình duyệt**, cookie session là `httpOnly` (`lib/supabase/session-cookie-options.ts:11-16`). Supabase Auth (GoTrue) xử lý OAuth với Google; dữ liệu (`public.awards`, `public.award_prizes`, `public.profiles`) đọc qua PostgREST bằng publishable key kèm cookie của người dùng, RLS áp dụng; ngoại lệ có chủ ý là mốc prelaunch (`public.site_settings`), đọc bằng client không cookie (vai `anon`) ở `lib/prelaunch/read-prelaunch-ends-at.ts` để không đua làm mới refresh token với `getClaims()` của proxy.
 
+Kudos (F006–F009, *planned*): dữ liệu bảng kudos đọc bằng server client có cookie (vai `anon` cho khách, `authenticated` cho người đăng nhập, RLS áp dụng) để cột "tim của tôi" đúng theo người xem. Trang kế của All Kudos lấy bằng Route Handler `GET /api/kudos` (đọc, theo request); chỉ thả/rút tim đi qua Server Action. Hàm/trigger `security definer` trong Postgres giữ các bất biến (trọng số tim, bộ đếm, liên kết Sunner), client không ghi được bộ đếm. Vẫn không có client Supabase phía trình duyệt.
+
 ```mermaid
 flowchart LR
     subgraph Browser
         B[Browser]
-        CD["Client: LiveCountdown, PrelaunchCountdownLive, LanguageSelector, AccountMenu, GoogleButton"]
+        CD["Client: LiveCountdown, PrelaunchCountdownLive, LanguageSelector, AccountMenu, GoogleButton, Kudos carousel/feed/Spotlight (planned)"]
     end
     subgraph "Next.js 16.4 App Router"
         P["proxy.ts (matcher phu dinh: moi page route; cong prelaunch F005)"]
         H["GET / HomePage + HomeContent"]
         L["GET /login LoginPage"]
         CP["GET /countdown CountdownPage (F005)"]
+        K["GET /sun-kudos KudosPage (F006, planned)"]
+        KA["GET /api/kudos route handler (F006, planned)"]
         CB["GET /auth/callback route handler"]
-        A["Server Actions: signInWithGoogle, signOut, setLocale"]
+        A["Server Actions: signInWithGoogle, signOut, setLocale, likeKudos, unlikeKudos (F007, planned)"]
         LIB["lib: supabase, auth, awards, countdown, prelaunch, i18n, ui"]
     end
     subgraph "Supabase (Auth + PostgREST + Postgres)"
         G["Auth / GoTrue"]
-        R["PostgREST + Postgres: awards, award_prizes, profiles, site_settings"]
+        R["PostgREST + Postgres: awards, award_prizes, profiles, site_settings, 9 bang Kudos (planned)"]
     end
     GO[Google OAuth]
 
@@ -40,11 +44,17 @@ flowchart LR
     P --> H
     P --> L
     P --> CP
+    P --> K
+    P --> KA
     B --> CB
     H --> CD
     L --> CD
     CP --> CD
     CP --> LIB
+    K --> CD
+    K --> LIB
+    KA --> LIB
+    CD --> KA
     CD --> A
     H --> LIB
     L --> LIB
@@ -94,6 +104,8 @@ graph TD
 
 Quy tắc phụ thuộc (đúng với code): `lib/*` không import ngược `app/*`; `lib/supabase` chạm Supabase qua `@supabase/ssr`, riêng `lib/prelaunch/read-prelaunch-ends-at.ts` (F005) tạo client không cookie bằng `@supabase/supabase-js` có chủ ý (`:35-38`); `lib/supabase/proxy-session.ts` import `lib/prelaunch/*` và `lib/prelaunch/read-gate-user-role.ts` import `lib/supabase/user-role.ts` (hàm thuần, không import) nên ở mức tệp không có vòng; `lib/countdown/parse-countdown-target.ts` và `lib/awards/award-card-mapping.ts`, `lib/awards/award-detail-mapping.ts` và `lib/ui/section-scroll-spy.ts` và `lib/prelaunch/prelaunch-gate-decision.ts`, `lib/supabase/user-role.ts` là hàm thuần (chỉ import type hoặc mapping thuần, hai tệp sau không import gì), `lib/countdown/use-countdown.ts`, `lib/countdown/use-prelaunch-countdown.ts` và `lib/ui/use-menu-disclosure.ts` là hook client (`"use client"`). Đồ thị trên dựng trước F005; F005 thêm hai nút `app/countdown` (import `lib/i18n`, `lib/prelaunch`, `app/_components/countdown-prelaunch`, `lib/countdown`) và `lib/prelaunch` (import `lib/supabase`, `lib/countdown`), cạnh `proxy`/`lib/supabase` → `lib/prelaunch` chưa vẽ.
 
+Module Kudos *(planned, chưa vẽ trong đồ thị)*: `app/sun-kudos` và `app/api/kudos/route.ts` import `lib/kudos`, `lib/supabase`, `lib/i18n`; `app/_components/sun-kudos` import `lib/kudos`, `lib/i18n`, `lib/ui`. `lib/kudos` không import ngược `app/*`; mapper, bố cục Spotlight, suy Hero tier và định dạng thời gian là hàm thuần. Cạnh mới tới `lib/supabase` (server client có cookie) và, nếu dùng đọc công khai có cache, tới `@supabase/supabase-js` (client không cookie).
+
 ### Components
 
 | Component | Path | Responsibility |
@@ -129,12 +141,24 @@ Quy tắc phụ thuộc (đúng với code): `lib/*` không import ngược `app
 | Seed (F005) | `supabase/seeds/common/03-site-settings.sql` | Upsert mốc `2026-01-01T00:00:00+07:00` (quá khứ) để local luôn mở sau `db reset`; E2E đặt mốc tương lai rồi khôi phục literal này. |
 | Migrations | `supabase/migrations/20261008045411_create_awards.sql`, `supabase/migrations/20261008045415_create_profiles.sql`, `supabase/migrations/20261009021753_add_award_details_and_prizes.sql` | Tạo `public.awards`, `public.profiles`, bật RLS, policy, `REVOKE`/`GRANT` tường minh; trigger `on_auth_user_created` + backfill cho profile; migration thứ ba chỉ thêm năm cột chi tiết vào `awards` và bảng `award_prizes` (RLS + GRANT cùng mẫu). |
 | Seed | `supabase/seeds/common/01-awards.sql`, `supabase/seeds/common/02-award-details.sql` | Upsert 6 giải thưởng (`on conflict (slug) do update`); `02` (chạy sau `01` theo tên tệp) cập nhật cột chi tiết theo `slug` và upsert `award_prizes` theo `(award_slug, sort_order)`; chạy khi `supabase db reset` (theo `[db.seed] sql_paths`, `supabase/config.toml:58-63`). |
+| Kudos page (F006, planned) | `app/sun-kudos/page.tsx` *(planned)*, `app/sun-kudos/_components/*` *(planned)* | Vỏ tĩnh `<Suspense>`; Server Component bên trong `await searchParams` (`hashtag`, `department`), đọc locale, người dùng, Highlight và trang đầu All Kudos; bộ lọc truyền xuống client island bằng props (không `useSearchParams`). Header/footer đánh dấu "Sun* Kudos" là trang hiện tại. Khi có phiên, lấy `id` Sunner của người xem bằng `get_my_sunner()` để truyền `isSender` và `likedByMe` cho từng thẻ; gắn provider trạng thái tim dùng chung (logic do F007 cấp) bao quanh Highlight và All Kudos. Dưới khổ máy tính trang xếp một cột (sidebar dưới All Kudos, carousel một thẻ). Tên tệp chi tiết `TBD (draft)`. |
+| Kudos query layer (F006, planned) | `lib/kudos/*` *(planned)* | Getter theo mẫu hiện có (`connection()` ngoài `try`, lỗi → log + rỗng, type guard + mapper thuần, không bao giờ ném). Một hàm áp bộ lọc dùng chung cho Highlight (`like_count desc, seq desc`, 5 dòng) và All Kudos (`seq desc`, con trỏ `seq`, lấy thừa một dòng để biết còn trang). Lọc Hashtag qua `kudos_hashtags`, Department theo phòng ban của người nhận. Nhãn Hero + số sao suy từ `kudos_received_count` bằng hàm thuần (không lưu). Thời gian `HH:mm - MM/DD/YYYY` theo Asia/Ho_Chi_Minh. |
+| Kudos feed endpoint (F006, planned) | `app/api/kudos/route.ts` *(planned)* | `GET` Route Handler: tham số `cursor`, `hashtag`, `department`; trả JSON trang kế của All Kudos, chạy theo request (đọc cookie cho cột "tim của tôi"). Matcher của proxy khớp `/api/kudos` nên phiên được làm mới và cổng prelaunch áp dụng (chỉ `GET`/`HEAD`). Kích thước trang cố định phía máy chủ; `cursor` và bộ lọc được kiểm tra đầu vào. Không có endpoint ghi. |
+| Kudos hearts actions (F007, planned) | Server Action `likeKudos(id)`, `unlikeKudos(id)` trong `lib/kudos/**` *(planned; tên tệp `TBD (draft)`)* | Biểu thị ý định (không phải nút bật/tắt), idempotent. Kiểm lại phiên phía server bằng `getCurrentUser()`; khách → trả `unauthenticated`, client `router.push("/login")`. Ghi `kudos_likes` bằng phiên của người dùng dưới RLS; trọng số, chặn tự thích và bộ đếm do trigger DB giữ, action không tự tính. |
+| Kudos feed client islands (F006, planned) | `app/_components/sun-kudos/*` *(planned)* + thư mục behaviour theo quy ước `app/_components/<feature>-behaviour/` *(tên `TBD (draft)`)* | Carousel Highlight (state React + transform; `key` theo bộ lọc để về thẻ 1; thứ tự không xếp lại sau khi thả/rút tim), danh sách cuộn vô hạn (`IntersectionObserver`, `AbortController` khi đổi bộ lọc, loại trùng theo id), Copy Link (Clipboard API, dự phòng `execCommand` khi không có `navigator.clipboard`, URL = `window.location.origin` + `/sun-kudos/<id>` lúc bấm) và toast tự viết `role="status"` (cũng dùng cho thông báo lỗi ngắn khi thả/rút tim thất bại ở F007); ảnh đính kèm là liên kết mở ảnh gốc ở tab mới. Không thêm dependency npm. |
+| Kudos Spotlight (F008, planned) | `app/_components/sun-kudos/*` *(planned; tên tệp `TBD (draft)`)* | React + CSS transform, pointer events; mỗi tên là một `<a>` tới `/sun-kudos/[id]`; bố cục tất định (không ngẫu nhiên) tính ở server cho tối đa khoảng 300 tên; một tooltip dùng chung; công tắc Pan/Zoom giữ trạng thái `{x, y, k}` ở client; tìm kiếm (≤ 100 ký tự, kiểm khi bấm tìm, không phân biệt hoa thường và dấu tiếng Việt) chỉ tô sáng/làm mờ, không đổi bố cục. Không theo bộ lọc Hashtag/Department của trang; tối đa 300 kudos mới nhất, tổng là tổng thật; dải kudos mới nhất là 5 dòng tĩnh (`hh:mmAM/PM`) đọc lúc tải trang. Chỉ đọc dữ liệu của F006, không thêm bảng. |
+| Kudos Personal Sidebar (F009, planned) | `app/_components/sun-kudos/*` *(planned; tên tệp `TBD (draft)`)* | Server Component đọc `getCurrentUser()`: khách → lời nhắc đăng nhập (dòng chữ + nút "Đăng nhập"); người đăng nhập → thống kê của chính mình (hàng Sunner qua `get_my_sunner()`, kudos gửi, hộp quà đã mở/chưa mở suy từ `secret_boxes`; không xác định được số liệu thì "—") và nút "Mở Secret Box" chưa làm gì; danh sách 10 hộp quà đã mở gần nhất, mỗi hộp một hàng (công khai), rỗng → "Chưa có dữ liệu". |
+| Public cached reads (planned) | `lib/kudos/*` *(planned)* | Dữ liệu công khai không phụ thuộc người xem (danh sách hashtag/phòng ban, tên Spotlight, danh sách quà) có thể dùng `"use cache"` + `cacheLife` với client không cookie (`@supabase/supabase-js`, publishable key), vì `"use cache"` không cho `cookies()` trong call stack. Mức dùng thực tế `TBD (draft)` (chốt ở technical-spec F006/F008). Feed có cột "tim của tôi" không cache. |
+| Site chrome — Kudos delta (F006, planned) | `app/_components/site/site-types.ts`, `site-header.tsx`, `site-footer.tsx` | `SitePage` thêm giá trị `"kudos"` cạnh `"about"`, `"awards"`; liên kết "Sun* Kudos" hiện có tới `/sun-kudos` được đánh dấu `aria-current="page"` trên trang mới. |
+| Kudos copy (i18n, planned) | `lib/i18n/dictionary.ts` + tệp copy mới `TBD (draft)` | Nhãn `vi`/`en` theo mẫu `{vi, en} satisfies Record<Locale, ...>`; nội dung kudos, tên người, hashtag giữ nguyên như đã viết (luật F002). |
+| Kudos migrations (F006–F009, planned) | `supabase/migrations/*_kudos*.sql` *(planned; số tệp và tên `TBD (draft)`)* | Chỉ forward, chỉ thêm: chín bảng (xem "Kudos data store"), RLS + `REVOKE`/`GRANT` tường minh cùng mẫu `site_settings`, hàm/trigger `security definer`, backfill `auth.users` → `sunners` một lần. Không sửa migration đã áp dụng (`profiles` giữ nguyên). |
+| Kudos seeds (planned) | `supabase/seeds/common/*kudos*.sql` *(planned)* | Upsert idempotent nội dung từ Figma: phòng ban, Sunner, hashtag, kudos, ảnh, `special_days`, `secret_boxes`; chạy khi `supabase db reset` sau `01`–`03`. Kudos phải seed theo thứ tự thời gian vì con trỏ phân trang là `seq`. |
 
-Ghi chú về `cacheComponents`: mọi thứ phụ thuộc request (cookie `NEXT_LOCALE`, `searchParams`, `getClaims()` vì đọc đồng hồ, truy vấn DB) nằm trong `<Suspense>`; hàm phụ thuộc phiên gọi `connection()` ngoài `try` trước khi đọc (`lib/supabase/current-user.ts:35`, `lib/awards/get-awards.ts:20`) và `unstable_rethrow` trong `catch` để không nuốt tín hiệu prerender. Không dùng `export const dynamic/revalidate`.
+Ghi chú về `cacheComponents`: mọi thứ phụ thuộc request (cookie `NEXT_LOCALE`, `searchParams`, `getClaims()` vì đọc đồng hồ, truy vấn DB) nằm trong `<Suspense>`; hàm phụ thuộc phiên gọi `connection()` ngoài `try` trước khi đọc (`lib/supabase/current-user.ts:35`, `lib/awards/get-awards.ts:20`) và `unstable_rethrow` trong `catch` để không nuốt tín hiệu prerender. Không dùng `export const dynamic/revalidate`. Trang `/sun-kudos` *(planned)* theo cùng quy tắc: `searchParams`, locale, `getCurrentUser()` và truy vấn feed nằm trong `<Suspense>`; getter Kudos gọi `connection()` ngoài `try` và `unstable_rethrow` trong `catch`.
 
 ### Data Model
 
-Bốn bảng trong schema `public` (chi tiết cột/ràng buộc: `entities.md`).
+Bốn bảng hiện có trong schema `public` (chi tiết cột/ràng buộc: `entities.md`); chín bảng Kudos *(planned)* ở mục "Kudos data store" ngay sau danh sách ghi chú dưới bảng.
 
 | Bảng | MODEL | Cột chính | RLS / quyền |
 |------|-------|-----------|-------------|
@@ -149,13 +173,42 @@ Bốn bảng trong schema `public` (chi tiết cột/ràng buộc: `entities.md`
 - Seed chỉ chạy khi `db reset` local; `supabase db push` không chạy seed.
 - Chưa sinh kiểu bằng `supabase gen types` (bốn bảng, truy vấn hẹp; dùng type guard tay `isAwardRow`; mốc prelaunch kiểm kiểu ở `read-prelaunch-ends-at.ts:70-77`).
 
+#### Kudos data store (F006–F009, planned)
+
+Chín bảng mới trong schema `public`, tạo bằng migration chỉ-thêm. Tên bảng là tên tạm theo feature-list; mã `MODEL###` đều `TBD (draft)`. Tên cột dưới đây là thiết kế, chưa có trong code; tên chính thức chốt ở technical-spec từng feature.
+
+| Bảng | Feature | MODEL | Cột chính | RLS / quyền |
+|------|---------|-------|-----------|-------------|
+| `public.sunners` | F006 | `TBD (draft)` | `id` (uuid PK), `user_id` (uuid unique, nullable, → `auth.users(id)` `on delete set null`), họ tên, phòng ban (FK → `departments`, nullable), `avatar_url`, `email` (chỉ để liên kết), `kudos_received_count` (int, mặc định 0), `hearts_total` (int, mặc định 0; F006 tạo cột, F007 bảo trì), `created_at` | RLS bật. `select` công khai (`anon`, `authenticated`) theo cấp quyền cột, **không gồm `email` và `user_id`**; ghi chỉ `service_role`; hai cột đếm chỉ do trigger `security definer` cập nhật. Hàng của chính người xem lấy qua hàm `get_my_sunner()` (cấp `execute` cho `authenticated`, chỉ trả hàng của `auth.uid()`). |
+| `public.departments` | F006 | `TBD (draft)` | mã, tên (tên cột `TBD (draft)`) | RLS bật. `select` công khai; ghi chỉ `service_role`. |
+| `public.hashtags` | F006 | `TBD (draft)` | danh sách cố định seed từ Figma (cột `TBD (draft)`) | RLS bật. `select` công khai; ghi chỉ `service_role`. |
+| `public.kudos` | F006 | `TBD (draft)` | `id`, `seq` (bigint identity, con trỏ phân trang), `sender_id`, `receiver_id` (→ `sunners.id`, một người nhận mỗi kudos), `title` (chữ tự do, nhãn tiêu đề D.4, rỗng được), nội dung, `created_at`, `like_count` (int, mặc định 0; F006 tạo cột, F007 bảo trì); chỉ mục `(like_count desc, seq desc)`, `(seq desc)`, `(receiver_id, seq desc)` | RLS bật. `select` công khai; ghi chỉ `service_role`; client không ghi kể cả bộ đếm. |
+| `public.kudos_hashtags` | F006 | `TBD (draft)` | PK `(kudos_id, hashtag_id)`, cả hai FK `on delete cascade` | RLS bật. `select` công khai; ghi chỉ `service_role`. |
+| `public.kudos_images` | F006 | `TBD (draft)` | `kudos_id` (FK cascade), đường dẫn ảnh cục bộ dưới `/public/sun-kudos/**`, thứ tự; giao diện hiện tối đa 5 | RLS bật. `select` công khai; ghi chỉ `service_role`. |
+| `public.kudos_likes` | F007 | `TBD (draft)` | PK `(kudos_id, user_id)` (`user_id` → `auth.users(id)`), `weight` (smallint, `check (weight in (1, 2))`), `created_at` | RLS bật. `INSERT`/`DELETE` cho `authenticated` chỉ khi `user_id = (select auth.uid())`; `SELECT` chỉ dòng của mình (không lộ ai đã thích); không `UPDATE`; `weight` do trigger gán, giá trị client gửi bị bỏ qua. |
+| `public.special_days` | F007 | `TBD (draft)` | `day` (date PK), `weight` (smallint, mặc định 2, `check (weight in (1, 2))`) | RLS bật. `select` công khai; ghi chỉ `service_role`; chưa có giao diện quản trị. |
+| `public.secret_boxes` | F009 | `TBD (draft)` | chủ sở hữu (→ `sunners`), tên quà, `opened_at` (`NULL` = chưa mở) | RLS bật. `select`: hộp đã mở (`opened_at is not null`) công khai cho `anon`, `authenticated` (danh sách quà); hộp chưa mở chỉ chủ hộp đọc (chủ hộp xác định qua `get_my_sunner()`); ghi chỉ `service_role`. Mở hộp ngoài phạm vi. |
+
+- Heart-count (`kudos.like_count`, `sunners.hearts_total`) là dữ liệu dùng chung do F006 tạo cả hai cột (mặc định 0; Highlight sắp theo `like_count`); F007 chỉ thêm `kudos_likes`, `special_days` và các trigger giữ hai cột đó.
+- Hàm `public.get_my_sunner()` (F006): `security definer`, `set search_path = ''`, trả đúng một hàng `sunners` của `auth.uid()` với cột không nhạy cảm (không `email`, không `user_id`); cấp `execute` cho `authenticated` (trái với hai hàm trigger). Là đường duy nhất cho trang F006, sidebar F009 và policy `secret_boxes` biết Sunner của người xem.
+- Hàm/trigger đều `security definer`, `set search_path = ''`, `REVOKE EXECUTE` khỏi `public`, `anon`, `authenticated` (cùng công thức `handle_new_user`) nên không gọi được qua PostgREST RPC:
+  - Liên kết Sunner: hàm mới, `after insert on auth.users`, độc lập với `handle_new_user` (hai trigger không dựa vào thứ tự chạy). `lower(email)` khớp Sunner seed chưa có `user_id` → gán `user_id` (cùng tên/ảnh nếu còn trống); không khớp → tạo Sunner mới. Giữ tối giản vì lỗi trigger làm hỏng đăng ký. Backfill một lần cho `auth.users` hiện có. Tên/ảnh lấy từ `raw_user_meta_data` một lần lúc liên kết, không đồng bộ lại, chỉ nhận ảnh `https://`; tên khoá metadata của Google `TBD (draft)`, kiểm bằng một lần đăng nhập thật.
+  - Kudos: `after insert/delete` cập nhật `sunners.kudos_received_count` của người nhận.
+  - Like: `before insert` từ chối khi Sunner của người thích (`sunners.user_id = auth.uid()`, có chỉ mục) trùng `kudos.sender_id` (`check_violation`) và gán `weight` theo `special_days` của ngày hiện tại ở Asia/Ho_Chi_Minh (mặc định 1); `after insert/delete` đổi `kudos.like_count` ±1 và `sunners.hearts_total` của người gửi ± `weight` đã lưu, cùng giao dịch với dòng like.
+- Phân trang bằng `seq` thay vì `(created_at, id)`; seed theo thứ tự thời gian.
+- Hashtag là danh sách cố định + bảng nối (đã quyết); nhãn "IDOL GIỚI TRẺ" là cột chữ tự do `kudos.title`, bấm vào chỉ lọc khi có hashtag trùng chữ, không thì là chữ thường (đã chốt).
+- Hero tier (0–9 New, 10–19 Rising, 20–49 Super, 50+ Legend) tính ở TS từ `kudos_received_count`, không lưu cột.
+- Ảnh kudos là tệp cục bộ dưới `/public/sun-kudos/**` (đường dẫn trong DB, `next/image`, cùng quy tắc `isLocalPath` như `awards`). Avatar Google là URL ngoài: render bằng `<img referrerPolicy="no-referrer" loading="lazy">`, không `next/image`, không `remotePatterns`; thiếu ảnh → chữ cái đầu.
+- Xoá kudos ngoài phạm vi; nếu `service_role` xoá trực tiếp bằng SQL, like cascade và trigger hạ `hearts_total` của người gửi đúng trọng số đã lưu (đã chốt là đúng ý).
+
 ### Known Gaps
 
 Phát hiện khi đối chiếu code, không sửa trong phạm vi tài liệu này:
 
-- Link tới trang chưa tồn tại (không có `page.tsx`): `/profile`, `/admin` (`app/_components/header-behaviour/account-region.tsx:70-71`), `/sun-kudos`, `/standards` (header/footer/kudos). (`/awards-information` đã có page từ F004.) Phía server của `/admin` chưa có nên BR-004 (kiểm tra role ở route admin) chưa thực thi được.
+- Link tới trang chưa tồn tại (không có `page.tsx`): `/profile`, `/admin` (`app/_components/header-behaviour/account-region.tsx:70-71`), `/standards` (header/footer/kudos). (`/awards-information` đã có page từ F004; `/sun-kudos` sẽ có page từ F006 *(planned)*, khi đó `/sun-kudos/[id]` và `/profiles/[id]` thành link mới tới trang chưa xây, 404 cho tới khi có feature.) Phía server của `/admin` chưa có nên BR-004 (kiểm tra role ở route admin) chưa thực thi được.
 - Asset được tham chiếu nhưng không có trong `public/`: `/login/key-visual.png` (`app/login/_components/login-screen.tsx:34`) và `/login/flag-gb.svg` (`app/_components/site/language-selector.tsx:15`). Trang chủ có `public/home/key-visual.png` nhưng login trỏ vào `/login/`.
-- `@supabase/supabase-js` được import trong `e2e/` (`e2e/support/supabase-session.ts`, `e2e/support/prelaunch-setting.ts`, các `e2e/supabase-schema-rls-*.spec.ts`) và, từ F005, ở đúng một tệp ứng dụng: `lib/prelaunch/read-prelaunch-ends-at.ts:1` (client không cookie cho mốc prelaunch); phần còn lại của ứng dụng dùng `@supabase/ssr`.
+- `@supabase/supabase-js` được import trong `e2e/` (`e2e/support/supabase-session.ts`, `e2e/support/prelaunch-setting.ts`, các `e2e/supabase-schema-rls-*.spec.ts`) và, từ F005, ở đúng một tệp ứng dụng: `lib/prelaunch/read-prelaunch-ends-at.ts:1` (client không cookie cho mốc prelaunch); phần còn lại của ứng dụng dùng `@supabase/ssr`. Từ Kudos *(planned)* có thể thêm tệp ứng dụng thứ hai dùng client không cookie cho đọc công khai có cache (`TBD (draft)`).
+- `e2e/awards-information-page.spec.ts:85-93` hiện khẳng định `/sun-kudos` trả 404; phải đổi khi F006 land. Các tài liệu đang ghi "/sun-kudos chưa xây" cập nhật ở bước promote/reconcile.
 
 ## Tech Stack
 
@@ -170,13 +223,14 @@ Phát hiện khi đối chiếu code, không sửa trong phạm vi tài liệu n
 | Supabase JS | `@supabase/supabase-js` (chỉ E2E import trực tiếp) | 2.117.2 |
 | Auth server | Supabase Auth (GoTrue); provider Google bật (`supabase/config.toml:302-313`) | theo Supabase CLI ^2.120.0 |
 | Identity provider | Google OAuth 2.0 (PKCE) | n/a |
-| Backend | Không có API riêng: Server Component, Server Action, Route Handler của Next | n/a |
+| Backend | Không có API riêng: Server Component, Server Action, Route Handler của Next (`GET /api/kudos` *(planned)* cho trang kế của All Kudos) | n/a |
 | Database | Supabase Postgres (`major_version = 17`, `supabase/config.toml:34`) + PostgREST, migration trong `supabase/migrations` | 17 |
 | i18n | Từ điển tự viết (`lib/i18n`) + cookie `NEXT_LOCALE` | n/a |
 | Lint | ESLint + `eslint-config-next` (`eslint.config.mjs`) | ^9 / 16.4.0 |
 | E2E | `@playwright/test`, chỉ project chromium, `testDir: ./e2e` (`playwright.config.ts`) | ^1.63.0 |
-| Cache | Không dùng (không có Redis/`"use cache"`) | n/a |
+| Cache | Không dùng tới F005 (không có Redis/`"use cache"`); Kudos *(planned)* có thể dùng `"use cache"` cho dữ liệu công khai (xem "Public cached reads"), vẫn không Redis | n/a |
 | Queue | Không dùng | n/a |
+| Kudos UI *(planned)* | React + CSS tự viết (carousel, Spotlight, toast); không thêm dependency npm | n/a |
 
 ## Data Flow
 
@@ -259,6 +313,48 @@ sequenceDiagram
 - Cổng là cổng ra mắt, không phải kiểm soát an ninh: mốc fail open (thiếu dòng, `NULL`, sai, quá 2 giây → site mở, log `[prelaunch]`), vai trò fail closed; không thấy `POST` nên mọi trang và Server Action vẫn tự kiểm tra quyền (`lib/supabase/proxy-session.ts:35-40`).
 - Redirect là 307 tới hằng `/countdown` hoặc `/`, không đọc từ request (`lib/prelaunch/prelaunch-gate-decision.ts:7,9`). `/countdown` luôn render theo request (`connection()` + `Date.now()`), không được cache, để `serverNowMs` luôn tươi.
 
+Luồng xem bảng Kudos (F006, *planned*, `ROUTE### TBD (draft)`):
+
+```mermaid
+sequenceDiagram
+    participant U as Browser
+    participant P as proxy.ts
+    participant N as Next.js (/sun-kudos, /api/kudos)
+    participant S as Supabase (PostgREST)
+
+    U->>P: GET /sun-kudos?hashtag=x&department=y
+    P-->>N: getClaims() lam moi phien, cong prelaunch nhu F005
+    N-->>U: Vo tinh + Suspense (stream)
+    N->>S: getCurrentUser() + select Highlight (like_count desc, seq desc, limit 5) + select trang dau All Kudos (seq desc, limit n+1), cung bo loc
+    N-->>U: Carousel + danh sach + sidebar (stream)
+    U->>N: GET /api/kudos?cursor=seq&hashtag=x&department=y (IntersectionObserver)
+    N->>S: select seq < cursor, cung bo loc
+    N-->>U: JSON trang ke + hasMore
+```
+
+- Bộ lọc nằm trên URL; đổi bộ lọc dùng `router.replace(url, { scroll: false })` trong `startTransition`; `key` theo bộ lọc đưa carousel về thẻ 1, bỏ trang đã gom và huỷ fetch đang chờ.
+- `GET /api/kudos` bị cổng prelaunch như mọi `GET`: nếu mốc khoá giữa phiên, fetch nhận 307 và client phải coi là thất bại thay vì parse; cách hiển thị `TBD (draft)`.
+
+Luồng thả/rút tim (F007, *planned*, `ROUTE### TBD (draft)`):
+
+```mermaid
+sequenceDiagram
+    participant U as Browser
+    participant N as Next.js (Server Action)
+    participant S as Supabase (Postgres)
+
+    U->>N: Bam tim -> likeKudos(id) (POST /sun-kudos)
+    N->>N: getCurrentUser() (kiem lai phien phia server)
+    N-->>U: Khach: unauthenticated -> router.push("/login")
+    N->>S: insert kudos_likes (phien nguoi dung, RLS)
+    S->>S: before insert chan tu thich + gan weight, after insert: like_count +1, hearts_total nguoi gui + weight
+    N-->>U: Ket qua (dang kudos TBD (draft)), UI doi do/xam, so tim +-1
+```
+
+- `unlikeKudos(id)`: `delete` dòng của chính mình; trigger `after delete` hoàn đúng `weight` đã lưu. Like lặp là no-op (`on conflict do nothing`); unlike khi chưa có dòng cũng no-op.
+- Server Action là `POST` nên không bị cổng prelaunch; bất biến nằm ở DB, không ở action.
+- Liên kết Sunner: sau `exchangeCodeForSession` ở `/auth/callback` (nhánh tạo tài khoản mới), insert vào `auth.users` kích hai trigger độc lập: `handle_new_user` (tạo `profiles`) và trigger liên kết Sunner.
+
 ## Deployment View
 
 > Derived from repository infrastructure-as-code — not verified against production.
@@ -284,5 +380,7 @@ Chỉ nêu tên biến, không có giá trị. Ứng dụng đọc env ở serve
 Dịch vụ Supabase local (`supabase/config.toml`, từ Supabase CLI): API `54321` (`:10`), Postgres `54322` (`:29`), Studio `54323`, Inbucket `54324`. `site_url = "http://localhost:3000"` (`:148`) và `additional_redirect_urls` chứa `http://localhost:3000/auth/callback` (`:150`; phải khớp chính xác). Provider `google` bật, `skip_nonce_check = false` (`:302-313`). `[auth.email] enable_signup = true` (`:201`) chỉ để E2E seed session bằng mật khẩu, được chú thích "LOCAL ONLY" — ứng dụng không có form email. Sau khi đổi config: `npx supabase stop && npx supabase start`; sau khi thêm migration/seed: `npx supabase db reset` (xoá `auth.users`/`profiles`; E2E dựng lại user qua `ensureUser`).
 
 Script chạy: `npm run dev`, `npm run build`, `npm run start`, `npm run lint`, `npm run test:e2e` (`package.json`).
+
+Kudos *(planned)* không thêm biến môi trường: URL Copy Link lấy từ `window.location.origin` lúc bấm.
 
 Ràng buộc host: luôn mở ứng dụng bằng `http://localhost:3000`, không trộn với `127.0.0.1`, vì cookie PKCE verifier và callback phải cùng host (`app/auth/callback/route.ts:21-22`).
