@@ -108,10 +108,16 @@ function createHeartStore() {
       };
     },
 
-    /** Optimistic flip, then reconcile with the server (ok) or restore the pre-click snapshot. */
+    /**
+     * Optimistic flip, then reconcile with the server (ok). On failure the entry
+     * goes back to the pre-click snapshot, or to a fresher server seed that
+     * `sync` remembered while the request was pending. Only the optimistic value
+     * this request wrote is rolled back; anything newer is kept.
+     */
     async toggle(kudosId: string): Promise<KudosHeartToggleResult> {
       const before = entries.get(kudosId);
       if (!before || before.pending) return { status: "ignored" };
+      const seedAtClick = seeds.get(kudosId);
 
       const like = !before.liked;
       const optimistic = { liked: like, count: Math.max(0, before.count + (like ? 1 : -1)), pending: true };
@@ -128,8 +134,11 @@ function createHeartStore() {
 
       if (result.status === "ok") {
         write(kudosId, { liked: result.liked, count: result.likeCount, pending: false });
-      } else {
-        write(kudosId, { ...before, pending: false });
+      } else if (entries.get(kudosId) === optimistic) {
+        // `sync` stores a new seed object only when the value changed.
+        const seed = seeds.get(kudosId);
+        const fresher = seed !== undefined && seed !== seedAtClick ? seed : before;
+        write(kudosId, { liked: fresher.liked, count: fresher.count, pending: false });
       }
       return result;
     },

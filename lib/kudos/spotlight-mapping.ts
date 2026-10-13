@@ -6,13 +6,18 @@ import type { SpotlightTickerLine } from "./spotlight-types";
 // Spotlight's unpositioned nodes and ticker lines (F008 A2: BR-002, BR-004,
 // BR-005). No framework imports, so it stays provable with plain Node.
 
-/** Columns read from `public.kudos` (INT-001); `receiver` is the to-one embed. */
+/**
+ * Columns read from `public.kudos` (INT-001); `receiver` is the to-one embed.
+ * `seq` is cast to text like the card columns: a bigint is exact as a string,
+ * while a JSON number loses precision past 2^53.
+ */
 export const SPOTLIGHT_COLUMNS =
-  "id,seq,created_at,receiver:sunners!receiver_id(full_name,kudos_received_count)";
+  "id,seq:seq::text,created_at,receiver:sunners!receiver_id(full_name,kudos_received_count)";
 
 export type SpotlightRow = {
   id: string;
-  seq: number;
+  /** `kudos.seq` as text (positive integer, no leading zero). */
+  seq: string;
   created_at: string;
   receiver: { full_name: string; kudos_received_count: number };
 };
@@ -25,7 +30,10 @@ export type SpotlightNodeDraft = {
   timeLabel: string;
   /** Receiver's total kudos; drives font size and layout order. */
   receivedCount: number;
-  /** Insert order; breaks ties so the layout is stable. */
+  /**
+   * Insert order, only a layout tie-break (`spotlight-layout` compares numbers):
+   * exact up to 2^53; two seqs equal as doubles fall through to the id tie-break.
+   */
   seq: number;
 };
 
@@ -39,6 +47,9 @@ export type SpotlightSource = {
 
 export const EMPTY_SPOTLIGHT_SOURCE: SpotlightSource = { total: 0, nodes: [], ticker: [] };
 
+/** Same rule as the card mapping's `seq` guard. */
+const SEQ_PATTERN = /^[1-9]\d*$/;
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
@@ -47,7 +58,7 @@ export function isSpotlightRow(value: unknown): value is SpotlightRow {
   if (!isRecord(value)) return false;
   const { id, seq, created_at: createdAt, receiver } = value;
   if (typeof id !== "string" || id === "") return false;
-  if (typeof seq !== "number" || !Number.isFinite(seq)) return false;
+  if (typeof seq !== "string" || !SEQ_PATTERN.test(seq)) return false;
   if (typeof createdAt !== "string" || Number.isNaN(Date.parse(createdAt))) return false;
   if (!isRecord(receiver)) return false;
   const count = receiver.kudos_received_count;
@@ -66,7 +77,7 @@ export function toSpotlightNodes(rows: SpotlightRow[]): SpotlightNodeDraft[] {
     name: row.receiver.full_name.trim(),
     timeLabel: formatKudosTime(row.created_at),
     receivedCount: row.receiver.kudos_received_count,
-    seq: row.seq,
+    seq: Number(row.seq),
   }));
 }
 

@@ -2,10 +2,11 @@ import { unstable_rethrow } from "next/navigation";
 import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import type { KudosFilters, KudosPage, KudosRead } from "./kudos-card-types";
-import { HASHTAG_COLUMNS, kudosCardColumns } from "./kudos-card-columns";
+import { kudosCardColumns } from "./kudos-card-columns";
 import { toKudosPage } from "./kudos-card-mapping";
 import { KUDOS_PAGE_SIZE } from "./kudos-constants";
 import { applyKudosFilters, KUDOS_CURSOR_PATTERN } from "./kudos-filters";
+import { getHashtagRowsPerRequest } from "./get-hashtag-rows-per-request";
 
 /** How one filtered kudos read is ordered and cut. */
 export type KudosReadShape = {
@@ -26,7 +27,9 @@ const errorMessage = (cause: unknown) => (cause instanceof Error ? cause.message
  * `authenticated` with a session (the `my_like` embed then holds the viewer's
  * own like). Never throws: a failed query or a throw is logged once with
  * `[kudos]` and returns `{status: "error"}`. A failed hashtag lookup only
- * turns title tags into plain text. Request-time only (inside `<Suspense>`).
+ * turns title tags into plain text. The hashtag list is read once per page
+ * render (`getHashtagRowsPerRequest`), shared with the other loaders.
+ * Request-time only (inside `<Suspense>`).
  */
 export async function readKudos<T>(
   filters: KudosFilters,
@@ -44,15 +47,13 @@ export async function readKudos<T>(
     if (shape.order === "hearts") query = query.order("like_count", { ascending: false });
     query = query.order("seq", { ascending: false }).limit(shape.limit);
 
-    const [kudos, hashtags] = await Promise.all([query, supabase.from("hashtags").select(HASHTAG_COLUMNS)]);
+    const [kudos, hashtags] = await Promise.all([query, getHashtagRowsPerRequest()]);
     if (kudos.error) {
       console.error(`[kudos] query failed: ${kudos.error.code || "?"} ${kudos.error.message}`);
       return { status: "error" };
     }
-    if (hashtags.error) {
-      console.error(`[kudos] hashtag lookup failed: ${hashtags.error.code || "?"} ${hashtags.error.message}`);
-    }
-    return { status: "ok", data: map(kudos.data, hashtags.error ? [] : hashtags.data) };
+    if (hashtags.status === "error") console.error(`[kudos] hashtag lookup failed: ${hashtags.reason}`);
+    return { status: "ok", data: map(kudos.data, hashtags.status === "ok" ? hashtags.rows : []) };
   } catch (cause) {
     unstable_rethrow(cause);
     console.error(`[kudos] query threw: ${errorMessage(cause)}`);

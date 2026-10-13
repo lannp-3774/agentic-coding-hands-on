@@ -13,13 +13,17 @@ export function normalizeName(value: string): string {
     .trim();
 }
 
-/** Ids of the nodes whose name contains the query, ignoring case and diacritics. */
+/**
+ * Ids of the nodes whose name contains the query, ignoring case and diacritics.
+ * A query that normalises to nothing (blank, or only combining marks) matches nothing.
+ */
 export function matchSpotlightNodes(
   nodes: ReadonlyArray<{ kudosId: string; name: string }>,
   query: string,
 ): Set<string> {
   const needle = normalizeName(query);
   const matches = new Set<string>();
+  if (needle === "") return matches;
   for (const node of nodes) {
     if (normalizeName(node.name).includes(needle)) matches.add(node.kudosId);
   }
@@ -43,7 +47,10 @@ export type SpotlightSearchOutcome =
   | { kind: "error"; error: string }
   | { kind: "result"; matchIds: Set<string> | null; status: string };
 
-/** Validates on submit, not on input (no `maxLength`): empty and over-long are rejected. */
+/**
+ * Validates on submit, not on input (no `maxLength`): empty (also after
+ * normalising) and over-long are rejected.
+ */
 export function evaluateSpotlightSearch(
   nodes: ReadonlyArray<{ kudosId: string; name: string }>,
   rawValue: string,
@@ -52,6 +59,8 @@ export function evaluateSpotlightSearch(
   const query = rawValue.trim();
   if (query === "") return { kind: "error", error: messages.searchRequired };
   if (query.length > SPOTLIGHT_SEARCH_MAX_LENGTH) return { kind: "error", error: messages.searchTooLong };
+  // Only combining marks (e.g. a lone accent) is as empty as a blank query.
+  if (normalizeName(query) === "") return { kind: "error", error: messages.searchRequired };
 
   const matchIds = matchSpotlightNodes(nodes, query);
   if (matchIds.size === 0) return { kind: "result", matchIds: null, status: messages.noMatch };

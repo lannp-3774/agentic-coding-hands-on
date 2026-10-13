@@ -1,18 +1,24 @@
-// Guards for media paths read from the DB (F006 ALG-002). Avatars may be local
-// or https; gallery images must be local, so a row cannot make the page load
-// arbitrary remote content.
+// Guards for media paths read from the DB (F006 ALG-002). Avatars and gallery
+// images must both be local paths under /public (avatars: clarifications
+// 2026-10-13, M1), so a row can never make a viewer's browser load remote content.
 
-/** Local path under /public: starts with a single "/", no protocol-relative "//", no "\". */
+/**
+ * Local path under /public, the same rule as the DB checks
+ * (`^/[^/\\[:space:]][^\\[:space:]]*$`): one leading "/" (never a
+ * protocol-relative "//"), no backslash, no whitespace and no control character
+ * anywhere (a "/\t/host" must not turn protocol-relative in an href).
+ */
+const LOCAL_PATH_PATTERN = /^\/[^/\\\s\p{Cc}][^\\\s\p{Cc}]*$/u;
+
 function isLocalPath(v: string): boolean {
-  return v.startsWith("/") && !v.startsWith("//") && !v.includes("\\");
+  return LOCAL_PATH_PATTERN.test(v);
 }
 
-/** Local path or `https://` URL, else null (the UI shows the initial instead). */
+/** Local path, else null (the UI shows the initial instead). */
 export function safeAvatarUrl(v: unknown): string | null {
   if (typeof v !== "string") return null;
   const s = v.trim();
-  if (s === "") return null;
-  return isLocalPath(s) || s.startsWith("https://") ? s : null;
+  return isLocalPath(s) ? s : null;
 }
 
 /** Gallery image: local path only. */

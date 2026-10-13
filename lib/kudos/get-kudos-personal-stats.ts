@@ -1,7 +1,7 @@
 import { unstable_rethrow } from "next/navigation";
 import { connection } from "next/server";
-import { getCurrentUser } from "@/lib/supabase/current-user";
 import { createClient } from "@/lib/supabase/server";
+import { getMySunnerPerRequest } from "./get-my-sunner-per-request";
 import { firstSunnerRow, toPersonalStats } from "./sidebar-mapping";
 import type { PersonalStatsResult } from "./sidebar-types";
 
@@ -10,7 +10,8 @@ import type { PersonalStatsResult } from "./sidebar-types";
  *
  * - guest -> `{status:"guest"}` with no query (the region shows the login prompt);
  * - signed in but no Sunner row, or any read fails -> `{status:"unavailable"}` (every value "—");
- * - otherwise the five counts. Identity comes only from the verified session.
+ * - otherwise the five counts. Identity comes only from the verified session,
+ *   through the per-render `get_my_sunner()` read shared with the page shell.
  *
  * Never throws. Request-time only: call inside `<Suspense>`.
  */
@@ -18,17 +19,16 @@ export async function getKudosPersonalStats(): Promise<PersonalStatsResult> {
   // Outside the try: Next's prerender bail-out must never be swallowed.
   await connection();
 
-  try {
-    const user = await getCurrentUser();
-    if (!user) return { status: "guest" };
+  const me = await getMySunnerPerRequest();
+  if (me.status === "guest") return { status: "guest" };
+  if (me.status === "error") return unavailable(me.reason);
 
-    const supabase = await createClient();
-    const { data, error } = await supabase.rpc("get_my_sunner");
-    if (error) return unavailable(`get_my_sunner failed: ${error.code || "?"} ${error.message}`);
-    const sunner = firstSunnerRow(data);
+  try {
+    const sunner = firstSunnerRow(me.data);
     if (!sunner) return unavailable("no Sunner row for the signed-in user");
 
     // Owner-only boxes are visible through the user's own session (secret_boxes_select_own).
+    const supabase = await createClient();
     const count = { count: "exact", head: true } as const;
     const [sent, opened, unopened] = await Promise.all([
       supabase.from("kudos").select("id", count).eq("sender_id", sunner.id),

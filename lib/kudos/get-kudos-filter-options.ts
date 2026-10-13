@@ -2,9 +2,10 @@ import { unstable_rethrow } from "next/navigation";
 import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import type { KudosFilterOptions, KudosRead } from "./kudos-card-types";
-import { DEPARTMENT_COLUMNS, HASHTAG_COLUMNS } from "./kudos-card-columns";
+import { DEPARTMENT_COLUMNS } from "./kudos-card-columns";
 import { isHashtagRow, keepValid } from "./kudos-card-mapping";
 import { DEPARTMENT_CODE_PATTERN } from "./kudos-filters";
+import { getHashtagRowsPerRequest } from "./get-hashtag-rows-per-request";
 
 type DepartmentRow = { code: string };
 
@@ -17,7 +18,8 @@ const isDepartmentRow = (v: unknown): v is DepartmentRow =>
 /**
  * Values of the Hashtag and Department filter lists (F006 A7, FR-301):
  * `hashtags` by `sort_order` (then slug), `departments` by code (labels are
- * the code only). Read with the request's server client (public read).
+ * the code only). Read with the request's server client (public read); the
+ * hashtag list is the per-request read shared with Highlight and All Kudos.
  *
  * Never throws: a failed query or a throw is logged once with `[kudos]` and
  * returns `{status: "error"}`; the filter bar then offers only "Tất cả".
@@ -30,23 +32,16 @@ export async function getKudosFilterOptions(): Promise<KudosRead<KudosFilterOpti
   try {
     const supabase = await createClient();
     const [hashtags, departments] = await Promise.all([
-      supabase
-        .from("hashtags")
-        .select(HASHTAG_COLUMNS)
-        .order("sort_order", { ascending: true })
-        .order("slug", { ascending: true }),
+      getHashtagRowsPerRequest(),
       supabase.from("departments").select(DEPARTMENT_COLUMNS).order("code", { ascending: true }),
     ]);
-    const failure = hashtags.error ?? departments.error;
-    if (failure) {
-      console.error(`[kudos] filter options query failed: ${failure.code || "?"} ${failure.message}`);
-      return { status: "error" };
-    }
+    if (hashtags.status === "error") return queryFailed(hashtags.reason);
+    if (departments.error) return queryFailed(`${departments.error.code || "?"} ${departments.error.message}`);
 
     return {
       status: "ok",
       data: {
-        hashtags: keepValid(hashtags.data, isHashtagRow, "hashtag").map(({ slug, label }) => ({ slug, label })),
+        hashtags: keepValid(hashtags.rows, isHashtagRow, "hashtag").map(({ slug, label }) => ({ slug, label })),
         departments: keepValid(departments.data, isDepartmentRow, "department").map((row) => row.code),
       },
     };
@@ -56,4 +51,9 @@ export async function getKudosFilterOptions(): Promise<KudosRead<KudosFilterOpti
     console.error(`[kudos] filter options query threw: ${message}`);
     return { status: "error" };
   }
+}
+
+function queryFailed(reason: string): KudosRead<KudosFilterOptions> {
+  console.error(`[kudos] filter options query failed: ${reason}`);
+  return { status: "error" };
 }

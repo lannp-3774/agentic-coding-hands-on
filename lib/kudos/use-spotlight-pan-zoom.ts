@@ -192,6 +192,7 @@ export function useSpotlightPanZoom(board: Size): SpotlightPanZoom {
       el.removeEventListener("wheel", onWheel);
       el.removeEventListener("keydown", onKeyDown);
       drag = null;
+      dragMovedRef.current = false; // off mid-drag: no pointerup clears it, later node clicks would be swallowed
     };
   }, [panZoomOn, boardWidth, boardHeight]);
 
