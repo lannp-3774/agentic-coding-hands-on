@@ -18,7 +18,7 @@ edge cases, and configuration for a BA/QA audience.
 
 **How to read this file:** § 2 is the index — pick the action you care about and read its block
 in § 3 straight through; each block is one complete thread, top to bottom. § 4 is the shared
-appendix — jump in only when a § 3 block points you there. Đây là bản nháp (greenfield): chưa có mã nguồn của feature, nên mọi rung **Source** là `TBD (draft)`, tên handler là tên dự kiến (đánh dấu *(planned)*), và các cam kết về hành vi mới dùng **Design basis** chứ không phải trích dẫn `path:line`.
+appendix — jump in only when a § 3 block points you there. Bản này soạn trước khi có mã: dòng **Source** còn `TBD (draft)` và tên đánh dấu *(planned)* chưa được đối chiếu lại với mã đã giao (Stage 6 chỉ đối chiếu A1, A2, A4, A7, A11, A12 và § 4.2, § 4.5; muốn có `path:line` cho phần còn lại chạy `/tkm:rebuild-spec --features F006`).
 
 ## 1. Technical Overview
 
@@ -66,18 +66,18 @@ flowchart LR
 | # | Action (handler) | Method · Path | Codes | Writes | Detail |
 |---|---|---|---|---|---|
 | **A0** | *cross-cutting — belongs to no single action* | — | FR-001, FR-601, BR-001 | — | § 4.4 |
-| **A1** | `SunKudosPage#render` *(planned)* | `GET` `/sun-kudos` | FR-101, FR-102, FR-201, FR-202, FR-203, FR-404, BR-002, BR-009, US001 | — *(read-only)* | § 3.1 |
-| **A2** | `KudosHighlightLoader#render` *(planned)* | `GET` `/sun-kudos` *(đoạn sau `<Suspense>` của Highlight)* | FR-204, FR-205, FR-207, FR-208, FR-211, FR-212, FR-213, BR-003, BR-004, BR-006, BR-007, BR-008, BR-009, DEC-001, ALG-001, ALG-002, INT-001, US002, US007 | — *(read-only: `kudos`, `sunners`, `kudos_hashtags`, `hashtags`, `kudos_images`)* | § 3.2 |
-| **A3** | `useHighlightCarousel#goTo` *(planned; client behaviour, no HTTP)* | — | FR-206, DEC-002, US002 | — *(read-only, chỉ đổi thẻ đang xem)* | § 3.2 |
-| **A4** | `KudosFeedLoader#render` *(planned)* | `GET` `/sun-kudos` *(đoạn sau `<Suspense>` của All Kudos)* | FR-209, FR-211, FR-212, FR-213, FR-214, FR-215, BR-003, BR-005, BR-006, BR-007, BR-008, BR-009, DEC-003, ALG-001, ALG-002, INT-001, US003, US007 | — *(read-only: như A2)* | § 3.3 |
-| **A5** | `KudosRoute#GET` *(planned)* | `GET` `/api/kudos` | FR-209, FR-210, BR-003, BR-005, BR-006, BR-008, ALG-001, ALG-002, INT-001, US003 | — *(read-only: như A2)* | § 3.3 |
-| **A6** | `useKudosInfiniteList#loadMore` *(planned; client behaviour)* | `GET` `/api/kudos` *(gọi A5)* | FR-210, FR-215, BR-005, DEC-004, US003 | — *(read-only)* | § 3.3 |
-| **A7** | `KudosFilterOptionsLoader#render` *(planned)* | `GET` `/sun-kudos` *(đoạn sau `<Suspense>` của nút lọc)* | FR-301, INT-001, US004 | — *(read-only: `hashtags`, `departments`)* | § 3.4 |
-| **A8** | `useKudosFilters#applyFilter` *(planned; client behaviour, no HTTP riêng)* | — | FR-302, FR-303, FR-304, FR-305, BR-006, DEC-005, US004 | — *(read-only, chỉ đổi URL)* | § 3.4 |
-| **A9** | `useCopyKudosLink#copy` *(planned; client behaviour, no HTTP)* | — | FR-401, BR-009, BR-013, DEC-006, INT-002, US005 | — *(chỉ ghi clipboard)* | § 3.5 |
-| **A10** | `KudosCardLinks#resolveHref` *(planned; client behaviour)* | — | FR-402, FR-403, BR-010, DEC-007, US006 | — *(read-only, chỉ điều hướng)* | § 3.5 |
-| **A11** | `public.link_or_create_sunner#trigger` *(planned; background, no FE)* | trigger · `auth.users` AFTER INSERT | FR-002, BR-011, US008 | `sunners` | § 3.6 ▸ **diagram** |
-| **A12** | `public.sync_kudos_received_count#trigger` *(planned; background, no FE)* | trigger · `public.kudos` AFTER INSERT/DELETE | FR-003, BR-012, US007 | `sunners` | § 3.6 ▸ **diagram** |
+| **A1** | `SunKudosPage#render` *(planned)* | `GET` `/sun-kudos` | FR-101, FR-102, FR-201, FR-202, FR-203, FR-404, BR-002, BR-009, US034 | — *(read-only)* | § 3.1 |
+| **A2** | `KudosHighlightLoader#render` *(planned)* | `GET` `/sun-kudos` *(đoạn sau `<Suspense>` của Highlight)* | FR-204, FR-205, FR-207, FR-208, FR-211, FR-212, FR-213, BR-003, BR-004, BR-006, BR-007, BR-008, BR-009, DEC-001, ALG-001, ALG-002, INT-001, US035, US040 | — *(read-only: `kudos`, `sunners`, `kudos_hashtags`, `hashtags`, `kudos_images`)* | § 3.2 |
+| **A3** | `useHighlightCarousel#goTo` *(planned; client behaviour, no HTTP)* | — | FR-206, DEC-002, US035 | — *(read-only, chỉ đổi thẻ đang xem)* | § 3.2 |
+| **A4** | `KudosFeedLoader#render` *(planned)* | `GET` `/sun-kudos` *(đoạn sau `<Suspense>` của All Kudos)* | FR-209, FR-211, FR-212, FR-213, FR-214, FR-215, BR-003, BR-005, BR-006, BR-007, BR-008, BR-009, DEC-003, ALG-001, ALG-002, INT-001, US036, US040 | — *(read-only: như A2)* | § 3.3 |
+| **A5** | `KudosRoute#GET` *(planned)* | `GET` `/api/kudos` | FR-209, FR-210, BR-003, BR-005, BR-006, BR-008, ALG-001, ALG-002, INT-001, US036 | — *(read-only: như A2)* | § 3.3 |
+| **A6** | `useKudosInfiniteList#loadMore` *(planned; client behaviour)* | `GET` `/api/kudos` *(gọi A5)* | FR-210, FR-215, BR-005, DEC-004, US036 | — *(read-only)* | § 3.3 |
+| **A7** | `KudosFilterOptionsLoader#render` *(planned)* | `GET` `/sun-kudos` *(đoạn sau `<Suspense>` của nút lọc)* | FR-301, INT-001, US037 | — *(read-only: `hashtags`, `departments`)* | § 3.4 |
+| **A8** | `useKudosFilters#applyFilter` *(planned; client behaviour, no HTTP riêng)* | — | FR-302, FR-303, FR-304, FR-305, BR-006, DEC-005, US037 | — *(read-only, chỉ đổi URL)* | § 3.4 |
+| **A9** | `useCopyKudosLink#copy` *(planned; client behaviour, no HTTP)* | — | FR-401, BR-009, BR-013, DEC-006, INT-002, US038 | — *(chỉ ghi clipboard)* | § 3.5 |
+| **A10** | `KudosCardLinks#resolveHref` *(planned; client behaviour)* | — | FR-402, FR-403, BR-010, DEC-007, US039 | — *(read-only, chỉ điều hướng)* | § 3.5 |
+| **A11** | `public.link_or_create_sunner()#trigger` *(background, no FE)* | trigger · `auth.users` AFTER INSERT (đã xác nhận) · AFTER UPDATE OF `email_confirmed_at` | FR-002, BR-011, US041 | `sunners` | § 3.6 ▸ **diagram** |
+| **A12** | `public.sync_kudos_received_count#trigger` *(planned; background, no FE)* | trigger · `public.kudos` AFTER INSERT/DELETE | FR-003, BR-012, US040 | `sunners` | § 3.6 ▸ **diagram** |
 
 **Rung set** — mỗi khối trong § 3 theo thứ tự **Who** → **FE** → **Request** → **BE** → **Rule** → **Result** → **State** → **Source**; rung vắng thì bỏ hẳn. Feature này không có máy trạng thái bền vững (§ 4.3) và bản nháp chưa có mã nguồn để xác nhận chuyển trạng thái, nên không khối nào có rung **State**; rung **Source** là `TBD (draft)` ở mọi khối. Chỉ A11 và A12 là hành động nền (ghi bảng bằng trigger) nên mang `sequenceDiagram`; các khối còn lại chỉ đọc, đồng bộ, dưới ngưỡng.
 
@@ -87,12 +87,12 @@ flowchart LR
 
 #### A1 · Hiển thị trang Sun* Kudos
 `GET /sun-kudos` → `` `SunKudosPage#render` *(planned)* ``
-`FR-101` `FR-102` `FR-201` `FR-202` `FR-203` `FR-404` `BR-002` `BR-009` `US001` · `SCR006_SunKudosLiveBoard`
+`FR-101` `FR-102` `FR-201` `FR-202` `FR-203` `FR-404` `BR-002` `BR-009` `US034` · `SCR006_SunKudosLiveBoard`
 
 **Who** · Người xem, khách hoặc đã đăng nhập *(gate A0 — § 4.4)*
 **FE** · Vỏ tĩnh `SaaPageShell` bọc `<Suspense>` có khung chờ nền tối cao bằng màn hình, đúng khuôn trang chủ và Awards Information. Nội dung ghép `SiteHeader` (`currentPage="kudos"`, vùng tài khoản, chuông, bộ chọn ngôn ngữ cắm vào slot sẵn có); banner (ảnh nền, tiêu đề "Hệ thống ghi nhận và cảm ơn", logo "SAA 2025 KUDOS", chỉ để xem); thanh gửi kudos A.1 (biểu tượng bút + chữ gợi ý, bấm chưa làm gì) và thanh "Tìm kiếm profile Sunner" cạnh nó, cũng vẽ đúng Figma nhưng chưa làm gì (D013, đã chốt: `<button>` không handler, không `href`); khối Highlight (tiêu đề + hai nút lọc từ A7 + carousel từ A2); vùng giữ chỗ Spotlight (một `<section>` có chiều cao cố định, F008 cắm vào); khối All Kudos (tiêu đề + danh sách từ A4) cùng cột phải giữ chỗ sidebar (F009 cắm vào, cuộn độc lập); `SiteFooter` (`currentPage="kudos"`). Mỗi thẻ kudos có một vùng giữ chỗ nút tim nhận `{kudosId, likeCount, likedByMe, isSender}` (xem D015: hiện tim xám chỉ để xem cho tới khi F007 thay bằng nút thật). F006 gắn một kho trạng thái tim dùng chung theo mã kudos (provider client; F007 cấp logic, tên `TBD (draft)`) bao quanh cả Highlight lẫn All Kudos để hai nút của cùng một kudos luôn cùng trạng thái; mỗi thẻ đăng ký giá trị khởi tạo của mình vào kho. Tất cả vùng giữ chỗ có kích thước cố định để bố cục không nhảy. Dưới khổ máy tính (D022, đã chốt) trang xếp một cột: sidebar nằm dưới All Kudos, carousel chỉ hiện một thẻ, không phần nào bị ẩn.
 **Request** · cookie `NEXT_LOCALE`; `searchParams` `hashtag`, `department` (mỗi khoá lấy giá trị chuỗi đầu tiên nếu lặp)
-**BE** · `getLocale()`, `getDictionary(locale)` có sẵn; từ điển thêm nhánh chữ riêng của trang (file chữ mới `lib/i18n/sun-kudos-copy.ts` *(planned)*, dạng `{vi, en}`). `getCurrentUser()` có sẵn (đã `cache()`, đọc lúc request, trong `<Suspense>`, lỗi thì coi như khách) cho cờ `signedIn` truyền xuống thẻ. Khi `signedIn`, `getViewerSunnerId()` *(planned)* gọi hàm `public.get_my_sunner()` (§ 4.2, § 4.4) để lấy `id` Sunner của người xem; không đọc được thì coi `viewerSunnerId = null` (fail closed: không thẻ nào là `isSender`, và DB vẫn chặn tự thích ở F007). Hàm thuần `withViewerFlags(card, viewerSunnerId)` *(planned)* gắn cho mỗi thẻ `isSender = (sender.id === viewerSunnerId)` và `likedByMe` (mặc định `false` ở F006; F007 bổ sung nguồn thật là embed lượt thích của chính người xem); A2 và A4 dùng nó ở máy chủ, A6 dùng cho thẻ nạp thêm ở trình duyệt. `parseKudosFilters(searchParams)` (nửa đầu của ALG-001) kiểm định dạng giá trị lọc rồi truyền `filters` và `filterKey` cho A2, A4, A7. `SitePage` ở `site-types.ts` mở rộng thêm `"kudos"`; header và footer chọn kiểu đang chọn như đã làm cho `"awards"`.
+**BE** · `getLocale()`, `getDictionary(locale)` có sẵn; từ điển thêm nhánh chữ riêng của trang (file chữ mới `lib/i18n/sun-kudos-copy.ts` *(planned)*, dạng `{vi, en}`). `getCurrentUser()` có sẵn (đã `cache()`, đọc lúc request, trong `<Suspense>`, lỗi thì coi như khách) cho cờ `signedIn` truyền xuống thẻ. Khi `signedIn`, `getViewerSunnerId()` (`lib/kudos/get-viewer-sunner-id.ts`) lấy `id` Sunner của người xem từ hàm `public.get_my_sunner()` (§ 4.2, § 4.4) qua `getMySunnerPerRequest()`, chỉ một lần RPC mỗi lần render trang và dùng chung với thống kê cá nhân của F009 (xem § 4.5 INT-001); không đọc được thì coi `viewerSunnerId = null` (fail closed: không thẻ nào là `isSender`, và DB vẫn chặn tự thích ở F007). Hàm thuần `withViewerFlags(card, viewerSunnerId)` *(planned)* gắn cho mỗi thẻ `isSender = (sender.id === viewerSunnerId)` và `likedByMe` (mặc định `false` ở F006; F007 bổ sung nguồn thật là embed lượt thích của chính người xem); A2 và A4 dùng nó ở máy chủ, A6 dùng cho thẻ nạp thêm ở trình duyệt. `parseKudosFilters(searchParams)` (nửa đầu của ALG-001) kiểm định dạng giá trị lọc rồi truyền `filters` và `filterKey` cho A2, A4, A7. `SitePage` ở `site-types.ts` mở rộng thêm `"kudos"`; header và footer chọn kiểu đang chọn như đã làm cho `"awards"`.
 **Rule**
 - **BR-002 — Mỗi trang đánh dấu đang chọn đúng một liên kết điều hướng, là liên kết trỏ về chính trang đó.** Ở trang này là "Sun* Kudos" (header chữ vàng, gạch chân, `aria-current="page"`; footer kiểu chọn riêng); "About SAA 2025" và "Awards Information" về kiểu thường; trang chủ và Awards Information không truyền `"kudos"` nên giữ nguyên hành vi. **Design basis:** F004 đã thiết lập mẫu `currentPage`; feature này chỉ thêm giá trị `"kudos"`.
 - **BR-009 — Ngôn ngữ chỉ là `vi` hoặc `en` (mặc định `vi`); EN chỉ dịch chữ giao diện.** Nhãn trang, nút lọc, tooltip sao, thông báo đều tra từ từ điển; nội dung kudos, tên, hashtag, phòng ban lấy nguyên từ dữ liệu. *(§ 4.4)*
@@ -109,7 +109,7 @@ flowchart LR
 
 #### A2 · Nạp Highlight (top 5 theo tim) và vẽ carousel
 `GET /sun-kudos` *(đoạn sau `<Suspense>` của Highlight)* → `` `KudosHighlightLoader#render` *(planned)* ``
-`FR-204` `FR-205` `FR-207` `FR-208` `FR-211` `FR-212` `FR-213` `BR-003` `BR-004` `BR-006` `BR-007` `BR-008` `BR-009` `DEC-001` `ALG-001` `ALG-002` `INT-001` `US002` `US007` · `SCR006_SunKudosLiveBoard`
+`FR-204` `FR-205` `FR-207` `FR-208` `FR-211` `FR-212` `FR-213` `BR-003` `BR-004` `BR-006` `BR-007` `BR-008` `BR-009` `DEC-001` `ALG-001` `ALG-002` `INT-001` `US035` `US040` · `SCR006_SunKudosLiveBoard`
 
 **Who** · Người xem *(vai trò DB `anon` hoặc `authenticated`; gate A0 — § 4.4)*
 **FE** · Tiêu đề khối ("Sun* Annual Awards 2025" nhỏ + "HIGHLIGHT KUDOS" lớn) và carousel; mỗi thẻ gồm khối người gửi, mũi tên gửi→nhận (không bấm), khối người nhận (ảnh đại diện, tên, phòng ban, sao, nhãn Hero), giờ, nhãn tiêu đề (cột `kudos.title`, chữ tự do; là chip bấm được chỉ khi `titleTagSlug` khác rỗng, ngược lại chữ thường — D014), nội dung cắt 3 dòng, hashtag một dòng tối đa 5, vùng nút tim (nhận `likedByMe`, `isSender` từ A1), "Copy Link" (A9) và "Xem chi tiết" (A10); không có ảnh đính kèm. Dưới khổ máy tính chỉ hiện thẻ đang xem (D022). Carousel là client component (A3) nhận mảng thẻ đã ánh xạ. Khung chờ: một khung cùng kích thước carousel, không chữ. Rỗng hoặc lỗi: một dòng "Hiện tại chưa có Kudos nào." thay cho carousel.
@@ -140,7 +140,7 @@ flowchart LR
 
 #### A3 · Chuyển thẻ trong carousel
 `—` → `` `useHighlightCarousel#goTo` *(planned)* `` *(client; hook của `HighlightCarousel`, trong khối của A2)*
-`FR-206` `DEC-002` `US002` · `SCR006_SunKudosLiveBoard`
+`FR-206` `DEC-002` `US035` · `SCR006_SunKudosLiveBoard`
 
 **Who** · Người xem *(gate A0 — § 4.4)*
 **FE** · Hai nút mũi tên và bộ đếm `n/tổng`; thẻ đang xem ở giữa (to, rõ), các thẻ liền kề mờ (nhỏ, `opacity` thấp) và `inert`, các thẻ xa hơn ẩn; chuyển thẻ bằng CSS transform, không chạy chuyển động khi `prefers-reduced-motion: reduce`. Dưới khổ máy tính (D022) chỉ thẻ đang xem hiện, thẻ liền kề ẩn; mũi tên và bộ đếm giữ nguyên. Bao ngoài `role="region" aria-roledescription="carousel"`, mỗi thẻ `role="group" aria-roledescription="slide"` và nhãn "n trên tổng".
@@ -167,7 +167,7 @@ flowchart LR
 
 #### A4 · Nạp trang đầu của All Kudos và vẽ danh sách
 `GET /sun-kudos` *(đoạn sau `<Suspense>` của All Kudos)* → `` `KudosFeedLoader#render` *(planned)* ``
-`FR-209` `FR-211` `FR-212` `FR-213` `FR-214` `FR-215` `BR-003` `BR-005` `BR-006` `BR-007` `BR-008` `BR-009` `DEC-003` `ALG-001` `ALG-002` `INT-001` `US003` `US007` · `SCR006_SunKudosLiveBoard`
+`FR-209` `FR-211` `FR-212` `FR-213` `FR-214` `FR-215` `BR-003` `BR-005` `BR-006` `BR-007` `BR-008` `BR-009` `DEC-003` `ALG-001` `ALG-002` `INT-001` `US036` `US040` · `SCR006_SunKudosLiveBoard`
 
 **Who** · Người xem *(vai trò DB `anon` hoặc `authenticated`; gate A0 — § 4.4)*
 **FE** · Tiêu đề khối ("Sun* Annual Awards 2025" nhỏ + "ALL KUDOS") và danh sách thẻ: khối người gửi/người nhận, giờ, nhãn tiêu đề (cột `kudos.title`, biểu tượng bút; bấm được chỉ khi có hashtag trùng chữ, D014), nội dung cắt 5 dòng (bấm → chi tiết, A10), thư viện ảnh vuông tối đa 5 căn trái (mỗi ảnh là `<a target="_blank" rel="noopener">` tới ảnh gốc, mở tab mới, D017), hashtag, vùng nút tim (nhận `likedByMe`, `isSender` từ A1), "Copy Link" (không có "Xem chi tiết" ở All Kudos). Danh sách là client component `KudosFeedList` (A6) nhận `initialItems`, `nextCursor`, `filters`, `viewerSunnerId` và `key={filterKey}`. Khung chờ: vài thẻ khung không chữ. Rỗng hoặc lỗi: "Hiện tại chưa có Kudos nào.".
@@ -198,7 +198,7 @@ flowchart LR
 
 #### A5 · Trả trang kế của All Kudos
 `GET /api/kudos` → `` `KudosRoute#GET` *(planned, `app/api/kudos/route.ts`)* ``
-`FR-209` `FR-210` `BR-003` `BR-005` `BR-006` `BR-008` `ALG-001` `ALG-002` `INT-001` `US003` · `SCR006_SunKudosLiveBoard`
+`FR-209` `FR-210` `BR-003` `BR-005` `BR-006` `BR-008` `ALG-001` `ALG-002` `INT-001` `US036` · `SCR006_SunKudosLiveBoard`
 
 **Who** · Người xem, khách hoặc đã đăng nhập *(vai trò DB `anon` hoặc `authenticated`; gate A0 — § 4.4)*
 **FE** · không có giao diện riêng; kết quả do `useKudosInfiniteList` (A6) dựng thành thẻ.
@@ -218,7 +218,7 @@ flowchart LR
 
 #### A6 · Tự nạp thêm khi cuộn gần cuối
 `GET /api/kudos` *(gọi A5)* → `` `useKudosInfiniteList#loadMore` *(planned)* `` *(client; hook của `KudosFeedList`)*
-`FR-210` `FR-215` `BR-005` `DEC-004` `US003` · `SCR006_SunKudosLiveBoard`
+`FR-210` `FR-215` `BR-005` `DEC-004` `US036` · `SCR006_SunKudosLiveBoard`
 
 **Who** · Người xem *(gate A0 — § 4.4)*
 **FE** · Một phần tử sentinel ở cuối danh sách; vùng trạng thái dưới danh sách hiện khung chờ khi đang nạp, hoặc thông báo lỗi kèm nút "Thử lại" (D020); `aria-live="polite"` báo lỗi.
@@ -246,12 +246,12 @@ flowchart LR
 
 #### A7 · Nạp danh sách giá trị cho hai nút lọc
 `GET /sun-kudos` *(đoạn sau `<Suspense>` của nút lọc)* → `` `KudosFilterOptionsLoader#render` *(planned)* ``
-`FR-301` `INT-001` `US004` · `SCR006_SunKudosLiveBoard`
+`FR-301` `INT-001` `US037` · `SCR006_SunKudosLiveBoard`
 
 **Who** · Người xem *(vai trò DB `anon` hoặc `authenticated`; gate A0 — § 4.4)*
 **FE** · Hai nút "Hashtag" và "Phòng ban" ở đầu khối Highlight; bấm mở danh sách `role="listbox"` (một danh sách mở mỗi lần, Esc hoặc bấm ra ngoài thì đóng) có mục "Tất cả" (D020) và các giá trị; nút hiện giá trị đang chọn. Khung chờ: hai nút cùng kích thước, không chữ.
 **Request** · `filters` hiện tại từ A1 (để đánh dấu giá trị đang chọn)
-**BE** · `getKudosFilterOptions()` *(planned, `lib/kudos/get-kudos-filter-options.ts`)*: `await connection()` ngoài `try`, hai truy vấn đọc `hashtags` (theo `sort_order`) và `departments` (theo `code`), mỗi truy vấn chọn cột tường minh; lỗi hoặc rỗng thì danh sách trống (nút vẫn hiện, danh sách chỉ có "Tất cả"); `INT-001` *(§ 4.5)*. Chưa dùng `use cache` (KISS; có thể thêm sau nếu số liệu tăng).
+**BE** · `getKudosFilterOptions()` (`lib/kudos/get-kudos-filter-options.ts`): `await connection()` ngoài `try`, đọc `hashtags` (theo `sort_order`, rồi `slug`) qua `getHashtagRowsPerRequest()` dùng chung với A2 và A4 (xem § 4.5 INT-001) và `departments` (theo `code`), mỗi truy vấn chọn cột tường minh; lỗi hoặc rỗng thì danh sách trống (nút vẫn hiện, danh sách chỉ có "Tất cả"); `INT-001` *(§ 4.5)*. Chưa dùng `use cache` (KISS; có thể thêm sau nếu số liệu tăng).
 **Rule** · Không có luật nghiệp vụ riêng ngoài nguồn giá trị: danh sách lấy đúng từ hai bảng (FR-301), hashtag là danh sách cố định theo D006 và phòng ban theo D018.
 **Result** · Chỉ đọc, không ghi DB. Hai danh sách lọc có đúng các giá trị trong hệ thống.
 **Source:** TBD (draft)
@@ -263,7 +263,7 @@ flowchart LR
 
 #### A8 · Áp bộ lọc lên Highlight và All Kudos
 `—` → `` `useKudosFilters#applyFilter` *(planned)* `` *(client; hook dùng chung cho nút lọc và chip hashtag trên thẻ)*
-`FR-302` `FR-303` `FR-304` `FR-305` `BR-006` `DEC-005` `US004` · `SCR006_SunKudosLiveBoard`
+`FR-302` `FR-303` `FR-304` `FR-305` `BR-006` `DEC-005` `US037` · `SCR006_SunKudosLiveBoard`
 
 **Who** · Người xem *(gate A0 — § 4.4)*
 **FE** · Mục của hai danh sách lọc (A7), chip hashtag và nhãn tiêu đề khi `titleTagSlug` khác rỗng (cùng là `<Link replace scroll={false}>`) trên mọi thẻ. Trong lúc chuyển, nội dung cũ vẫn hiện và mờ nhẹ (`isPending` của `useTransition`).
@@ -294,7 +294,7 @@ flowchart LR
 
 #### A9 · Chép liên kết một kudos
 `—` → `` `useCopyKudosLink#copy` *(planned)* `` *(client; nút "Copy Link" trên mọi thẻ)*
-`FR-401` `BR-009` `BR-013` `DEC-006` `INT-002` `US005` · `SCR006_SunKudosLiveBoard`
+`FR-401` `BR-009` `BR-013` `DEC-006` `INT-002` `US038` · `SCR006_SunKudosLiveBoard`
 
 **Who** · Người xem *(gate A0 — § 4.4)*
 **FE** · Nút "Copy Link" trên mỗi thẻ; thông báo nhỏ `role="status"` ở cuối màn hình, tự tắt sau 3 giây, dùng lại một phần tử cho mọi lần bấm; chữ thông báo thành công "Link copied — ready to share!" (nguyên văn Figma, giữ nguyên ở cả VN lẫn EN), thông báo lỗi theo D020.
@@ -320,7 +320,7 @@ flowchart LR
 
 #### A10 · Mở chi tiết kudos hoặc hồ sơ từ thẻ
 `—` → `` `KudosCardLinks#resolveHref` *(planned)* `` *(client; dựng `href` cho ảnh đại diện, tên, "Xem chi tiết", nội dung thẻ)*
-`FR-402` `FR-403` `BR-010` `DEC-007` `US006` · `SCR006_SunKudosLiveBoard`
+`FR-402` `FR-403` `BR-010` `DEC-007` `US039` · `SCR006_SunKudosLiveBoard`
 
 **Who** · Người xem, khách hoặc Sunner đã đăng nhập *(gate A0 — § 4.4; liên kết chỉ là tiện lợi UX, trang đích tương lai phải tự kiểm lại phiên)*
 **FE** · Ảnh đại diện và tên người gửi, người nhận là liên kết; "Xem chi tiết" (Highlight) và nội dung thẻ (cả hai khối) là liên kết tới chi tiết kudos, dùng mẫu liên kết kéo giãn (stretched link) để phủ cả thẻ mà không lồng `<a>` trong `<a>`. Liên kết tới trang chưa xây đặt `prefetch={false}` để không bắn yêu cầu nạp trước lỗi.
@@ -347,18 +347,18 @@ flowchart LR
 ### 3.6 CAP-06 — Nền dữ liệu Sunner và kudos
 
 #### A11 · Gắn hoặc tạo Sunner khi có tài khoản mới *(background, no FE)*
-`trigger · auth.users AFTER INSERT` → `` `public.link_or_create_sunner#trigger` *(planned)* ``
-`FR-002` `BR-011` `US008` · BL### TBD (draft)
+`trigger · auth.users AFTER INSERT / AFTER UPDATE OF email_confirmed_at` → `` `public.link_or_create_sunner()#trigger` ``
+`FR-002` `BR-011` `US041` · BL### TBD (draft)
 
-**Who** · *no human actor — trigger kích hoạt khi Supabase Auth tạo hàng `auth.users` (đăng nhập Google lần đầu, A0 của F001)*
+**Who** · *no human actor — trigger kích hoạt khi Supabase Auth tạo hàng `auth.users` đã xác nhận email (đăng nhập Google lần đầu, A0 của F001) hoặc khi `email_confirmed_at` đổi từ rỗng sang có giá trị*
 **FE** · *none*
 **Request** · *no HTTP request* — hàng `auth.users` mới: `id`, `email`, `email_confirmed_at`, `raw_user_meta_data`
-**BE** · hàm `public.link_or_create_sunner()` `security definer`, `set search_path = ''`, thu quyền `execute` của `public`, `anon`, `authenticated` (cùng công thức `handle_new_user` của `profiles`); đặt tên và ảnh đại diện từ `raw_user_meta_data` (`full_name` hoặc `name`; `avatar_url` hoặc `picture`, chỉ nhận `https://`, sao chép một lần lúc gắn, không đồng bộ lại); thân hàm bọc `exception when others then raise warning ... return new` để lỗi không bao giờ chặn đăng ký. Migration chạy hàm một lần cho `auth.users` đã có mà chưa có Sunner (backfill như `profiles`).
-**Rule** · **BR-011 — Một tài khoản chỉ ứng với tối đa một Sunner.** Khi `email_confirmed_at` khác `null` và có Sunner `user_id` rỗng có `lower(email)` trùng thì gắn `user_id`; không thì tạo Sunner mới; không bao giờ ghi đè Sunner đã có `user_id`; `sunners.user_id` duy nhất nên mỗi tài khoản không quá một Sunner. **Design basis:** researcher-01 § 6.
+**BE** · hai trigger trên `auth.users` cùng gọi hàm bao `public.link_or_create_sunner()`: `on_auth_user_created_link_sunner` (`AFTER INSERT`, `when (new.email_confirmed_at is not null)`) và `on_auth_user_confirmed_link_sunner` (`AFTER UPDATE OF email_confirmed_at`, `when (old.email_confirmed_at is null and new.email_confirmed_at is not null)`), vì GoTrue thường chèn user trước rồi mới đặt `email_confirmed_at` ở lần UPDATE sau (tạo bằng admin, tự xác nhận, OAuth). Hàm bao chỉ làm việc khi `new.email_confirmed_at` khác `null`, gọi hàm lõi `public.link_or_create_sunner_for_user(uuid, text, jsonb)`; cả hai `security definer`, `set search_path = ''`, thu quyền `execute` của `public`, `anon`, `authenticated`. Hàm lõi: không làm gì nếu tài khoản đã có Sunner; gắn `user_id` vào Sunner chưa gắn có `lower(email)` trùng; không thì chèn Sunner mới với tên lấy từ `raw_user_meta_data` (`full_name`, rồi `name`, rồi phần trước `@`, rồi `Sunner`; tối đa 200 ký tự) và `email` chỉ khi chưa Sunner nào giữ; **không bao giờ sao chép avatar** (metadata do người dùng ghi được; `avatar_url` chỉ nhận đường dẫn cục bộ từ seed, § 4.2). Thân hàm bao có `exception when others then raise warning ... return new` (lỗi hạ xuống WARNING, đăng ký không bao giờ bị chặn). Migration chạy hàm lõi một lần cho mọi `auth.users` đã xác nhận có từ trước (backfill).
+**Rule** · **BR-011 — Một tài khoản chỉ ứng với tối đa một Sunner, và chỉ tài khoản đã xác nhận email mới có.** Khi `email_confirmed_at` khác `null`: có Sunner `user_id` rỗng có `lower(email)` trùng thì gắn `user_id`, không thì tạo Sunner mới. Chưa xác nhận thì không gắn, không tạo cho tới khi xác nhận (trigger UPDATE chạy lại). Không bao giờ ghi đè Sunner đã có `user_id`; `sunners.user_id` duy nhất nên mỗi tài khoản không quá một Sunner. **Design basis:** researcher-01 § 6.
 **Result**
-- Writes `sunners.user_id` (và `avatar_url` nếu đang rỗng) ← `new.id`, hoặc chèn hàng `sunners` mới (`full_name`, `email`, `avatar_url`, `user_id`) khi không có Sunner để gắn.
+- Writes `sunners.user_id` ← `new.id`, hoặc chèn hàng `sunners` mới (`full_name`, `email`, `user_id`; không có `avatar_url`) khi không có Sunner để gắn.
 - Không có hiệu ứng nào khác; từ đó trang này, F007 và F009 tìm Sunner của người đang đăng nhập qua hàm `public.get_my_sunner()` (§ 4.2, § 4.4), không đọc `user_id` trực tiếp từ trình duyệt.
-**Source:** TBD (draft)
+**Source:** `supabase/migrations/20261012072146_create_kudos_board.sql` (hàm bao, hai trigger, backfill); `supabase/migrations/20261013060400_restrict_sunner_avatars_and_index_department.sql` (hàm lõi bản hiện hành, không sao chép avatar)
 **Design basis:** researcher-01 § 6 + scout § 4 (khuôn migration `create_profiles`, trigger `on_auth_user_created`).
 
 ```mermaid
@@ -367,11 +367,11 @@ sequenceDiagram
     participant T as link_or_create_sunner
     participant S as sunners
 
-    AU->>T: AFTER INSERT auth.users
-    alt email đã xác nhận VÀ có Sunner cùng email chưa gắn
-        T->>S: gắn user_id (và avatar nếu đang rỗng)
+    AU->>T: AFTER INSERT (đã xác nhận) hoặc AFTER UPDATE OF email_confirmed_at (rỗng -> có)
+    alt có Sunner cùng email chưa gắn
+        T->>S: gắn user_id (không đụng avatar)
     else không có Sunner để gắn
-        T->>S: chèn Sunner mới
+        T->>S: chèn Sunner mới (không avatar)
     end
     T-->>AU: trả NEW (lỗi nào cũng không chặn đăng ký)
 ```
@@ -379,8 +379,8 @@ sequenceDiagram
 ---
 
 #### A12 · Giữ số kudos nhận khi kudos được thêm hoặc xoá *(background, no FE)*
-`trigger · public.kudos AFTER INSERT/DELETE` → `` `public.sync_kudos_received_count#trigger` *(planned)* ``
-`FR-003` `BR-012` `US007` · BL### TBD (draft)
+`trigger · public.kudos AFTER INSERT/DELETE` → `` `public.sync_kudos_received_count()#trigger` ``
+`FR-003` `BR-012` `US040` · BL### TBD (draft)
 
 **Who** · *no human actor — trigger kích hoạt khi một hàng `kudos` được chèn hoặc xoá bằng `service_role` (seed hoặc quản trị sau này)*
 **FE** · *none*
@@ -389,7 +389,7 @@ sequenceDiagram
 **Rule** · **BR-012 — Số kudos nhận của người nhận do hệ thống tự cộng, trừ theo kudos được thêm, xoá; không ai sửa trực tiếp.** `sunners.kudos_received_count` luôn bằng số hàng `kudos` có `receiver_id` là Sunner đó; cột có `check (>= 0)`, khi trừ dùng `greatest(count - 1, 0)`; client không có quyền ghi cột này. **Design basis:** researcher-01 § 6 + clarifications.md (hạng Hero tính từ số kudos nhận, không lưu).
 **Result**
 - Writes `sunners.kudos_received_count` ← `+ 1` (chèn) hoặc `- 1` (xoá) cho đúng `receiver_id`, trong cùng giao dịch với hàng `kudos`.
-**Source:** TBD (draft)
+**Source:** `supabase/migrations/20261012072146_create_kudos_board.sql` (`sync_kudos_received_count`, trigger `kudos_sync_received_count`)
 **Design basis:** researcher-01 § 6 (trigger đếm trên `kudos`, hạng Hero tính ở TypeScript).
 
 ```mermaid
@@ -418,7 +418,7 @@ sequenceDiagram
 | A1 · A2 · A4 | Khách chưa đăng nhập mở trang | Khi site đã mở: thấy đủ nội dung, proxy không chuyển hướng; khi site còn khoá, cổng prelaunch F005 chuyển về `/countdown` *(A0, BR-001)* |
 | A2 · A4 | Bảng `kudos` rỗng, truy vấn lỗi hoặc thiếu `SUPABASE_URL`/`SUPABASE_PUBLISHABLE_KEY` | log `[kudos]`; mỗi khối tự hiện "Hiện tại chưa có Kudos nào."; phần còn lại của trang không ảnh hưởng *(DEC-001, DEC-003)* |
 | A2 · A4 · A5 | Hàng thiếu cột hoặc sai kiểu | hàng bị bỏ, log số hàng bị bỏ *(ALG-002)* |
-| A2 · A4 | Sunner chưa có phòng ban hoặc ảnh đại diện | không hiện dòng phòng ban; ảnh thay bằng chữ cái đầu của tên; `image_path` rỗng, tương đối hoặc bắt đầu `//` hoặc có `\` thì coi như không có ảnh *(ALG-002)* |
+| A2 · A4 | Sunner chưa có phòng ban hoặc ảnh đại diện, hoặc `avatar_url` không phải đường dẫn cục bộ | không hiện dòng phòng ban; ảnh thay bằng chữ cái đầu của tên (avatar chỉ nhận đường dẫn dưới `/public`, không URL ngoài); `image_path` rỗng, tương đối hoặc bắt đầu `//` hoặc có `\` thì coi như không có ảnh *(ALG-002)* |
 | A2 · A4 | Kudos có hơn 5 hashtag hoặc hơn 5 ảnh | chỉ hiện 5 hashtag đầu (theo `sort_order` của hashtag) và 5 ảnh đầu (theo `sort_order` của ảnh) *(BR-007)* |
 | A2 · A4 | Một Sunner vừa là người gửi vừa là người nhận trong dữ liệu seed | hiển thị bình thường; không có ràng buộc `sender_id <> receiver_id` ở F006 *(§ 5.2)* |
 | A3 | Có ít hơn 5 kudos nổi bật | bộ đếm theo số thẻ thực; một thẻ thì cả hai mũi tên tắt *(DEC-002)* |
@@ -433,9 +433,9 @@ sequenceDiagram
 | A9 | Bấm "Copy Link" liên tiếp nhiều lần | thông báo nhỏ được dùng lại một phần tử, bộ đếm giờ tắt đặt lại *(DEC-006)* |
 | A10 | Phiên không xác định được (lỗi đọc phiên) | coi như khách, mọi liên kết thẻ trỏ `/login` *(DEC-007)* |
 | A10 | Trang đích `/sun-kudos/[id]` hoặc `/profiles/[id]` chưa xây | 404 mặc định của Next, trang bảng không ảnh hưởng *(BR-010)* |
-| A11 | Tài khoản có email trùng một Sunner nhưng `email_confirmed_at` rỗng | không gắn; tạo Sunner mới *(BR-011)* |
-| A11 | Hai tài khoản cùng email xuất hiện (khác nhà cung cấp) | tài khoản đầu gắn Sunner có sẵn; tài khoản sau thấy `user_id` đã có nên nhận Sunner mới *(BR-011)* |
-| A11 | Lỗi bất kỳ trong thân trigger | `raise warning`, trả `NEW`; đăng ký vẫn thành công, tài khoản chưa có Sunner cho tới backfill kế *(BR-011)* |
+| A11 | Tài khoản có email trùng một Sunner nhưng `email_confirmed_at` rỗng | không gắn, không tạo Sunner nào; khi email được xác nhận, trigger UPDATE gắn hoặc tạo *(BR-011)* |
+| A11 | Hai tài khoản cùng email | GoTrue từ chối email trùng nên không xảy ra (ghi chú thủ công, không tự động hoá); nếu vẫn có, tài khoản sau nhận Sunner mới không có `email` (email vẫn duy nhất) *(BR-011)* |
+| A11 | Lỗi bất kỳ trong thân trigger | `raise warning` (hạ xuống WARNING), trả `NEW`; đăng ký vẫn thành công, tài khoản chưa có Sunner cho tới backfill kế *(BR-011)* |
 | A12 | Xoá một kudos làm số nhận về dưới 0 (dữ liệu bất nhất) | `greatest(count - 1, 0)` giữ không âm *(BR-012)* |
 | A12 | `service_role` sửa `receiver_id` của kudos đã có | không được hỗ trợ: trigger chỉ xử lý INSERT và DELETE *(§ 5.2)* |
 | A1-A12 | Người đã đăng nhập mở trang | cùng nội dung như khách; chỉ vùng tài khoản khác (F003) và liên kết thẻ dẫn tới đích thay vì `/login` *(A0, BR-001)* |
@@ -467,7 +467,7 @@ sequenceDiagram
 | `SaaPageShell`, `LanguageSelector`, `AccountRegion`, `AccountBellRegion` | vỏ trang, bộ chọn ngôn ngữ, hai vùng tài khoản (F003) | A1 | `app/_components/site/saa-page-shell.tsx`, `app/_components/site/language-selector.tsx`, `app/_components/header-behaviour/account-region.tsx` *(có sẵn)* |
 | `getLocale`, `getDictionary`, bản chữ của trang | cookie ngôn ngữ, từ điển, chữ riêng của trang Sun* Kudos | A1, A2, A4, A9 | `lib/i18n/dictionary.ts` *(có sẵn, sửa)*, `lib/i18n/sun-kudos-copy.ts` *(planned)* |
 | `createClient`, `getCurrentUser` | Supabase server client gắn cookie request; người dùng hiện tại (fail closed) | A1, A2, A4, A5, A7 | `lib/supabase/server.ts`, `lib/supabase/current-user.ts` *(có sẵn, không đổi)* |
-| `link_or_create_sunner`, `sync_kudos_received_count`, `get_my_sunner` | hai hàm trigger của DB và một hàm RPC `security definer` chỉ trả hàng Sunner của người gọi | A0, A11, A12 | `supabase/migrations/<timestamp>_create_kudos_board.sql` *(planned)* |
+| `link_or_create_sunner`, `link_or_create_sunner_for_user`, `sync_kudos_received_count`, `get_my_sunner` | hàm bao trigger `auth.users`, hàm lõi gắn/tạo Sunner, hàm trigger đếm kudos nhận và một hàm RPC `security definer` chỉ trả hàng Sunner của người gọi | A0, A11, A12 | `supabase/migrations/20261012072146_create_kudos_board.sql`, `20261013060400_restrict_sunner_avatars_and_index_department.sql` (hàm lõi bản hiện hành) |
 
 ### 4.2 Data Model
 
@@ -533,7 +533,7 @@ erDiagram
 | `KudosImage` *(mới; MODEL### TBD (draft))* | `kudos_images` | khoá (`kudos_id`, `sort_order`), `image_path` | ảnh đính kèm, thứ tự hiển thị *(A4, A5)* |
 
 **Design basis** (migration `supabase/migrations/<timestamp>_create_kudos_board.sql` *(planned)*, cộng thêm hoàn toàn, theo khuôn `create_awards` và `create_site_settings`: đầu tệp có `-- ROLLBACK STRATEGY` + `-- Down SQL` + ghi chú F006; chưa có bảng cũ nào bị đổi):
-- Tên bảng và cột là tạm; mã `MODEL###` do bước promote cấp. F006 tạo cả hai bộ đếm tim: `kudos.like_count` và `sunners.hearts_total` (mặc định 0, `check >= 0`) để Highlight có khoá sắp xếp ngay và F009 có chỗ đọc tổng tim; F007 chỉ thêm `kudos_likes`, `special_days` và các trigger bảo trì hai cột đó; F009 thêm `secret_boxes`. `kudos.title` là cột chữ tự do (D014, đã chốt), không khoá ngoại tới `hashtags`; `titleTagSlug` của thẻ do ALG-002 suy ra khi ánh xạ.
+- Tên bảng và cột là tạm; mã `MODEL###` do bước promote cấp. F006 tạo cả hai bộ đếm tim: `kudos.like_count` và `sunners.hearts_total` (mặc định 0, `check >= 0`) để Highlight có khoá sắp xếp ngay và F009 có chỗ đọc tổng tim; F007 chỉ thêm `kudos_likes`, `special_days` và các trigger bảo trì hai cột đó; F009 thêm `secret_boxes`. `kudos.title` là cột chữ tự do (D014, đã chốt), không khoá ngoại tới `hashtags`; `titleTagSlug` của thẻ do ALG-002 suy ra khi ánh xạ. `sunners.avatar_url` chỉ là đường dẫn cục bộ dưới `/public` (CHECK `^/[^/\\[:space:]][^\\[:space:]]*$`, tối đa 2048 ký tự: một `/` đầu, không `//`, không `\`, không khoảng trắng; clarifications 2026-10-13, M1); NULL thì hiện chữ cái đầu; migration `20261013060400_restrict_sunner_avatars_and_index_department.sql` xoá giá trị cũ không cục bộ. Chỉ mục: `sunners_user_id_key` (duy nhất, phục vụ `get_my_sunner`), `sunners_email_lower_key`, `sunners_department_code_idx` (bộ lọc Department của All Kudos), `kudos_highlight_idx (like_count desc, seq desc)`, `kudos_receiver_seq_idx`, `kudos_sender_id_idx`, `kudos_hashtags_slug_kudos_idx`; `kudos.seq` có chỉ mục duy nhất của ràng buộc `unique`, đủ cho `ORDER BY seq DESC`.
 - `public.get_my_sunner()` *(provisional name)*: `security definer`, `set search_path = ''`, trả tối đa một hàng `sunners` có `user_id = (select auth.uid())` với cột `id, full_name, avatar_url, department_code, kudos_received_count, hearts_total` (không `email`, không `user_id`); thu `execute` của `public`, `anon`, rồi cấp `execute` cho `authenticated`. Đây là đường duy nhất để trình duyệt/server client biết Sunner của người xem, nên `user_id` và `email` không phải cấp quyền cột cho client (F007 trigger và policy `secret_boxes` của F009 cũng dùng nó hoặc chạy `security definer`).
 - `sunners.user_id` tham chiếu `auth.users(id)` với `on delete set null`; chỉ mục duy nhất trên `user_id` (khi khác rỗng) và trên `lower(email)` (khi khác rỗng); `department_code` tham chiếu `departments(code)`.
 - Chỉ mục: `kudos (like_count desc, seq desc)` cho Highlight, `kudos (seq desc)` cho All Kudos, `kudos (receiver_id, seq desc)` cho lọc phòng ban, `kudos_hashtags (hashtag_slug, kudos_id)` cho lọc hashtag, `sunners (user_id)`.
@@ -641,7 +641,7 @@ feed:      (cursor ? base.lt("seq", cursor) : base).order("seq", desc).limit(PAG
 **Used in:** A2, A4, A5
 **Source:** TBD (draft)
 **Design basis:** scout § 2 (khuôn `award-detail-mapping`: kiểu bảo vệ, bộ ánh xạ thuần, `pick(locale, vi, en)`) + BR-003, BR-007, BR-008
-**Input:** các hàng kudos kèm embed, danh sách `hashtags` (`slug`, `label`, một truy vấn nhỏ trong cùng getter), `locale` · **Output:** danh sách `KudosCard` giữ nguyên thứ tự · **Complexity:** O(n)
+**Input:** các hàng kudos kèm embed, danh sách `hashtags` (`slug`, `label`; đọc một lần mỗi lần render trang qua `getHashtagRowsPerRequest()`), `locale` · **Output:** danh sách `KudosCard` giữ nguyên thứ tự · **Complexity:** O(n)
 **Description:** Hàng thiếu cột bắt buộc hoặc sai kiểu bị bỏ và đếm vào log. Mỗi hàng hợp lệ thành một thẻ: giờ (BR-008), hạng Hero và số sao của người gửi, người nhận (BR-003), hashtag sắp theo `sort_order` của hashtag, ảnh sắp theo `sort_order` của ảnh, `likeCount` từ `like_count`; `titleTagSlug` là `slug` của hashtag có `label` trùng chữ với `title` (so khớp nguyên văn sau khi cắt khoảng trắng hai đầu; `title` rỗng hoặc không trùng thì `null`, D014); ảnh đại diện chỉ nhận đường dẫn gốc dưới `/public` (bắt đầu `/`, không `//`, không `\`) hoặc `https://`, ngoài ra coi như không có (chữ cái đầu thay thế).
 
 **Pseudocode:**
@@ -654,7 +654,7 @@ cards = rows.map(r => ({
   sender: person(r.sender), receiver: person(r.receiver),
   hashtags: r.hashtags.sortBy(h => h.sort_order).map(h => ({slug: h.slug, label: h.label})),
   images: r.images.sortBy(i => i.sort_order).map(i => i.image_path).filter(isAllowedImagePath) }))
-person(s) = { id: s.id, name: s.full_name, department: s.department_code, avatarUrl: safeAvatar(s.avatar_url),
+person(s) = { id: s.id, name: s.full_name, department: s.department_code, avatarUrl: safeAvatarUrl(s.avatar_url),   # chỉ đường dẫn cục bộ dưới /public, không thì null
               ...heroTierOf(s.kudos_received_count) }
 ```
 
@@ -666,7 +666,7 @@ person(s) = { id: s.id, name: s.full_name, department: s.department_code, avatar
 **Type:** api-call
 **Target:** Supabase Data API (PostgREST) trên `public.kudos`, `public.sunners`, `public.departments`, `public.hashtags`, `public.kudos_hashtags`, `public.kudos_images`, qua server client dùng khóa publishable (vai trò `anon` khi không có phiên, `authenticated` khi có)
 **Payload:** truy vấn lồng với cột tường minh (`KUDOS_CARD_COLUMNS`), bộ lọc `eq`/`lt`, `order`, `limit`; không có secret nào đi qua trình duyệt, không có `service_role`.
-**Failure handling:** lỗi truy vấn hoặc ngoại lệ được log một dòng `[kudos]` và trả `{status: "error"}` (A2, A4: hiện thông báo rỗng, DEC-001/DEC-003; A5: 500 để A6 hiện "Thử lại", DEC-004); không retry; không cache, đọc theo từng request vì thẻ về sau có dữ liệu theo người dùng (`my_like` của F007).
+**Failure handling:** lỗi truy vấn hoặc ngoại lệ được log một dòng `[kudos]` và trả `{status: "error"}` (A2, A4: hiện thông báo rỗng, DEC-001/DEC-003; A5: 500 để A6 hiện "Thử lại", DEC-004); không retry; không dùng `use cache`, đọc theo từng request vì thẻ có dữ liệu theo người dùng (`my_like` của F007). Hai đọc dùng chung trong một lần render trang, bọc bằng `cache()` của React (chỉ nhớ trong một lượt render, không chia sẻ giữa các request): `getHashtagRowsPerRequest()` (`lib/kudos/get-hashtag-rows-per-request.ts`; danh sách `hashtags` cho Highlight, trang đầu All Kudos và nút lọc: 1 truy vấn thay vì 3) và `getMySunnerPerRequest()` (`lib/kudos/get-my-sunner-per-request.ts`; một RPC `get_my_sunner()` cho `getViewerSunnerId` và thống kê F009; khách không gọi). Server Action và Route Handler không phải lượt render nên `GET /api/kudos` vẫn tự đọc `hashtags` mỗi lần.
 
 ### Chép văn bản vào clipboard của người xem (INT-002)
 **Linked FR:** FR-401
@@ -692,10 +692,11 @@ VN_UTC_OFFSET_HOURS = 7                                 # BR-008
 COPY_TOAST_MS = 3000                                    # A9
 SENTINEL_ROOT_MARGIN_PX = 400                           # A6, researcher-01 § 2
 proxy.ts matcher ["/((?!_next/|__nextjs|.*\\..*).*)"]   # có sẵn; phủ /sun-kudos và /api/kudos, làm mới phiên và áp cổng prelaunch (A0)
-supabase/migrations/<timestamp>_create_kudos_board.sql  # 6 bảng + RLS + GRANT + 2 hàm trigger + backfill (planned)
+supabase/migrations/20261012072146_create_kudos_board.sql  # 6 bảng + RLS + GRANT + trigger/hàm Sunner + backfill
+supabase/migrations/20261013060400_restrict_sunner_avatars_and_index_department.sql  # avatar chỉ cục bộ, chỉ mục department_code, hàm lõi không sao chép avatar
 supabase/seeds/common/04-kudos-board.sql                # seed phòng ban, hashtag, Sunner, ~60 kudos (chỉ khi db reset local) (planned)
-public/sun-kudos/**                                     # ảnh banner, avatar seed, ảnh kudos xuất từ Figma (planned)
-e2e/sun-kudos-*.spec.ts, e2e/support/kudos-board-seed.ts  # kiểm thử e2e-red-first và hằng số seed dùng chung (planned)
+public/sun-kudos/**                                     # ảnh banner, avatar seed, ảnh kudos xuất từ Figma
+e2e/sun-kudos-*.spec.ts, e2e/support/kudos-board-seed.ts  # kiểm thử e2e-red-first và hằng số seed dùng chung
 ```
 
 **Client behavior:** see
@@ -720,11 +721,11 @@ Chính sách kiểm thử: `e2e-red-first` (lọc, carousel, cuộn vô hạn, C
 - **SC-009** *(A9)* Bấm "Copy Link" đặt đúng `origin + /sun-kudos/<id>` vào clipboard và hiện "Link copied — ready to share!"; khi `navigator.clipboard` bị xoá vẫn chép được; khi cả hai cách thất bại hiện thông báo lỗi (covers FR-401, BR-013, DEC-006)
 - **SC-010** *(A10)* Sunner đã đăng nhập: `href` của "Xem chi tiết" và nội dung là `/sun-kudos/<id>`, của ảnh đại diện và tên là `/profiles/<id>`; khách: mọi `href` đó là `/login` và bấm tới màn hình đăng nhập, đăng nhập xong về `/` (covers FR-402, FR-403, BR-010, DEC-007, D016)
 - **SC-011** *(A0)* Với vai trò `anon`, `select` có cột tường minh trên sáu bảng thành công, `select email` hoặc `select user_id` trên `sunners` bị từ chối, và `insert`/`update`/`delete` trên mọi bảng (kể cả `like_count`, `hearts_total`, `kudos_received_count`) bị từ chối; `rpc('get_my_sunner')` với `anon` bị từ chối, với `authenticated` trả đúng một hàng của chính họ và không có `email`, `user_id` (covers FR-001, FR-002, FR-601, BR-001)
-- **SC-012** *(A11)* Tạo `auth.users` với email xác nhận trùng một Sunner chưa gắn thì `sunners.user_id` được đặt; email chưa xác nhận hoặc không trùng thì có Sunner mới; tài khoản thứ hai cùng email không chiếm Sunner đã gắn; đăng ký không bao giờ thất bại vì trigger (covers FR-002, BR-011)
+- **SC-012** *(A11)* Tạo `auth.users` với email xác nhận trùng một Sunner chưa gắn thì `sunners.user_id` được đặt; email đã xác nhận nhưng không trùng thì có Sunner mới; email chưa xác nhận thì không gắn và không tạo Sunner nào cho tới khi xác nhận; tài khoản thứ hai cùng email bị GoTrue từ chối (ghi chú thủ công, không tự động hoá); đăng ký không bao giờ thất bại vì trigger (covers FR-002, BR-011)
 - **SC-013** *(A12)* Chèn một kudos tăng `kudos_received_count` của người nhận đúng 1, xoá giảm đúng 1 và không xuống dưới 0 (covers FR-003, BR-012)
 - **SC-014** *(A1, A2, A4)* Chọn EN đổi nhãn trang, nút lọc, nhãn Hero, thông báo; nội dung kudos, tên, hashtag, phòng ban không đổi (covers FR-404, BR-009)
 
-#### US001 *(A1)*
+#### US034 *(A1)*
 
 **Independent Test:** Mở `/sun-kudos` khi chưa đăng nhập, rồi khi đã đăng nhập; mở từ liên kết "Sun* Kudos" ở header trang chủ.
 
@@ -733,7 +734,7 @@ Chính sách kiểm thử: `e2e-red-first` (lọc, carousel, cuộn vô hạn, C
 1. **Given** khách chưa đăng nhập, **When** mở `/sun-kudos`, **Then** trả 200 với đủ khối của trang, URL không đổi, không có màn hình đăng nhập.
 2. **Given** khách ở `/`, **When** bấm "Sun* Kudos" ở header, **Then** tới `/sun-kudos` và liên kết đó có `aria-current="page"`.
 
-#### US002 *(A2, A3)*
+#### US035 *(A2, A3)*
 
 **Independent Test:** Đọc thứ tự thẻ Highlight theo seed, bấm mũi tên, thử bộ lọc không khớp.
 
@@ -742,7 +743,7 @@ Chính sách kiểm thử: `e2e-red-first` (lọc, carousel, cuộn vô hạn, C
 1. **Given** seed có hơn 5 kudos, **When** mở trang, **Then** Highlight có 5 thẻ theo `like_count` giảm dần, bộ đếm `1/5`, mũi tên trước `disabled`.
 2. **Given** bộ lọc không khớp kudos nào, **When** trang tải, **Then** Highlight hiện "Hiện tại chưa có Kudos nào." thay cho carousel.
 
-#### US003 *(A4, A5, A6)*
+#### US036 *(A4, A5, A6)*
 
 **Independent Test:** Cuộn tới cuối danh sách đã nạp và đếm thẻ; chặn `/api/kudos` rồi cuộn.
 
@@ -751,7 +752,7 @@ Chính sách kiểm thử: `e2e-red-first` (lọc, carousel, cuộn vô hạn, C
 1. **Given** seed có nhiều hơn một trang, **When** cuộn tới sentinel, **Then** `PAGE_SIZE` thẻ cũ hơn nối xuống dưới, không lặp `id`.
 2. **Given** `/api/kudos` trả lỗi, **When** cuộn tới sentinel, **Then** các thẻ cũ còn nguyên và nút "Thử lại" hiện.
 
-#### US004 *(A7, A8)*
+#### US037 *(A7, A8)*
 
 **Independent Test:** Chọn phòng ban rồi bấm chip hashtag; mở URL có sẵn bộ lọc; thử giá trị sai định dạng.
 
@@ -760,7 +761,7 @@ Chính sách kiểm thử: `e2e-red-first` (lọc, carousel, cuộn vô hạn, C
 1. **Given** không có bộ lọc, **When** chọn một phòng ban rồi bấm chip hashtag, **Then** URL mang cả hai khoá, carousel `1/n`, All Kudos nạp lại và chỉ còn kudos thoả cả hai.
 2. **Given** URL mang `hashtag` sai định dạng, **When** trang tải, **Then** trang hiện như chưa lọc, không lỗi.
 
-#### US005 *(A9)*
+#### US038 *(A9)*
 
 **Independent Test:** Bấm "Copy Link", đọc clipboard; lặp lại khi đã xoá `navigator.clipboard`.
 
@@ -769,7 +770,7 @@ Chính sách kiểm thử: `e2e-red-first` (lọc, carousel, cuộn vô hạn, C
 1. **Given** người xem ở `/sun-kudos`, **When** bấm "Copy Link" ở một thẻ, **Then** clipboard có `origin/sun-kudos/<id>` và thông báo "Link copied — ready to share!" hiện.
 2. **Given** `navigator.clipboard` không có, **When** bấm "Copy Link", **Then** cách dự phòng vẫn chép được và thông báo thành công hiện.
 
-#### US006 *(A10)*
+#### US039 *(A10)*
 
 **Independent Test:** Kiểm `href` và hành vi bấm của từng liên kết với phiên Sunner rồi với khách.
 
@@ -778,7 +779,7 @@ Chính sách kiểm thử: `e2e-red-first` (lọc, carousel, cuộn vô hạn, C
 1. **Given** Sunner đã đăng nhập, **When** bấm "Xem chi tiết", **Then** tới `/sun-kudos/<id>` (404 mặc định cho tới khi xây).
 2. **Given** khách, **When** bấm ảnh đại diện người nhận, **Then** tới `/login`.
 
-#### US007 *(A2, A4, A5, A12)*
+#### US040 *(A2, A4, A5, A12)*
 
 **Independent Test:** Đặt `kudos_received_count` của một Sunner bằng `service_role` tại các biên 9, 10, 19, 20, 49, 50 rồi đọc nhãn trên thẻ; chèn và xoá một kudos.
 
@@ -787,23 +788,23 @@ Chính sách kiểm thử: `e2e-red-first` (lọc, carousel, cuộn vô hạn, C
 1. **Given** người nhận có 20 kudos nhận, **When** thẻ hiện, **Then** khối người nhận có 2 sao và "Super Hero", tooltip đúng mức 2 sao.
 2. **Given** người nhận có 9 kudos nhận, **When** chèn thêm một kudos tới họ, **Then** số nhận là 10 và thẻ hiện 1 sao "Rising Hero".
 
-#### US008 *(A11)*
+#### US041 *(A11)*
 
 **Independent Test:** Tạo người dùng qua Admin API với email trùng và không trùng Sunner seed, có và không xác nhận email; đọc `sunners.user_id`.
 
 **Acceptance Scenarios:**
 
 1. **Given** Sunner seed `a@x` chưa gắn, **When** tạo tài khoản `a@x` đã xác nhận, **Then** `sunners.user_id` bằng id tài khoản và không có Sunner thứ hai.
-2. **Given** Sunner seed `a@x`, **When** tạo tài khoản `a@x` chưa xác nhận, **Then** Sunner seed vẫn `user_id` rỗng, tài khoản có Sunner mới và việc tạo thành công.
+2. **Given** Sunner seed `a@x`, **When** tạo tài khoản `a@x` chưa xác nhận, **Then** Sunner seed vẫn `user_id` rỗng, tài khoản chưa có Sunner nào (cho tới khi email được xác nhận) và việc tạo thành công.
 
 ### 5.2 Assumptions
 
 - *(A1)* Header và footer là mã của F002, được sửa ở mức mở rộng `SitePage` thêm `"kudos"` với mặc định giữ nguyên hành vi trang chủ và Awards Information (cùng mô thức F004 đã dùng cho `"awards"`).
-- *(A2, A4)* Ảnh banner, avatar seed và ảnh đính kèm kudos được xuất từ Figma vào `public/sun-kudos/**` và seed lưu đường dẫn gốc `/sun-kudos/...`; chưa có tệp xuất nên bản triển khai cần lấy qua MoMorph khi làm. Không cấu hình `images.remotePatterns` cho avatar Google: avatar `https://` dùng thẻ `<img referrerPolicy="no-referrer" loading="lazy">`, đường dẫn cục bộ dùng `next/image`.
+- *(A2, A4)* Ảnh banner, avatar seed và ảnh đính kèm kudos được xuất từ Figma vào `public/sun-kudos/**` và seed lưu đường dẫn gốc `/sun-kudos/...`; chưa có tệp xuất nên bản triển khai cần lấy qua MoMorph khi làm. Avatar chỉ là đường dẫn cục bộ dưới `/public` (clarifications 2026-10-13, M1): không cấu hình `images.remotePatterns`, không nhúng URL ngoài (kể cả avatar Google, không sao chép từ `user_metadata`); giá trị không hợp lệ thì hiện chữ cái đầu (`safeAvatarUrl`, `lib/kudos/safe-media-path.ts`).
 - *(A2, A4, A5)* Highlight và All Kudos đọc theo từng request, không dùng `use cache`: thẻ sẽ có dữ liệu theo người dùng khi F007 thêm `my_like`, và `use cache` cấm `cookies()` trong ngăn xếp gọi (researcher-01 § 2).
 - *(A0, A11)* `sunners.user_id` và `sunners.email` không mở cho client (đã chốt). F007 xác định người thích bằng `auth.uid()` ở tầng RLS/trigger (hàm `security definer` đọc được `user_id`); trang F006 và F009 lấy hàng Sunner của người xem bằng `get_my_sunner()` do F006 tạo (§ 4.2).
 - *(A2, A4)* "Hashtag trùng chữ với tiêu đề" (D014) được hiểu là `hashtags.label` bằng `kudos.title` nguyên văn sau khi cắt khoảng trắng hai đầu; nếu Figma ghi hashtag kèm `#` hoặc khác hoa thường thì chỉnh quy tắc so khớp lúc seed, không đổi bảng.
-- *(A11)* Với đăng nhập Google, `email_confirmed_at` đã có ngay lúc chèn `auth.users`, tên và ảnh nằm ở `raw_user_meta_data` dưới `full_name`/`name` và `avatar_url`/`picture` (suy luận từ tài liệu OIDC, chưa kiểm bằng một lần đăng nhập thật).
+- *(A11)* Với đăng nhập Google, `email_confirmed_at` có ngay lúc chèn hoặc ở UPDATE ngay sau; hai trigger (INSERT đã xác nhận, UPDATE OF `email_confirmed_at`) phủ cả hai. Tên nằm ở `raw_user_meta_data` dưới `full_name`/`name` (suy luận từ tài liệu OIDC); ảnh không được dùng.
 - *(A12)* Kudos chỉ được chèn hoặc xoá bằng `service_role` (seed hoặc quản trị sau này); không có đường sửa `receiver_id`, nên trigger không xử lý UPDATE. Không có ràng buộc `sender_id <> receiver_id` vì đầu vào không nêu.
 - *(A2, A4)* Bộ lọc hashtag chỉ nhận một hashtag mỗi lần (một khoá `hashtag` trên URL); chọn nhiều hashtag cùng lúc không có trong Figma nên không làm.
 - *(A0)* Dữ liệu seed chỉ có ở môi trường local; môi trường thật nằm ngoài phạm vi (như trang chủ).
@@ -811,15 +812,14 @@ Chính sách kiểm thử: `e2e-red-first` (lọc, carousel, cuộn vô hạn, C
 ### 5.3 Unresolved Questions
 
 1. **PostgREST có lọc được theo bí danh embed không** *(A2, A4, A5)*: ALG-001 giả định có thể viết `filter_tag:kudos_hashtags!inner(hashtag_slug)` song song với embed hiển thị `hashtags:kudos_hashtags(...)` rồi `.eq("filter_tag.hashtag_slug", …)` mà không làm embed hiển thị chỉ còn hashtag đang lọc. Chưa chạy thử trên supabase-js 2.117; nếu không được thì dùng một RPC `security invoker` hoặc truy vấn hai bước (lấy `kudos_id` theo hashtag rồi `in(...)`).
-2. **`connection()` trong Route Handler dưới `cacheComponents`** *(A5)*: Route Handler `GET` đọc `cookies()` qua `createClient()` nên chắc chắn chạy lúc request, nhưng chưa xác nhận có cần `await connection()` giống các Server Component hay không; đọc `node_modules/next/dist/docs/` khi làm.
-3. **Đăng nhập Google có `email_confirmed_at` ngay lúc chèn không** *(A11)*: nếu không thì điều kiện gắn theo email sẽ không bao giờ đúng và mọi Sunner seed sẽ bị bỏ lại; cần một lần đăng nhập thật hoặc đọc mã `auth.users` của Supabase để xác nhận.
-4. **F009 đọc Sunner của chính mình bằng đường nào** *(A0, A11)* — **đã chốt** (clarifications.md, spec gaps): một hàm `security definer` chỉ trả hàng của người gọi (`get_my_sunner()`, § 4.2); `sunners.email` và `sunners.user_id` không cấp cho client. Không còn câu hỏi mở.
-5. **Cách e2e ép trạng thái lỗi của loader** *(A2, A4)*: truy vấn chạy ở máy chủ nên `page.route` không chặn được; trạng thái rỗng kiểm được bằng bộ lọc không khớp, trạng thái lỗi của lần tải đầu chưa có đường kiểm tự động (như F004); lỗi của A5/A6 thì chặn được bằng `page.route` vì gọi từ trình duyệt.
-6. **`page.clock` không đổi giờ máy chủ** *(A2, A4)*: giờ hiển thị tính từ `created_at` trong seed nên ca kiểm giờ so với hằng số seed chứ không so với giờ hiện tại.
+2. **`connection()` trong Route Handler dưới `cacheComponents`** *(A5)* — **đã chốt** (chú thích đầu `app/api/kudos/route.ts`): đọc `request.nextUrl` đã khiến handler `GET` chạy lúc request nên route không gọi `connection()`; `getKudosPage` vẫn `await connection()` theo khuôn getter, không có tác dụng ở đây.
+3. **Đăng nhập Google có `email_confirmed_at` ngay lúc chèn không** *(A11)* — **đã phủ bằng thiết kế**: trigger thứ hai chạy khi `email_confirmed_at` đổi từ rỗng sang có giá trị. Chưa kiểm bằng một lần đăng nhập Google thật; e2e (`e2e/sun-kudos-serial-sunner-link-and-count-triggers.spec.ts`) phủ tài khoản đã xác nhận (gắn Sunner có sẵn, hoặc tạo mới) và chưa xác nhận (không gắn), chưa có ca xác nhận sau qua trigger UPDATE.
+4. **Cách e2e ép trạng thái lỗi của loader** *(A2, A4)*: truy vấn chạy ở máy chủ nên `page.route` không chặn được; trạng thái rỗng kiểm được bằng bộ lọc không khớp, trạng thái lỗi của lần tải đầu chưa có đường kiểm tự động (như F004); lỗi của A5/A6 thì chặn được bằng `page.route` vì gọi từ trình duyệt.
+5. **`page.clock` không đổi giờ máy chủ** *(A2, A4)*: giờ hiển thị tính từ `created_at` trong seed nên ca kiểm giờ so với hằng số seed chứ không so với giờ hiện tại.
 
 ### 5.4 Source References
 
-No source code written yet — see `## 7. User Stories` in `functional-spec.md` for planned behavior. Mã hiện có được dùng làm khuôn hoặc được sửa nhẹ (đọc khi bắt đầu làm, chưa trích dòng): `app/awards-information/page.tsx` và `app/awards-information/_components/awards-information-content.tsx` (khuôn trang), `app/awards-information/_components/award-details-loader.tsx` và `lib/awards/get-award-details.ts` (khuôn bộ nạp và getter), `lib/awards/award-detail-mapping.ts` (khuôn ánh xạ), `app/_components/site/site-header.tsx`, `site-footer.tsx`, `site-types.ts` (thêm `"kudos"`), `lib/supabase/server.ts`, `lib/supabase/current-user.ts`, `lib/i18n/dictionary.ts`, `proxy.ts` và `lib/supabase/proxy-session.ts` (matcher và cổng prelaunch, không sửa), `supabase/migrations/20261008045415_create_profiles.sql` (khuôn trigger `handle_new_user`), `supabase/migrations/20261009083754_create_site_settings.sql` và `supabase/seeds/common/03-site-settings.sql` (khuôn RLS và seed), `e2e/awards-information-page.spec.ts` (cần sửa ca "/sun-kudos là 404").
+Mã đã giao: `app/sun-kudos/`, `app/api/kudos/route.ts`, `app/_components/sun-kudos/`, `app/_components/sun-kudos-behaviour/`, `lib/kudos/`, `lib/i18n/sun-kudos-copy*.ts`, `supabase/migrations/20261012072146_create_kudos_board.sql`, `20261012072217_create_kudos_likes.sql`, `20261012072258_create_secret_boxes.sql`, `20261013060400_restrict_sunner_avatars_and_index_department.sql`. Mã có sẵn dùng làm khuôn hoặc sửa nhẹ: `app/awards-information/page.tsx` và `app/awards-information/_components/awards-information-content.tsx` (khuôn trang), `app/awards-information/_components/award-details-loader.tsx` và `lib/awards/get-award-details.ts` (khuôn bộ nạp và getter), `lib/awards/award-detail-mapping.ts` (khuôn ánh xạ), `app/_components/site/site-header.tsx`, `site-footer.tsx`, `site-types.ts` (thêm `"kudos"`), `lib/supabase/server.ts`, `lib/supabase/current-user.ts`, `lib/i18n/dictionary.ts`, `proxy.ts` và `lib/supabase/proxy-session.ts` (matcher và cổng prelaunch, không sửa), `supabase/migrations/20261008045415_create_profiles.sql` (khuôn trigger `handle_new_user`), `supabase/migrations/20261009083754_create_site_settings.sql` và `supabase/seeds/common/03-site-settings.sql` (khuôn RLS và seed), `e2e/awards-information-page.spec.ts` (cần sửa ca "/sun-kudos là 404").
 
 #### Data Flow
 
@@ -845,9 +845,9 @@ A12: kudos INSERT/DELETE -> sync_kudos_received_count -> sunners.kudos_received_
 | System Overview | [overview.md](../../system/overview.md) | — | [ ] |
 | Architecture | [architecture.md](../../system/architecture.md) | — | [ ] |
 | Feature List | [feature-list.md](../../generated/feature-list.md) | F006 | [ ] |
-| API Map | [api-map.md](../../generated/api-map.md) | TBD (draft) | [ ] |
-| Entities | [entities.md](../../generated/entities.md) | TBD (draft) | [ ] |
-| Screens | [functional-spec.md § 6](./functional-spec.md#6-screens) | TBD (draft) | [ ] |
-| Behavior Logic | [behavior-logic.md](../../generated/behavior-logic.md) | TBD (draft) | [ ] |
-| Permissions Matrix | [permissions-matrix.md](../../generated/permissions-matrix.md) | TBD (draft) | [ ] |
-| User Stories | [user-stories.md](../../generated/user-stories.md) | TBD (draft) | [ ] |
+| API Map | [api-map.md](../../generated/api-map.md) | ROUTE011, ROUTE014, ROUTE015 | [ ] |
+| Entities | [entities.md](../../generated/entities.md) | MODEL005, MODEL006, MODEL007, MODEL008, MODEL009, MODEL010 | [ ] |
+| Screens | [functional-spec.md § 6](./functional-spec.md#6-screens) | SCR006_SunKudosLiveBoard | [ ] |
+| Behavior Logic | [behavior-logic.md](../../generated/behavior-logic.md) | — (trigger DB không thuộc kho BL; BL001, BL003 dùng chung) | [ ] |
+| Permissions Matrix | [permissions-matrix.md](../../generated/permissions-matrix.md) | PERM014, PERM015, PERM016 | [ ] |
+| User Stories | [functional-spec.md § 7](./functional-spec.md#7-user-stories) | US034..US041 (chưa có trong user-stories.md) | [ ] |

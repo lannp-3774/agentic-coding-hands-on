@@ -74,7 +74,7 @@ flowchart LR
 **Request** · cookie `NEXT_LOCALE`; không có tham số
 **BE** · `getLocale()` (`lib/i18n/get-locale.ts:9-12`) đọc cookie, `getDictionary(locale)` (`lib/i18n/dictionary.ts:71-73`) trả chữ giao diện; `HomeContent` còn gọi `parseCountdownTarget` cho A2 (`app/_components/home/home-content.tsx:28-31`). Không có lời gọi dịch vụ ngoài ở A1 — dữ liệu giải thưởng thuộc A3, nội dung vùng tài khoản thuộc F003. Nội dung dài (Root Further, câu trích, đoạn Kudos) là hằng số tiếng Việt dùng chung cho cả hai ngôn ngữ (`lib/i18n/home-copy.ts:38-52`).
 **Rule**
-- **BR-004 — Liên kết tới trang chưa xây dùng địa chỉ dự kiến.** Header, hero, Kudos và footer trỏ `/awards-information`, `/sun-kudos`, `/standards`; `/awards-information` đã có page từ F004 (2026-10-09), hai đích còn lại chưa có nên Next trả 404 mặc định, không có trang lỗi riêng. *(§ 4.4)*
+- **BR-004 — Liên kết tới trang chưa xây dùng địa chỉ dự kiến.** Header, hero, Kudos và footer trỏ `/awards-information`, `/sun-kudos`, `/standards`; `/awards-information` đã có page từ F004 (2026-10-09) và `/sun-kudos` từ F006 (2026-10-13), chỉ `/standards` chưa có nên Next trả 404 mặc định, không có trang lỗi riêng. *(§ 4.4)*
 - **BR-006 — Ngôn ngữ chỉ là `vi` hoặc `en` (mặc định `vi`); EN chỉ dịch chữ giao diện.** Nhãn liên kết, nút, tiêu đề mục và bản quyền đổi theo từ điển; Root Further, câu trích và đoạn Kudos giữ tiếng Việt. *(§ 4.4)*
 
 **Result** · Chỉ đọc, không ghi DB. Người xem thấy đủ các khối của trang; footer dùng lại câu bản quyền của màn hình Login (`lib/i18n/dictionary.ts:47,59`).
@@ -197,7 +197,7 @@ flowchart LR
 | A3 | `image_path` rỗng, tương đối, bắt đầu `//` hoặc có `\` | dùng ảnh `/home/logo.png` thay thế *(ALG-003)* |
 | A3 | `title_en` trống ở EN | dùng `title_vi` *(BR-006)* |
 | A3 | Mô tả dài hơn 2 dòng | cắt bằng dấu ba chấm, không đổi chiều cao thẻ |
-| A1 · A3 | Bấm liên kết tới `/sun-kudos`, `/standards` khi chưa xây (`/awards-information` đã có page từ F004) | trình duyệt hiện trang 404 mặc định của Next *(BR-004)* |
+| A1 · A3 | Bấm liên kết tới `/standards` khi chưa xây (`/awards-information` đã có page từ F004, `/sun-kudos` từ F006) | trình duyệt hiện trang 404 mặc định của Next *(BR-004)* |
 | A1 | Khổ dưới `lg` (nhỏ hơn 1024px) | ba liên kết điều hướng ở header không hiện; logo, bộ chọn ngôn ngữ và vùng tài khoản vẫn hiện; footer vẫn đủ bốn liên kết |
 | A1 | Vùng tài khoản chưa xác định xong trạng thái đăng nhập | ô cố định `h-10 w-24` giữ chỗ nên header không dịch chuyển (nội dung do F003) |
 | A1 · A4 | Cookie `NEXT_LOCALE` có giá trị lạ | coi là `vi` *(BR-006)* |
@@ -272,7 +272,7 @@ Cross-cutting: áp dụng cho toàn trang, không thuộc riêng action nào. `a
 #### Bin 2 — used by ≥2 named actions
 
 **BR-004 — Liên kết tới trang chưa xây dùng địa chỉ dự kiến.**
-Used in: **A1** · **A3**. Các đích là `/awards-information` (kèm `#<slug>` ở thẻ), `/sun-kudos`, `/standards`; trang đích chưa tồn tại nên 404 mặc định của Next là chấp nhận được. Hệ quả: công cụ kiểm tra liên kết hỏng sẽ báo lỗi tới khi các trang được xây.
+Used in: **A1** · **A3**. Các đích là `/awards-information` (kèm `#<slug>` ở thẻ), `/sun-kudos`, `/standards`; `/awards-information` và `/sun-kudos` đã có page; `/standards` chưa tồn tại nên 404 mặc định của Next là chấp nhận được. Hệ quả: công cụ kiểm tra liên kết hỏng sẽ báo lỗi `/standards` tới khi trang được xây.
 **Source:** `app/_components/site/site-header.tsx:49,56` · `app/_components/site/site-footer.tsx:46,53,57` · `app/_components/home/hero-section.tsx:69,75` · `app/_components/home/kudos-section.tsx:37` · `lib/awards/award-card-mapping.ts:27,60`
 ```text
 destinations = { awards: "/awards-information", kudos: "/sun-kudos", standards: "/standards" }

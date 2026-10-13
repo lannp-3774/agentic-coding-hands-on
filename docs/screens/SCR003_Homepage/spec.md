@@ -198,7 +198,7 @@ Trang cuộn dọc gồm sáu vùng nối tiếp: header cố định ở đầu
 |--------|---------|-----------|-------------|--------|--------|
 | Mở trang giải thưởng | E03, E13, E23 (Awards Information) | — | SCR004_AwardsInformation (route `/awards-information`) | redirect | `app/_components/site/site-header.tsx:48-54`, `app/_components/site/site-footer.tsx:45-51`, `app/_components/home/hero-section.tsx:69` |
 | Mở hạng mục giải thưởng | E17 (ảnh, tiêu đề, "Chi tiết") | — | SCR004_AwardsInformation kèm neo là mã định danh hạng mục (`/awards-information#<slug>`) | redirect; thiếu mã thì không kèm neo | `lib/awards/award-card-mapping.ts:60` |
-| Mở trang Sun* Kudos | E04, E14, E20, E23 (Sun* Kudos) | — | TBD (draft): màn hình Sun* Kudos (route dự kiến `/sun-kudos`, chưa xây) | redirect | TBD (draft) |
+| Mở trang Sun* Kudos | E04, E14, E20, E23 (Sun* Kudos) | — | SCR006_SunKudosLiveBoard (route `/sun-kudos`, F006) | redirect | TBD (draft) |
 | Mở trang Tiêu chuẩn chung | E23 | — | TBD (draft): màn hình Tiêu chuẩn chung (route dự kiến `/standards`, chưa xây) | redirect | TBD (draft) |
 | Về đầu trang | E01, E02, E22, E23 (About SAA 2025) | đang ở trang chủ | (stays on screen) | cuộn lên đầu | TBD (draft) |
 

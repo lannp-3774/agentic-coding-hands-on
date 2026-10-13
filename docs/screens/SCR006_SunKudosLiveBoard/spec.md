@@ -39,9 +39,9 @@ Trang cuộn dọc: header cố định ở đầu; banner key visual; thanh g�
 │     [Phòng ban ▾]                                            │
 │        ◂  ░thẻ░  [ THẺ GIỮA ]  ░thẻ░  ▸      2/5            │
 ├──────────────────────────────────────────────────────────────┤
-│ R5: Spotlight (giữ chỗ — feature Spotlight)                  │
+│ R5: Spotlight (vùng của F008 Spotlight)                       │
 ├────────────────────────────────────┬─────────────────────────┤
-│ R6: ALL KUDOS (cột chính)          │ R7: Sidebar (giữ chỗ,   │
+│ R6: ALL KUDOS (cột chính)          │ R7: Sidebar (F009,      │
 │   thẻ kudos × N …                  │ cuộn độc lập)           │
 │   [vùng nạp thêm / thử lại]        │                         │
 ├────────────────────────────────────┴─────────────────────────┤
@@ -58,9 +58,9 @@ Trang cuộn dọc: header cố định ở đầu; banner key visual; thanh g�
 | R2 | Banner | static | no | TBD (draft) |
 | R3 | Thanh gửi kudos và tìm hồ sơ | static | no | TBD (draft) |
 | R4 | Highlight (tiêu đề, nút lọc, carousel, bộ đếm) | static | no | TBD (draft) |
-| R5 | Spotlight (giữ chỗ) | static | no | TBD (draft) |
+| R5 | Spotlight (vùng của F008) | static | no | TBD (draft) |
 | R6 | All Kudos (tiêu đề, danh sách thẻ, vùng nạp thêm) | static | yes (theo trang) | TBD (draft) |
-| R7 | Sidebar (giữ chỗ) | sticky: cột phải ở khổ máy tính | yes (độc lập) | TBD (draft) |
+| R7 | Sidebar (vùng của F009) | sticky: cột phải ở khổ máy tính | yes (độc lập) | TBD (draft) |
 | R8 | Footer | static | no | TBD (draft) |
 | R9 | Thông báo nhỏ khi chép liên kết | fixed-bottom | no | TBD (draft) |
 
@@ -84,13 +84,13 @@ Trang cuộn dọc: header cố định ở đầu; banner key visual; thanh g�
 | E14 | Nội dung kudos | display field | — | — | Conditional | Bấm → chi tiết kudos | API field | cắt 3 dòng (Highlight), 5 dòng (All Kudos), rồi "..." | — | N/A |
 | E15 | Hashtag của thẻ | link | — | — | Conditional | Bấm thì đặt bộ lọc Hashtag | API field | tối đa 5 trên một dòng, dư thì "..." | ẩn khi không có hashtag | N/A |
 | E16 | Ảnh đính kèm (chỉ All Kudos) | image | — | — | Conditional | Bấm → mở ảnh gốc ở tab mới (D017) | API field | tối đa 5 hình vuông, căn trái | ẩn khi không có ảnh | N/A |
-| E17 | Vùng nút tim của thẻ (tạm hiện tim xám và số tim, chỉ để xem, cho tới khi feature Tim thay bằng nút thật) | region label | — | Tim xám | Conditional | — | API field | số tim | — | N/A |
+| E17 | Vùng nút tim của thẻ (nút của F007: tim xám khi chưa thích, đỏ khi đã thích, kèm số tim; vô hiệu cho người gửi; khách bấm thì tới `/login`) | region label | — | Tim xám | Conditional | — | API field | số tim | — | N/A |
 | E18 | Nút "Copy Link" | button | — | Enabled | Conditional | Chép địa chỉ chi tiết kudos | computed | — | — | N/A |
 | E19 | Nút "Xem chi tiết" (chỉ thẻ Highlight) | link | — | Enabled | Conditional | Mở chi tiết kudos | computed | — | — | N/A |
 | E20 | Tiêu đề khối All Kudos: chữ nhỏ "Sun* Annual Awards 2025" và "ALL KUDOS" | display field | — | — | Always | — | static | theo ngôn ngữ đang chọn | — | N/A |
 | E21 | Danh sách thẻ All Kudos, mới nhất trước, tự nạp thêm khi cuộn gần cuối | list | — | — | Conditional | Cuộn nạp thêm | API field | 10 thẻ mỗi lần | thay bằng E24 | N/A |
 | E22 | Vùng cuối danh sách: khung chờ khi đang nạp, hoặc dòng lỗi kèm nút "Thử lại" | message | — | Ẩn | Conditional | Bấm "Thử lại" nạp lại | computed | — | hidden | N/A |
-| E23 | Vùng giữ chỗ Spotlight và sidebar (khung cố định kích thước, chưa có nội dung ở màn hình này) | region label | — | — | Always | — | static | — | — | N/A |
+| E23 | Vùng Spotlight (F008) và sidebar (F009): khung do F006 giữ, nội dung và hành vi do hai feature đó sở hữu (xem functional-spec của F008, F009) | region label | — | — | Always | — | static | — | — | N/A |
 | E24 | Thông báo rỗng "Hiện tại chưa có Kudos nào." (thay cho carousel hoặc cho danh sách) | message | — | Ẩn | Conditional | — | static | theo ngôn ngữ đang chọn | — | N/A |
 | E25 | Thông báo nhỏ khi chép liên kết ("Link copied — ready to share!" hoặc dòng lỗi), tự tắt sau 3 giây | message | — | Ẩn | Conditional | — | static | thành công giữ nguyên chữ Figma ở cả hai ngôn ngữ | hidden | N/A |
 

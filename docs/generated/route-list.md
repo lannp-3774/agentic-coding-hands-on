@@ -46,6 +46,21 @@
 |--------|------|------|------------|---------|------------|
 | GET | /countdown | ROUTE010 | F005 | `app/countdown/page.tsx:8` CountdownPage | proxy (updateSession; cổng prelaunch: khi site khoá hiện trang cho mọi vai trò, khi đã mở hoặc mốc không dùng được → 307 `/`, `lib/prelaunch/prelaunch-gate-decision.ts:51-53`) |
 
+### File: app/sun-kudos/page.tsx (route `/sun-kudos`)
+
+| Method | Path | Code | Owner F### | Handler | Middleware |
+|--------|------|------|------------|---------|------------|
+| GET | /sun-kudos | ROUTE011 | F006 | `app/sun-kudos/page.tsx:7` SunKudosPage (kèm searchParams `hashtag`, `department`; vùng Spotlight F008 và sidebar F009 nằm trong cùng route, không có route riêng) | proxy (updateSession; khi site đã mở khách không bị chuyển hướng; khi khoá, người không phải admin → 307 `/countdown`) |
+| POST | /sun-kudos [Next-Action: likeKudos] | ROUTE012 | F007 | `lib/kudos/kudos-heart-actions.ts:33` likeKudos (Server Action, gọi từ kho tim: `lib/kudos/kudos-heart-store.tsx:128`; khách → `unauthenticated`, phiên kiểm lại phía máy chủ) | proxy (updateSession) |
+| POST | /sun-kudos [Next-Action: unlikeKudos] | ROUTE013 | F007 | `lib/kudos/kudos-heart-actions.ts:41` unlikeKudos (Server Action, gọi từ kho tim: `lib/kudos/kudos-heart-store.tsx:128`) | proxy (updateSession) |
+| POST | /sun-kudos [Next-Action: setLocale] | ROUTE014 | F001, F002, F004, F006 | `lib/i18n/actions.ts:8` setLocale (Server Action, gọi từ bộ chọn ngôn ngữ: `app/sun-kudos/_components/sun-kudos-content.tsx`) | proxy (updateSession) |
+
+### File: app/api/kudos/route.ts (route `/api/kudos`)
+
+| Method | Path | Code | Owner F### | Handler | Middleware |
+|--------|------|------|------------|---------|------------|
+| GET | /api/kudos | ROUTE015 | F006 | `app/api/kudos/route.ts:28` GET (Route Handler; trang kế của All Kudos theo `?cursor=<seq>` kèm `hashtag`, `department` tuỳ chọn; trả `{items, nextCursor}`; 400 `invalid_cursor` / `invalid_filter`, 500 `read_failed`; `Cache-Control: no-store`) | proxy (updateSession; khi site đã mở khách không bị chuyển hướng; khi khoá, người không phải admin → 307 `/countdown`) |
+
 ## Frontend Routes/Pages
 
 ### File: app/page.tsx
@@ -72,14 +87,20 @@
 |------|-----------|------------|
 | /countdown | CountdownPage (`app/countdown/page.tsx:8`) | countdown |
 
-> Ghi chú: các trang bọc trong `RootLayout` (`app/layout.tsx:21`) — layout không phải route riêng nên không có hàng. `/`, `/login`, `/awards-information` và `/countdown` là các endpoint `GET` đã tính ở ROUTE001, ROUTE004, ROUTE008 và ROUTE010; bảng này chỉ liệt kê thành phần trang tương ứng. Riêng `/countdown` không dùng `SaaPageShell` và không có header, footer.
+### File: app/sun-kudos/page.tsx
+
+| Path | Component | Route Name |
+|------|-----------|------------|
+| /sun-kudos | SunKudosPage (`app/sun-kudos/page.tsx:7`) | sun-kudos |
+
+> Ghi chú: các trang bọc trong `RootLayout` (`app/layout.tsx:21`) — layout không phải route riêng nên không có hàng. `/`, `/login`, `/awards-information`, `/countdown` và `/sun-kudos` là các endpoint `GET` đã tính ở ROUTE001, ROUTE004, ROUTE008, ROUTE010 và ROUTE011; bảng này chỉ liệt kê thành phần trang tương ứng. Riêng `/countdown` không dùng `SaaPageShell` và không có header, footer.
 
 ## Summary
 
 | Category | Count |
 |----------|-------|
-| Backend Routes | 10 |
-| Frontend Pages | 4 |
-| Total | 14 |
+| Backend Routes | 15 |
+| Frontend Pages | 5 |
+| Total | 20 |
 
-> Ghi chú: Total = tổng hai danh mục theo mẫu; 4 trang frontend trùng với ROUTE001, ROUTE004, ROUTE008 và ROUTE010, nên số endpoint HTTP phân biệt (method + path) là 10.
+> Ghi chú: Total = tổng hai danh mục theo mẫu; 4 trang frontend trùng với ROUTE001, ROUTE004, ROUTE008 và ROUTE010, nên số endpoint HTTP phân biệt (method + path) là 15.

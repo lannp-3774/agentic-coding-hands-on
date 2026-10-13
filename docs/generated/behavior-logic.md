@@ -205,6 +205,11 @@ Quy tắc chuyển hướng theo phiên: chỉ `GET`/`HEAD` và `pathname === "/
 - (POST) /login [Next-Action: setLocale] — ROUTE006
 - (GET) /awards-information — ROUTE008
 - (POST) /awards-information [Next-Action: setLocale] — ROUTE009
+- (GET) /sun-kudos — ROUTE011
+- (POST) /sun-kudos [Next-Action: likeKudos] — ROUTE012
+- (POST) /sun-kudos [Next-Action: unlikeKudos] — ROUTE013
+- (POST) /sun-kudos [Next-Action: setLocale] — ROUTE014
+- (GET) /api/kudos — ROUTE015
 
 ---
 

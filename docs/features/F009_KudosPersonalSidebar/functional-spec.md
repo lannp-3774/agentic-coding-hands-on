@@ -15,7 +15,7 @@ lang: vi
 **See also:** [`technical-spec.md`](./technical-spec.md) — endpoints, Source citations, pseudocode,
 key entities, and DB writes for a Dev/QA/SA audience.
 
-**Traceability:** F009_KudosPersonalSidebar → TBD (draft)
+**Traceability:** F009_KudosPersonalSidebar → SCR006_SunKudosLiveBoard (vùng sidebar) → US054, US055, US056, US057 (mã US toàn cục, tiếp sau F008)
 
 ## 1. Overview
 
@@ -35,8 +35,8 @@ key entities, and DB writes for a Dev/QA/SA audience.
 
 | ID | Capability | What the user can do | User Stories | Requirements | Business Rules | Screens |
 |----|------------|------------------------|-----------------|---------------|-------------------|---------|
-| CAP-01 | Thống kê cá nhân (D.1) | Sunner đã đăng nhập xem số Kudos nhận và gửi, số tim, số Secret Box đã mở và chưa mở của mình; khách thấy lời nhắc đăng nhập thay cho khối này | US001, US002 | FR-001, FR-101, FR-201, FR-202, FR-203, FR-204, FR-205, FR-206, FR-207, FR-208, FR-209, FR-214, FR-601, FR-602 | BR-001, BR-002, BR-004, DEC-001 | SCR006_SunKudosLiveBoard |
-| CAP-02 | Danh sách Sunner nhận quà (D.3) | Ai cũng xem 10 hộp quà đã mở gần nhất và bấm một hàng để tới hồ sơ người nhận (khách tới đăng nhập) | US003, US004 | FR-102, FR-210, FR-211, FR-212, FR-213, FR-215 | BR-003, DEC-002 | N/A — nằm trên vùng sidebar của màn hình Sun* Kudos Live board, đã tính ở CAP-01 |
+| CAP-01 | Thống kê cá nhân (D.1) | Sunner đã đăng nhập xem số Kudos nhận và gửi, số tim, số Secret Box đã mở và chưa mở của mình; khách thấy lời nhắc đăng nhập thay cho khối này | US054, US055 | FR-001, FR-101, FR-201, FR-202, FR-203, FR-204, FR-205, FR-206, FR-207, FR-208, FR-209, FR-214, FR-601, FR-602 | BR-001, BR-002, BR-004, DEC-001 | SCR006_SunKudosLiveBoard |
+| CAP-02 | Danh sách Sunner nhận quà (D.3) | Ai cũng xem 10 hộp quà đã mở gần nhất và bấm một hàng để tới hồ sơ người nhận (khách tới đăng nhập) | US056, US057 | FR-102, FR-210, FR-211, FR-212, FR-213, FR-215 | BR-003, DEC-002 | N/A — nằm trên vùng sidebar của màn hình Sun* Kudos Live board, đã tính ở CAP-01 |
 
 ## 3. Open Decisions
 
@@ -109,7 +109,7 @@ Cả ba mục dưới đây đã chốt ở clarifications.md (lượt "spec gap
 
 ## 7. User Stories
 
-### US001 — Xem thống kê Kudos cá nhân
+### US054 — Xem thống kê Kudos cá nhân
 
 **Actor:** Sunner đã đăng nhập
 **Goal:** Nhìn nhanh số kudos đã nhận và gửi, số tim kiếm được và tình trạng Secret Box của mình.
@@ -121,7 +121,7 @@ Cả ba mục dưới đây đã chốt ở clarifications.md (lượt "spec gap
 - [ ] Nút "Mở Secret Box" hiển thị nhưng bấm không có tác dụng.
 - [ ] Không xác định được số liệu thì năm giá trị hiện "—".
 
-### US002 — Được mời đăng nhập thay cho thống kê
+### US055 — Được mời đăng nhập thay cho thống kê
 
 **Actor:** Khách chưa đăng nhập
 **Goal:** Biết rằng thống kê cá nhân cần đăng nhập và đi tới đăng nhập chỉ bằng một lần bấm.
@@ -132,7 +132,7 @@ Cả ba mục dưới đây đã chốt ở clarifications.md (lượt "spec gap
 - [ ] Khách không thấy năm giá trị và không thấy nút "Mở Secret Box".
 - [ ] Người đã đăng nhập không bao giờ thấy lời nhắc này nhấp nháy trong lúc trang đang đọc phiên.
 
-### US003 — Xem 10 Sunner nhận quà mới nhất
+### US056 — Xem 10 Sunner nhận quà mới nhất
 
 **Actor:** Khách chưa đăng nhập
 **Goal:** Thấy ai vừa mở hộp quà và nhận được quà gì.
@@ -144,7 +144,7 @@ Cả ba mục dưới đây đã chốt ở clarifications.md (lượt "spec gap
 - [ ] Không có hộp đã mở thì hiện "Chưa có dữ liệu".
 - [ ] Hộp chưa mở không xuất hiện trong danh sách.
 
-### US004 — Mở hồ sơ người vừa nhận quà
+### US057 — Mở hồ sơ người vừa nhận quà
 
 **Actor:** Sunner đã đăng nhập
 **Goal:** Từ danh sách quà đi tới hồ sơ của người nhận.
@@ -156,35 +156,35 @@ Cả ba mục dưới đây đã chốt ở clarifications.md (lượt "spec gap
 
 ## 8. Scenarios
 
-### US001 — Happy Path
+### US054 — Happy Path
 
 **Given** Sunner đã đăng nhập có số liệu seed đã biết, **When** mở `/sun-kudos`, **Then** khối thống kê hiện năm giá trị đúng với số liệu đó và nút "Mở Secret Box".
 
-### US001 — Error: không xác định được số liệu
+### US054 — Error: không xác định được số liệu
 
 **Given** Sunner đã đăng nhập nhưng việc đọc số liệu lỗi hoặc chưa có hồ sơ Sunner, **When** mở `/sun-kudos`, **Then** năm giá trị hiện "—", nút "Mở Secret Box" vẫn hiện và phần còn lại của trang bình thường.
 
-### US002 — Happy Path
+### US055 — Happy Path
 
 **Given** khách chưa đăng nhập, **When** mở `/sun-kudos`, **Then** khối thống kê được thay bằng lời nhắc đăng nhập; bấm nút "Đăng nhập" thì tới `/login`.
 
-### US002 — Error: phiên hết hạn
+### US055 — Error: phiên hết hạn
 
 **Given** người dùng đã đăng nhập nhưng phiên hết hạn khi tải lại trang, **When** mở `/sun-kudos`, **Then** họ được xử lý như khách: thấy lời nhắc đăng nhập, không thấy số liệu cũ.
 
-### US003 — Happy Path
+### US056 — Happy Path
 
 **Given** có ít nhất 10 hộp đã mở, **When** ai đó mở `/sun-kudos`, **Then** danh sách hiện đúng 10 hàng theo thời điểm mở từ mới đến cũ, mỗi hàng có avatar, tên và "Nhận được 1 <tên quà>".
 
-### US003 — Error: chưa có hộp nào được mở
+### US056 — Error: chưa có hộp nào được mở
 
 **Given** chưa có hộp quà nào được mở, **When** ai đó mở `/sun-kudos`, **Then** danh sách hiện "Chưa có dữ liệu" và trang không báo lỗi.
 
-### US004 — Happy Path
+### US057 — Happy Path
 
 **Given** Sunner đã đăng nhập, **When** bấm một hàng trong danh sách quà, **Then** trình duyệt tới trang hồ sơ của Sunner đó (hiện 404 do trang chưa xây).
 
-### US004 — Error: khách bấm hàng quà
+### US057 — Error: khách bấm hàng quà
 
 **Given** khách chưa đăng nhập, **When** bấm một hàng trong danh sách quà, **Then** trình duyệt tới `/login`.
 

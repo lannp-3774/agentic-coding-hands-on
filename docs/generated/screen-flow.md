@@ -2,7 +2,7 @@
 
 **Project**: my-app (SAA 2025 — Sun* Annual Awards 2025)
 **Generated**: 2026-10-08
-**Analysis Scope**: Điều hướng giữa `/login` (SCR001_Login), `/` (SCR003_Homepage), `/awards-information` (SCR004_AwardsInformation) và `/countdown` (SCR005_CountdownPrelaunch, F005), đường quay về OAuth `/auth/callback`, chuyển hướng của `proxy.ts`, Server Action `signInWithGoogle` / `signOut` / `setLocale`. SCR002_Todo đã gỡ (2026-10-08), không có cạnh điều hướng.
+**Analysis Scope**: Điều hướng giữa `/login` (SCR001_Login), `/` (SCR003_Homepage), `/awards-information` (SCR004_AwardsInformation), `/countdown` (SCR005_CountdownPrelaunch, F005) và `/sun-kudos` (SCR006_SunKudosLiveBoard, F006–F009), đường quay về OAuth `/auth/callback`, chuyển hướng của `proxy.ts`, Server Action `signInWithGoogle` / `signOut` / `setLocale`. SCR002_Todo đã gỡ (2026-10-08), không có cạnh điều hướng.
 
 **Code Format**: All SCR codes MUST follow `SCR###_NameSlug` format (e.g., SCR001_LoginForm, SCR002_Dashboard) | `SCR###/REG###` for region-scoped transitions
 
@@ -14,6 +14,7 @@ graph TD
     A -->|"GET /login"| L["SCR001_Login"]
     A -->|"GET /awards-information"| W["SCR004_AwardsInformation"]
     A -->|"GET /countdown (site đang khoá)"| CD["SCR005_CountdownPrelaunch"]
+    A -->|"GET /sun-kudos"| K["SCR006_SunKudosLiveBoard"]
     H -->|"proxy 307 khi site khoá, không phải admin"| CD
     W -->|"proxy 307 khi site khoá, không phải admin"| CD
     CD -->|"chạm 00 00 00 hoặc proxy 307 khi site đã mở"| H
@@ -27,11 +28,18 @@ graph TD
     G -->|"redirect kèm code hoặc error"| C["/auth/callback (route handler, không có view)"]
     C -->|"302 / khi đổi code thành công"| H
     C -->|"302 /login?error=cancelled hoặc failed"| L
-    H -.->|"liên kết, chưa có page"| U["/sun-kudos, /standards, /profile, /admin"]
-    W -.->|"Chi tiết (Kudos), liên kết footer, chưa có page"| U
+    H -->|"header, hero, khối Kudos, footer"| K
+    W -->|"Chi tiết (Kudos), header, footer"| K
+    K -->|"logo, About SAA 2025"| H
+    K -->|"Awards Information"| W
+    K -->|"khách bấm tim, avatar, tên, chi tiết, Login"| L
+    K -->|"proxy 307 khi site khoá, không phải admin"| CD
+    H -.->|"liên kết, chưa có page"| U["/standards, /profile, /admin"]
+    W -.->|"liên kết footer, chưa có page"| U
+    K -.->|"chi tiết, hồ sơ (đã đăng nhập), chưa có page"| U2["/sun-kudos/[id], /profiles/[id]"]
 ```
 
-> Ghi chú: các đích `/sun-kudos`, `/standards`, `/profile`, `/admin` được liên kết trong giao diện nhưng không có page trong code, nên không phải SCR. SCR002_Todo (đã gỡ) không xuất hiện trên bản đồ.
+> Ghi chú: các đích `/standards`, `/profile`, `/admin`, `/sun-kudos/[id]`, `/profiles/[id]` được liên kết trong giao diện nhưng không có page trong code, nên không phải SCR (`/sun-kudos` đã có page từ F006 và là SCR006_SunKudosLiveBoard). SCR002_Todo (đã gỡ) không xuất hiện trên bản đồ.
 
 ## Feature Entry Points
 
@@ -56,7 +64,8 @@ graph TD
 | SCR003_Homepage | SCR003_Homepage | Chọn ngôn ngữ → `setLocale` (ROUTE003); hoặc bấm logo / "About SAA 2025" → cuộn lên đầu (`same-page-scroll-top.tsx:17-31`) | Bấm chuột trái thường, không phím bổ trợ | |
 | SCR003_Homepage | SCR004_AwardsInformation | Bấm ảnh, tên hoặc "Chi tiết/Details" của thẻ giải thưởng → mở `/awards-information#<slug>` (`lib/awards/award-card-mapping.ts:60`); neo bỏ trống nếu hàng không có slug | Có dữ liệu giải thưởng; neo là slug của giải | SCR003_Homepage/REG002_AwardsGrid |
 | SCR003_Homepage | SCR004_AwardsInformation | Bấm "Awards Information" ở header (`site-header.tsx:48-54`) hoặc footer (`site-footer.tsx:45-51`), hoặc nút "ABOUT AWARDS" ở hero (`hero-section.tsx:69`) | Không cần phiên; không ai bị chuyển hướng | |
-| SCR003_Homepage | (chưa có page) `/sun-kudos`, `/standards` | Bấm liên kết ở header, hero, khối Kudos, footer | Đích chưa xây, không có SCR | |
+| SCR003_Homepage | SCR006_SunKudosLiveBoard | Bấm "Sun* Kudos" ở header (`site-header.tsx`) hoặc footer, hoặc CTA "ABOUT KUDOS" ở hero, hoặc "Chi tiết" của khối Kudos → `GET /sun-kudos` (ROUTE011) | Không cần phiên; khi site khoá, người không phải admin bị chuyển 307 `/countdown` trước | |
+| SCR003_Homepage | (chưa có page) `/standards` | Bấm liên kết ở footer | Đích chưa xây, không có SCR | |
 | START (truy cập trực tiếp / liên kết ngoài) | SCR004_AwardsInformation | Tải trang `GET /awards-information` (ROUTE008), kèm hoặc không kèm neo `#<slug>` | Không cần phiên; khi site đã mở khách không bị chuyển hướng (`proxy.ts:23`, `lib/supabase/proxy-session.ts:129-135`); neo khớp slug thì trang tới khối đó, neo lạ bị bỏ qua | |
 | START (truy cập trực tiếp / liên kết ngoài) | SCR005_CountdownPrelaunch | Tải trang `GET /countdown` (HEAD cũng vậy) | Site đang khoá (`now < prelaunch_ends_at`); mọi vai trò kể cả khách, không cần phiên (`lib/prelaunch/prelaunch-gate-decision.ts:51-53`, `lib/supabase/proxy-session.ts:143-155`); mốc thiếu, `NULL`, hỏng hoặc đã qua thì xem dòng chuyển về `/` bên dưới | |
 | SCR003_Homepage | SCR005_CountdownPrelaunch | Mở `GET`/`HEAD /` khi site khoá → `proxy` chuyển 307 `/countdown` | Khách, hoặc đã đăng nhập mà vai trò không phải đúng chữ `admin` (tra vai trò lỗi hoặc quá 2 giây cũng tính là người thường); admin ở lại `/` (`lib/supabase/proxy-session.ts:157-159`) | |
@@ -66,7 +75,16 @@ graph TD
 | SCR004_AwardsInformation | SCR003_Homepage | Bấm logo hoặc "About SAA 2025" ở header (`site-header.tsx:26,40-46`) hoặc footer (`site-footer.tsx:24,37-43`) | Liên kết `/`; ở trang này "About SAA 2025" không ở kiểu đang chọn | |
 | SCR004_AwardsInformation | SCR001_Login | Bấm nút "Login" (vùng tài khoản dùng chung) hoặc chọn "Đăng xuất" → `signOut` rồi `redirect("/login")` | Khách có nút "Login"; Đăng xuất chỉ khi đã đăng nhập | |
 | SCR004_AwardsInformation | SCR004_AwardsInformation | Bấm mục menu → cuộn tới `<section id="<slug>">` và đổi mục đang chọn; cuộn tay, `hashchange`; chọn ngôn ngữ → `setLocale` (ROUTE009) ghi cookie `NEXT_LOCALE`, giao diện làm mới tại chỗ | Chuột trái thường, không phím bổ trợ (menu); giá trị ngôn ngữ trong danh sách cho phép | |
-| SCR004_AwardsInformation | (chưa có page) `/sun-kudos`, `/standards` | Bấm "Chi tiết" của khối Kudos, hoặc liên kết ở header/footer | Đích chưa xây, không có SCR | |
+| SCR004_AwardsInformation | SCR006_SunKudosLiveBoard | Bấm "Chi tiết" của khối Kudos, hoặc liên kết "Sun* Kudos" ở header/footer → `GET /sun-kudos` (ROUTE011) | Không cần phiên; như dòng SCR003 khi site khoá | |
+| SCR004_AwardsInformation | (chưa có page) `/standards` | Bấm liên kết ở footer | Đích chưa xây, không có SCR | |
+| START (truy cập trực tiếp / liên kết ngoài) | SCR006_SunKudosLiveBoard | Tải trang `GET /sun-kudos`, kèm hoặc không kèm `hashtag`, `department` (ROUTE011) | Không cần phiên; khi site đã mở khách không bị chuyển hướng; giá trị lọc sai định dạng bị bỏ qua | |
+| SCR006_SunKudosLiveBoard | SCR006_SunKudosLiveBoard | Chọn hoặc bỏ bộ lọc Hashtag/Phòng ban, hoặc bấm hashtag trên thẻ → `router.replace` URL mới; cuộn gần cuối All Kudos → `GET /api/kudos?cursor=…` (ROUTE015); bấm "Copy Link" → toast | Đổi lọc: carousel về thẻ 1, All Kudos nạp lại, Spotlight giữ trạng thái; hashtag trên thẻ chỉ đặt `hashtag`, giữ `department` | |
+| SCR006_SunKudosLiveBoard | SCR006_SunKudosLiveBoard | Thả/rút tim → Server Action `likeKudos` / `unlikeKudos` (ROUTE012, ROUTE013); chọn ngôn ngữ → `setLocale` (ROUTE014) | Đã đăng nhập và không phải người gửi (tim); giá trị ngôn ngữ thuộc danh sách cho phép | |
+| SCR006_SunKudosLiveBoard | SCR001_Login | Khách bấm tim, avatar, tên, "Xem chi tiết" hoặc nút "Đăng nhập" ở sidebar / dòng quà | Khách (không có phiên hoặc không xác định được phiên) | |
+| SCR006_SunKudosLiveBoard | SCR003_Homepage | Bấm logo hoặc "About SAA 2025" ở header/footer | Liên kết `/` | |
+| SCR006_SunKudosLiveBoard | SCR004_AwardsInformation | Bấm "Awards Information" ở header/footer | Không cần phiên | |
+| SCR006_SunKudosLiveBoard | SCR005_CountdownPrelaunch | Mở `GET`/`HEAD /sun-kudos` khi site khoá → `proxy` chuyển 307 `/countdown` | Như dòng SCR003; `GET /api/kudos` cũng bị cổng | |
+| SCR006_SunKudosLiveBoard | (chưa có page) `/sun-kudos/[id]`, `/profiles/[id]` | Đã đăng nhập bấm "Xem chi tiết", nội dung thẻ, avatar hoặc tên | Đích chưa xây, 404 mặc định của Next; Copy Link vẫn chép địa chỉ tuyệt đối của `/sun-kudos/<id>` | |
 | SCR003_Homepage | (chưa có page) `/profile` | Chọn "Profile" trong menu tài khoản | Đã đăng nhập; đích chưa xây | SCR003_Homepage/REG001_AccountRegion |
 | SCR003_Homepage | (chưa có page) `/admin` | Chọn "Admin" trong menu tài khoản | Chỉ khi `profiles.role = 'admin'` (`account-region.tsx:71`); đích chưa xây, hiện mục chỉ là giao diện, trang `/admin` khi xây phải tự kiểm tra lại vai trò ở server | SCR003_Homepage/REG001_AccountRegion |
 
@@ -111,7 +129,8 @@ graph TD
 **Exit Points**:
 - Sang SCR001_Login: nút "Login" của khách (REG001_AccountRegion); Đăng xuất (REG001_AccountRegion)
 - Sang SCR004_AwardsInformation: liên kết "Awards Information" ở header, footer, nút "ABOUT AWARDS" ở hero, thẻ giải thưởng (REG002_AwardsGrid) kèm neo
-- Sang các đích chưa có page: `/sun-kudos`, `/standards`, `/profile`, `/admin` (không thuộc SCR nào)
+- Sang SCR006_SunKudosLiveBoard: liên kết "Sun* Kudos" ở header, footer, CTA "ABOUT KUDOS" ở hero, "Chi tiết" của khối Kudos
+- Sang các đích chưa có page: `/standards`, `/profile`, `/admin` (không thuộc SCR nào)
 - Sang SCR005_CountdownPrelaunch: `proxy` chuyển 307 khi site khoá và người mở không phải admin
 
 **Decision Points**:
@@ -131,7 +150,8 @@ graph TD
 **Exit Points**:
 - Sang SCR003_Homepage: logo, "About SAA 2025" ở header/footer
 - Sang SCR001_Login: nút "Login" của khách; Đăng xuất (vùng tài khoản dùng chung)
-- Sang các đích chưa có page: `/sun-kudos` ("Chi tiết" của Kudos, header, footer), `/standards` (footer), `/profile`, `/admin` (menu tài khoản)
+- Sang SCR006_SunKudosLiveBoard: "Chi tiết" của khối Kudos, liên kết "Sun* Kudos" ở header, footer
+- Sang các đích chưa có page: `/standards` (footer), `/profile`, `/admin` (menu tài khoản)
 - Sang SCR005_CountdownPrelaunch: `proxy` chuyển 307 khi site khoá và người mở không phải admin
 
 **Decision Points**:
@@ -155,6 +175,26 @@ graph TD
 **Decision Points**:
 - `proxy` mở `/countdown`: site khoá → hiện màn hình; site mở, mốc thiếu, `NULL` hoặc hỏng → 307 `/` (`lib/prelaunch/prelaunch-gate-decision.ts:51-53`)
 - Đồng hồ: chưa hydrate → `--`, chưa chuyển; còn thời gian → đếm theo giờ máy chủ; chạm 0 hoặc mốc `null` → `00` rồi chuyển `/` một lần cho mỗi `serverNowMs` (`lib/countdown/use-prelaunch-countdown.ts:38-48`)
+
+---
+
+### SCR006_SunKudosLiveBoard (Sun* Kudos - Live board)
+
+**Entry Points**:
+- Truy cập trực tiếp `/sun-kudos` hoặc liên kết ngoài (công khai), kèm hoặc không kèm `hashtag`, `department`
+- Từ SCR003_Homepage và SCR004_AwardsInformation: liên kết "Sun* Kudos" ở header, footer; CTA "ABOUT KUDOS" và "Chi tiết" của khối Kudos
+
+**Exit Points**:
+- Sang SCR003_Homepage: logo, "About SAA 2025"; sang SCR004_AwardsInformation: "Awards Information"
+- Sang SCR001_Login: khách bấm tim, avatar, tên, "Xem chi tiết" hoặc "Đăng nhập" (sidebar)
+- Sang SCR005_CountdownPrelaunch: `proxy` chuyển 307 khi site khoá và người mở không phải admin
+- Sang các đích chưa có page: `/sun-kudos/[id]`, `/profiles/[id]` (người đã đăng nhập; 404 mặc định)
+
+**Decision Points**:
+- Bộ lọc trên URL: giá trị sai định dạng → bỏ qua như chưa lọc; đúng định dạng nhưng lạ → kết quả rỗng
+- Đọc dữ liệu từng khối (Highlight, All Kudos, nút lọc, Spotlight, sidebar): lỗi hoặc rỗng → thông báo rỗng của khối đó, khối khác vẫn hiện; All Kudos nạp thêm lỗi → giữ thẻ đã có và hiện "Thử lại"
+- Thả/rút tim: khách → `/login`; người gửi → nút vô hiệu; lỗi → hoàn lại tim và số, hiện thông báo lỗi ngắn
+- Sidebar D.1: khách → lời nhắc đăng nhập; đã đăng nhập → thống kê, hoặc "—" khi không đọc được
 
 ---
 

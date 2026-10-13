@@ -152,7 +152,7 @@ Luồng dữ liệu và lời gọi dịch vụ (đầu vào cho BehaviorLogic):
 - POST `/` [Next-Action: signOut] (ROUTE002)
 - POST `/` [Next-Action: setLocale] (ROUTE003)
 - `/awards-information` → SCR004_AwardsInformation (ROUTE008, F004)
-- Liên kết ra khỏi trang nhưng chưa có page trong code: `/sun-kudos`, `/standards`, `/profile`, `/admin` — không phải màn hình, không có mã SCR
+- Liên kết ra khỏi trang: `/sun-kudos` đã có page từ F006 (SCR006_SunKudosLiveBoard); chưa có page trong code: `/standards`, `/profile`, `/admin` — không phải màn hình, không có mã SCR
 
 ### Related Screens
 
@@ -218,7 +218,7 @@ Luồng dữ liệu và lời gọi dịch vụ (đầu vào cho BehaviorLogic):
 
 - `/awards-information` (GET, ROUTE008); neo `#<slug>` chỉ xử lý ở trình duyệt
 - POST `/awards-information` [Next-Action: setLocale] (ROUTE009)
-- Liên kết ra khỏi trang nhưng chưa có page trong code: `/sun-kudos`, `/standards`, `/profile`, `/admin` — không có mã SCR
+- Liên kết ra khỏi trang: `/sun-kudos` đã có page từ F006 (SCR006_SunKudosLiveBoard); chưa có page trong code: `/standards`, `/profile`, `/admin` — không có mã SCR
 
 ### Related Screens
 
@@ -287,13 +287,13 @@ loading (`--` trước khi hydrate), running, empty (mốc thiếu, trống ho�
 
 Bảng kudos công khai `/sun-kudos` (MoMorph "Sun* Kudos - Live board", screenId MaZUn5xHXZ) của F006_KudosBoardBrowse: header cố định với "Sun* Kudos" đang chọn, banner "Hệ thống ghi nhận và cảm ơn", thanh gửi kudos và thanh "Tìm kiếm profile Sunner" (vẽ đúng Figma, chưa làm gì), khối Highlight (hai nút lọc Hashtag / Phòng ban, carousel tối đa 5 thẻ theo số tim, mũi tên và bộ đếm `n/tổng`), vùng Spotlight, cột All Kudos (mới nhất trước, tự nạp thêm 10 thẻ khi cuộn gần cuối) cạnh sidebar, footer, và thông báo nhỏ khi chép liên kết. Không cần đăng nhập; khách bấm avatar, tên hoặc chi tiết thì chuyển tới `/login`.
 
-Luồng dữ liệu và lời gọi dịch vụ (bản nháp trước khi có mã — tên handler là tên dự kiến, chưa có file:line):
-- Vỏ tĩnh bọc `<Suspense>`; nội dung đọc cookie ngôn ngữ, bộ lọc `hashtag` / `department` trên địa chỉ trang và người dùng hiện tại, rồi đọc Highlight (5 kudos nhiều tim nhất), trang đầu All Kudos, danh sách giá trị lọc, dữ liệu Spotlight và sidebar ngay trong Server Component.
-- Trang kế của All Kudos: `GET /api/kudos` (cursor + bộ lọc), dùng chung hàm áp bộ lọc với lần đọc đầu.
+Luồng dữ liệu và lời gọi dịch vụ (đối chiếu với mã đã giao, 2026-10-13):
+- Vỏ tĩnh bọc `<Suspense>`; nội dung đọc cookie ngôn ngữ, bộ lọc `hashtag` / `department` trên địa chỉ trang và người dùng hiện tại, rồi đọc Highlight (5 kudos nhiều tim nhất), trang đầu All Kudos, danh sách giá trị lọc, dữ liệu Spotlight và sidebar ngay trong Server Component (`app/sun-kudos/_components/`). Danh sách hashtag và hàng Sunner của người xem (`get_my_sunner()`) được đọc một lần mỗi lần render (`cache()` của React) rồi dùng chung giữa các vùng.
+- Trang kế của All Kudos: `GET /api/kudos` (`app/api/kudos/route.ts:28`; cursor + bộ lọc kiểm danh sách cho phép), dùng chung hàm áp bộ lọc với lần đọc đầu.
 - Thả tim / rút tim (vùng của F007_KudosHearts): Server Action `likeKudos` / `unlikeKudos` trên `/sun-kudos`.
 - `proxy.ts` (BL003_SessionRefreshProxy) khớp `/sun-kudos` như mọi page route: làm mới cookie phiên; khi site khoá người không phải admin bị chuyển 307 về `/countdown` (SCR005_CountdownPrelaunch).
 
-> Note: Loại composite do bước promote của F006–F009 ghi: vỏ màn hình thuộc F006_KudosBoardBrowse; vùng nút tim trên thẻ thuộc F007_KudosHearts, vùng Spotlight thuộc F008_KudosSpotlight, vùng sidebar thuộc F009_KudosPersonalSidebar. Chưa khai báo REG### cho ba vùng này (chưa có mã nguồn để dẫn file:line); muốn tách thì chạy `/tkm:rebuild-spec --artifact screen-list` sau khi code xong. Route ROUTE### và MODEL### của màn hình chưa cấp. Đặc tả chi tiết: `docs/screens/SCR006_SunKudosLiveBoard/spec.md`.
+> Note: Loại composite do bước promote của F006–F009 ghi: vỏ màn hình thuộc F006_KudosBoardBrowse; vùng nút tim trên thẻ thuộc F007_KudosHearts, vùng Spotlight thuộc F008_KudosSpotlight, vùng sidebar thuộc F009_KudosPersonalSidebar. Chưa khai báo REG### cho ba vùng này; muốn tách thì chạy `/tkm:rebuild-spec --artifact screen-list`. Route và dữ liệu của màn hình: ROUTE011..ROUTE015, MODEL005..MODEL013. Đặc tả chi tiết: `docs/screens/SCR006_SunKudosLiveBoard/spec.md`.
 
 ### Components
 
@@ -312,16 +312,16 @@ Luồng dữ liệu và lời gọi dịch vụ (bản nháp trước khi có m�
 
 ### Data Displayed
 
-- Data Entity 1: kudos (tên tạm; MODEL### chưa cấp) — nội dung, tiêu đề, giờ gửi, số tim `like_count`
-- Data Entity 2: sunners (tên tạm; MODEL### chưa cấp) — người gửi, người nhận, phòng ban, số kudos nhận (hạng Hero)
-- Data Entity 3: hashtags, kudos_hashtags, departments, kudos_images (tên tạm; MODEL### chưa cấp)
+- Data Entity 1: MODEL007_Kudos — nội dung, tiêu đề, giờ gửi, số tim `like_count`; MODEL011_KudosLike (lượt thích của chính người xem), MODEL012_SpecialDay
+- Data Entity 2: MODEL006_Sunner — người gửi, người nhận, phòng ban, số kudos nhận (hạng Hero), tổng tim; MODEL013_SecretBox (sidebar)
+- Data Entity 3: MODEL008_Hashtag, MODEL009_KudosHashtag, MODEL005_Department, MODEL010_KudosImage
 - Data Entity 4: Cookie `NEXT_LOCALE` (ngôn ngữ hiện tại) và bộ lọc `hashtag` / `department` trên địa chỉ trang
 
 ### Routes/URLs
 
-- `/sun-kudos` (GET; ROUTE### chưa cấp), kèm searchParams `hashtag`, `department`
-- `GET /api/kudos` (trang kế của All Kudos; ROUTE### chưa cấp)
-- Server Action `likeKudos` / `unlikeKudos` trên `/sun-kudos` (F007_KudosHearts)
+- `/sun-kudos` (GET; ROUTE011), kèm searchParams `hashtag`, `department`
+- `GET /api/kudos` (trang kế của All Kudos; ROUTE015)
+- Server Action `likeKudos` (ROUTE012) / `unlikeKudos` (ROUTE013) trên `/sun-kudos` (F007_KudosHearts); `setLocale` (ROUTE014)
 - Chỉ liên kết, chưa xây: `/sun-kudos/[id]`, `/profiles/[id]`
 
 ### Related Screens
@@ -339,7 +339,7 @@ loading (Highlight, nút lọc, All Kudos lần đầu, nạp thêm), filtering,
 
 ## Summary
 
-- **Total Screens**: 5 (đang hoạt động: SCR001_Login, SCR003_Homepage, SCR004_AwardsInformation, SCR005_CountdownPrelaunch (F005, chưa có mã), SCR006_SunKudosLiveBoard (F006–F009, bản nháp trước khi có mã)); SCR002_Todo đã gỡ, không tính
+- **Total Screens**: 5 (đang hoạt động: SCR001_Login, SCR003_Homepage, SCR004_AwardsInformation, SCR005_CountdownPrelaunch (F005, chưa có mã), SCR006_SunKudosLiveBoard (F006–F009)); SCR002_Todo đã gỡ, không tính
 - **Composite Screens**: 3 (SCR003_Homepage, 2 vùng REG; SCR004_AwardsInformation, chưa khai báo REG; SCR006_SunKudosLiveBoard, chưa khai báo REG)
 - **Atomic Screens**: 2 (SCR001_Login, SCR005_CountdownPrelaunch)
 
@@ -348,7 +348,7 @@ loading (Highlight, nút lọc, All Kudos lần đầu, nạp thêm), filtering,
 ## Cross-Reference Validation
 
 - [x] All SCR### codes are unique
-- [ ] All SCR### codes are referenced in ScreenFlow.md  <!-- SCR006_SunKudosLiveBoard chưa có trong screen-flow.md (promote 2026-10-12); đồng bộ ở bước giao (Stage 6) -->
+- [x] All SCR### codes are referenced in ScreenFlow.md  <!-- SCR006_SunKudosLiveBoard đã thêm vào screen-flow.md ở bước giao (Stage 6, 2026-10-13) -->
 - [x] All related screen references are valid
 - [x] All route URLs are properly formatted  <!-- route-view only; dfm-form: replace with "All invocation edges cite file:line" -->
 - [x] All SCR### codes are referenced in FeatureList.md

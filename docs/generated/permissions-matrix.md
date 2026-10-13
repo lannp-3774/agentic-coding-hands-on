@@ -30,7 +30,7 @@
 
 **Note**: Feature mapping is managed in FeatureList.md. This document contains permission items without direct feature references.
 
-> Ghi chú phạm vi: chỉ ghi các kiểm soát **đã được thực thi trong code**. Hai mục UX-only (PERM003, PERM004) được đánh dấu rõ là chỉ ẩn/hiện giao diện, không phải rào chắn phía server. Dự án không có feature flag, experiment, locale-gate hay kiểm tra quyền sở hữu giữa người dùng. Các route `/profile`, `/admin`, `/sun-kudos`, `/standards` có liên kết nhưng chưa có page trong code nên không có PERM (xem mục "Gaps" ở cuối). `/todo` (SCR002_Todo) đã gỡ ngày 2026-10-08, không còn kiểm soát nào.
+> Ghi chú phạm vi: chỉ ghi các kiểm soát **đã được thực thi trong code**. Hai mục UX-only (PERM003, PERM004) được đánh dấu rõ là chỉ ẩn/hiện giao diện, không phải rào chắn phía server. Dự án không có feature flag, experiment, locale-gate hay kiểm tra quyền sở hữu giữa người dùng. Các route `/profile`, `/admin`, `/standards`, `/sun-kudos/[id]`, `/profiles/[id]` có liên kết nhưng chưa có page trong code nên không có PERM (xem mục "Gaps" ở cuối). Từ 2026-10-13 `/sun-kudos` và `GET /api/kudos` đã có (PERM015..PERM019; cổng prelaunch PERM014 áp cho hai `GET` này như mọi page route). `/todo` (SCR002_Todo) đã gỡ ngày 2026-10-08, không còn kiểm soát nào.
 
 ## Permissions Index
 
@@ -50,6 +50,11 @@
 | PERM012_AwardPrizesPublicReadServiceWrite | Bảng `award_prizes`: đọc công khai, ghi chỉ `service_role` | data-permission | `supabase/migrations/20261009021753_add_award_details_and_prizes.sql:46-57` |
 | PERM013_SiteSettingsPublicReadServiceWrite | Bảng `site_settings`: đọc công khai, ghi chỉ `service_role` | data-permission | `supabase/migrations/20261009083754_create_site_settings.sql:31-43` |
 | PERM014_PrelaunchGate | Cổng prelaunch: trước mốc chỉ admin vượt cổng (fail open phía mốc, fail closed phía vai trò) | route-guard | `proxy.ts:22-24`, `lib/supabase/proxy-session.ts:143-160`, `lib/prelaunch/prelaunch-gate-decision.ts:40-56` |
+| PERM015_KudosBoardPublicReadServiceWrite | Bảng của bảng Kudos (`departments`, `sunners` theo cột, `kudos`, `hashtags`, `kudos_hashtags`, `kudos_images`, `special_days`): đọc công khai, ghi chỉ `service_role` | data-permission | `supabase/migrations/20261012072146_create_kudos_board.sql:104-129`, `supabase/migrations/20261012072217_create_kudos_likes.sql:47-52,63-67` |
+| PERM016_SunnerPrivateColumnsOwnRowRpc | `sunners.email`, `sunners.user_id` không mở cho client; hàng của chính mình chỉ qua `get_my_sunner()`; avatar chỉ đường dẫn cục bộ | field-permission | `supabase/migrations/20261012072146_create_kudos_board.sql:127-128,206-225`, `supabase/migrations/20261013060400_restrict_sunner_avatars_and_index_department.sql:66-73` |
+| PERM017_KudosLikesOwnerOnly | `kudos_likes`: chỉ chủ lượt thích đọc, chèn (2 cột), xoá; người gửi không tự thích; trọng số do trigger | resource-ownership | `supabase/migrations/20261012072217_create_kudos_likes.sql:54-59,63-67,71-93` |
+| PERM018_SecretBoxesOpenedPublicUnopenedOwner | `secret_boxes`: hộp đã mở đọc công khai, hộp chưa mở chỉ chủ hộp, không client ghi | resource-ownership | `supabase/migrations/20261012072258_create_secret_boxes.sql:36-49` |
+| PERM019_KudosHeartActionSessionCheck | `likeKudos`/`unlikeKudos`: id kiểm định dạng, người dùng lấy từ claims đã xác minh, khách bị từ chối phía máy chủ | action-permission | `lib/kudos/kudos-heart-actions.ts:52-82` |
 
 ---
 
@@ -311,12 +316,14 @@ Server Action `setLocale` công khai; dữ liệu từ client được kiểm b�
 - ROUTE003 (POST) `/` [Next-Action: setLocale]
 - ROUTE006 (POST) `/login` [Next-Action: setLocale]
 - ROUTE009 (POST) `/awards-information` [Next-Action: setLocale]
+- ROUTE014 (POST) `/sun-kudos` [Next-Action: setLocale]
 
 #### Related Screens
 
 - SCR001_Login - Login (LanguageSelector)
 - SCR003_Homepage - Homepage (LanguageSelector)
 - SCR004_AwardsInformation - Awards Information (LanguageSelector)
+- SCR006_SunKudosLiveBoard - Sun* Kudos - Live board (LanguageSelector)
 
 #### Permission Rules
 
@@ -500,8 +507,9 @@ Cổng ra mắt (F005), không phải kiểm soát an ninh (FR-602). Chỉ `GET`
 
 - ROUTE001, ROUTE008 (GET) `/`, `/awards-information` — bị 307 `/countdown` khi khoá với người không phải admin; các trang khác cũng vậy
 - ROUTE010 (GET) `/countdown` — hiện khi khoá; 307 `/` khi mở
+- ROUTE011 (GET) `/sun-kudos`, ROUTE015 (GET) `/api/kudos` — cùng cổng như mọi `GET` (khi khoá, người không phải admin → 307 `/countdown`)
 - ROUTE004 (GET) `/login`, ROUTE007 (GET) `/auth/callback` — luôn được miễn
-- ROUTE002, ROUTE003, ROUTE005, ROUTE006, ROUTE009 (POST) — không qua cổng
+- ROUTE002, ROUTE003, ROUTE005, ROUTE006, ROUTE009, ROUTE012, ROUTE013, ROUTE014 (POST) — không qua cổng
 
 #### Related Screens
 
@@ -526,17 +534,179 @@ Cổng ra mắt (F005), không phải kiểm soát an ninh (FR-602). Chỉ `GET`
 
 ---
 
+### PERM015_KudosBoardPublicReadServiceWrite: Bảng của bảng Kudos: đọc công khai, ghi chỉ `service_role`
+
+**Type**: data-permission
+**Enforced At**: `supabase/migrations/20261012072146_create_kudos_board.sql:104-129` (RLS bật trên sáu bảng; policy `*_select_public`; REVOKE rồi GRANT tường minh), `supabase/migrations/20261012072217_create_kudos_likes.sql:47,50-52,63-67` (`special_days`)
+
+#### Description
+
+Cùng mẫu với PERM009. RLS bật trên `departments`, `sunners`, `kudos`, `hashtags`, `kudos_hashtags`, `kudos_images` và `special_days`; mỗi bảng có policy `<bảng>_select_public` cho `anon` và `authenticated` đọc mọi dòng. Thu hồi hết quyền của `public`, `anon`, `authenticated` (kể cả sequence `kudos_seq_seq`) rồi chỉ cấp `select`; `insert/update/delete` chỉ `service_role` (seed, vận hành), kể cả hai bộ đếm `kudos.like_count`, `sunners.kudos_received_count`, `sunners.hearts_total` (chỉ đổi qua trigger `security definer`). `sunners` chỉ được đọc theo cột (xem PERM016). Vì dữ liệu là công khai nên khách xem được toàn bộ bảng kudos.
+
+#### Related Routes
+
+- ROUTE011 (GET) `/sun-kudos`, ROUTE015 (GET) `/api/kudos` — đọc các bảng này bằng client publishable (`anon` hoặc `authenticated`)
+
+#### Related Screens
+
+- SCR006_SunKudosLiveBoard - Sun* Kudos - Live board
+
+#### Permission Rules
+
+| Role | Allow | Conditions |
+|------|-------|------------|
+| anon | ✓ (select) | Mọi dòng; `sunners` chỉ các cột trong column grant. Không có insert/update/delete. |
+| authenticated | ✓ (select) | Như `anon`. Không có insert/update/delete, không sửa bộ đếm. |
+| service_role | ✓ (select, insert, update, delete) | Bỏ qua RLS; dùng cho seed và vận hành. |
+
+#### Related Modules
+
+- `lib/kudos/get-kudos-page.ts`, `lib/kudos/get-kudos-filter-options.ts`, `lib/kudos/get-hashtag-rows-per-request.ts`, `lib/kudos/get-spotlight-data.ts`
+- MODEL005_Department, MODEL006_Sunner, MODEL007_Kudos, MODEL008_Hashtag, MODEL009_KudosHashtag, MODEL010_KudosImage, MODEL012_SpecialDay
+
+---
+
+### PERM016_SunnerPrivateColumnsOwnRowRpc: `sunners.email`, `sunners.user_id` không mở cho client; hàng của chính mình chỉ qua `get_my_sunner()`
+
+**Type**: field-permission
+**Enforced At**: `supabase/migrations/20261012072146_create_kudos_board.sql:127-128` (column grant), `supabase/migrations/20261012072146_create_kudos_board.sql:206-225` (`get_my_sunner`, REVOKE/GRANT `execute`), `supabase/migrations/20261013060400_restrict_sunner_avatars_and_index_department.sql:66-73` (CHECK avatar cục bộ), `supabase/migrations/20261013060400_restrict_sunner_avatars_and_index_department.sql:84-110` (hàm gắn Sunner không sao chép avatar)
+
+#### Description
+
+`email` (khoá gắn tài khoản) và `user_id` (tài khoản đã liên kết) không nằm trong column grant của `anon`/`authenticated`, nên `select=*` trên `sunners` bị từ chối (42501) và client không đọc được chúng. Hàng Sunner của chính người xem lấy bằng `public.get_my_sunner()` (`security definer`, `set search_path = ''`, `where user_id = auth.uid()`, tối đa một hàng, không có `email`/`user_id`): `execute` thu của `public`, `anon`, `authenticated` rồi chỉ cấp `authenticated`; khách không gọi RPC (`getMySunnerPerRequest` trả `guest` không truy vấn). Hàm gắn tài khoản (`link_or_create_sunner`, `link_or_create_sunner_for_user`) cùng các hàm trigger bị thu `execute` khỏi mọi role client, chạy từ trigger `auth.users` và chỉ với tài khoản đã xác nhận email. `sunners.avatar_url` chỉ là đường dẫn cục bộ dưới `/public` (CHECK; không sao chép từ `user_metadata`), nên trình duyệt không bao giờ bị trỏ tới máy chủ ngoài (review M1, 2026-10-13).
+
+#### Related Routes
+
+- ROUTE011 (GET) `/sun-kudos` — `getViewerSunnerId` và `getKudosPersonalStats` gọi `get_my_sunner()` một lần mỗi lần render
+
+#### Related Screens
+
+- SCR006_SunKudosLiveBoard - Sun* Kudos - Live board
+
+#### Permission Rules
+
+| Role | Allow | Conditions |
+|------|-------|------------|
+| anon | ✓ (select cột công khai) ✗ (`email`, `user_id`, RPC) | `select *` → 42501; không có quyền `execute` `get_my_sunner`. |
+| authenticated | ✓ (select cột công khai, `get_my_sunner()`) ✗ (`email`, `user_id`) | RPC chỉ trả hàng của `auth.uid()`. |
+| service_role | ✓ | Bỏ qua RLS; đọc/ghi mọi cột. |
+
+#### Related Modules
+
+- `lib/kudos/get-my-sunner-per-request.ts`, `lib/kudos/get-viewer-sunner-id.ts`, `lib/kudos/get-kudos-personal-stats.ts`, `lib/kudos/safe-media-path.ts`
+- MODEL006_Sunner
+
+---
+
+### PERM017_KudosLikesOwnerOnly: `kudos_likes`: chỉ chủ lượt thích; người gửi không tự thích
+
+**Type**: resource-ownership
+**Enforced At**: `supabase/migrations/20261012072217_create_kudos_likes.sql:48,54-59` (RLS, ba policy), `supabase/migrations/20261012072217_create_kudos_likes.sql:63-67` (quyền), `supabase/migrations/20261012072217_create_kudos_likes.sql:71-93` (trigger `kudos_likes_before_insert`)
+
+#### Description
+
+Policy `kudos_likes_select_own` (`anon`, `authenticated`), `kudos_likes_insert_own` và `kudos_likes_delete_own` (`authenticated`) đều ràng `user_id = (select auth.uid())`; không ai biết ai đã thích kudos nào. Client chỉ có `insert (kudos_id, user_id)` theo cột nên không chọn được `weight` hay `created_at`, không có `update`. Trigger `kudos_likes_before_insert` (`security definer`) từ chối tài khoản không có Sunner hoặc là người gửi kudos (`check_violation`, 23514 → action trả `forbidden`) rồi đặt `weight` theo `special_days` (Asia/Ho_Chi_Minh). Bộ đếm `kudos.like_count`, `sunners.hearts_total` chỉ đổi qua `kudos_likes_after_change`; xoá kudos bằng SQL được `release_kudos_like_hearts` (BEFORE DELETE trên `kudos`) trả lại đúng trọng số cho người gửi. Nút tim vô hiệu cho người gửi là UX; ràng buộc thật ở RLS và trigger.
+
+#### Related Routes
+
+- ROUTE012, ROUTE013 (POST) `/sun-kudos [Next-Action: likeKudos | unlikeKudos]`
+- ROUTE011 (GET) `/sun-kudos`, ROUTE015 (GET) `/api/kudos` — embed `my_like` chỉ trả lượt thích của chính người gọi
+
+#### Related Screens
+
+- SCR006_SunKudosLiveBoard - Sun* Kudos - Live board (vùng nút tim, F007)
+
+#### Permission Rules
+
+| Role | Allow | Conditions |
+|------|-------|------------|
+| anon | ✓ (select, kết quả rỗng) ✗ (insert, delete) | RLS `user_id = auth.uid()` không khớp dòng nào. |
+| authenticated | ✓ (select/insert/delete dòng của mình) ✗ (update, người gửi tự thích, ghi `weight`) | Chỉ khi có Sunner liên kết và không phải người gửi; một lượt mỗi kudos (PK ghép). |
+| service_role | ✓ (select, insert, update, delete) | Bỏ qua RLS; seed và vận hành. |
+
+#### Related Modules
+
+- `lib/kudos/kudos-heart-actions.ts`, `lib/kudos/kudos-heart-store.tsx`
+- MODEL011_KudosLike, MODEL012_SpecialDay
+
+---
+
+### PERM018_SecretBoxesOpenedPublicUnopenedOwner: `secret_boxes`: hộp đã mở đọc công khai, hộp chưa mở chỉ chủ hộp
+
+**Type**: resource-ownership
+**Enforced At**: `supabase/migrations/20261012072258_create_secret_boxes.sql:36-49` (RLS, hai policy, quyền)
+
+#### Description
+
+Policy `secret_boxes_select_opened_public` (`anon`, `authenticated`, `opened_at is not null`) cho danh sách "10 SUNNER NHẬN QUÀ MỚI NHẤT"; policy `secret_boxes_select_own` (`authenticated`, `owner_id = (select me.id from public.get_my_sunner() as me)`) cho chủ hộp đếm hộp chưa mở, vì `sunners.user_id` không cấp cho client. Thu hồi hết quyền rồi chỉ cấp `select`; không client nào ghi (mở hộp ngoài phạm vi), `service_role` ghi.
+
+#### Related Routes
+
+- ROUTE011 (GET) `/sun-kudos` — sidebar F009 (D.1 đếm hộp của chính mình, D.3 liệt kê hộp đã mở)
+
+#### Related Screens
+
+- SCR006_SunKudosLiveBoard - Sun* Kudos - Live board (vùng sidebar, F009)
+
+#### Permission Rules
+
+| Role | Allow | Conditions |
+|------|-------|------------|
+| anon | ✓ (select) | Chỉ hộp đã mở. |
+| authenticated | ✓ (select) | Hộp đã mở của mọi người và hộp chưa mở của chính mình. Không insert/update/delete. |
+| service_role | ✓ (select, insert, update, delete) | Bỏ qua RLS; seed và vận hành. |
+
+#### Related Modules
+
+- `lib/kudos/get-recent-gift-recipients.ts`, `lib/kudos/get-kudos-personal-stats.ts`
+- MODEL013_SecretBox
+
+---
+
+### PERM019_KudosHeartActionSessionCheck: `likeKudos`/`unlikeKudos` kiểm phiên phía máy chủ
+
+**Type**: action-permission
+**Enforced At**: `lib/kudos/kudos-heart-actions.ts:52-82` (`writeHeart`)
+
+#### Description
+
+Hai Server Action là endpoint `POST` công khai nên không tin dữ liệu từ client: `kudosId` phải khớp mẫu UUID, nếu không trả `error` và log; người dùng lấy từ claims đã xác minh (`getCurrentUser()`, fail closed thành khách), khách nhận `unauthenticated` (giao diện chuyển tới `/login`); ghi bằng client cookie của chính người dùng nên RLS (PERM017) và trigger quyết định phần còn lại. Mã lỗi Postgres 23505 (đã thích) là `ok` idempotent, 23514 là `forbidden`; mọi lỗi khác chỉ log mã, không lộ chi tiết. Server Action không qua cổng prelaunch (`POST`, PERM014) nên tự kiểm phiên.
+
+#### Related Routes
+
+- ROUTE012, ROUTE013 (POST) `/sun-kudos [Next-Action: likeKudos | unlikeKudos]`
+
+#### Related Screens
+
+- SCR006_SunKudosLiveBoard - Sun* Kudos - Live board (vùng nút tim, F007)
+
+#### Permission Rules
+
+| Role | Allow | Conditions |
+|------|-------|------------|
+| Anonymous visitor | ✗ | `unauthenticated`, không ghi DB. |
+| Authenticated user | ✓ | Không phải người gửi kudos và có Sunner (do trigger DB kiểm). |
+| Authenticated admin | ✓ | Như người dùng thường; vai trò không ảnh hưởng. |
+
+#### Related Modules
+
+- `lib/kudos/kudos-heart-actions.ts`, `lib/supabase/current-user.ts` (PERM005)
+- MODEL011_KudosLike
+
+---
+
 ## Summary
 
-- **Total Permission Items**: 14
-- **By Type**: route-guard: 3, screen-permission: 2, action-permission: 3, data-permission: 4, role-based: 1, resource-ownership: 0, field-permission: 0, api-scope: 0, feature-flag: 0, experiment: 0, env-gate: 1, locale-gate: 0
+- **Total Permission Items**: 19
+- **By Type**: route-guard: 3, screen-permission: 2, action-permission: 4, data-permission: 5, role-based: 1, resource-ownership: 2, field-permission: 1, api-scope: 0, feature-flag: 0, experiment: 0, env-gate: 1, locale-gate: 0
 - **UX-only (không phải rào chắn server)**: PERM003, PERM004
 - **Authorization model**: RBAC đơn giản (`profiles.role` ∈ {`user`, `admin`}) cộng RLS theo vai trò Postgres; không có phân quyền theo sở hữu giữa người dùng.
 
 ### Gaps (ghi nhận, không phải PERM)
 
 - `/admin` chưa có page và chưa có kiểm tra vai trò phía server; hiện chỉ có việc ẩn mục menu (PERM004). Khi xây phải gọi `getCurrentUser()` và từ chối nếu không phải `admin` (yêu cầu từ code: `current-user.ts:27-28`).
-- `/profile`, `/sun-kudos`, `/standards` có liên kết nhưng chưa có page, truy cập hiện trả 404; chưa có quy tắc quyền để ghi.
+- `/profile`, `/standards`, `/sun-kudos/[id]`, `/profiles/[id]` có liên kết nhưng chưa có page, truy cập hiện trả 404; chưa có quy tắc quyền để ghi. Khi xây `/sun-kudos/[id]` và `/profiles/[id]` phải tự kiểm quyền ở server (khách bấm từ bảng kudos đã được đưa tới `/login` ở phía giao diện).
+- Việc đăng ký hiện không giới hạn tên miền email ở dự án hosted: tài khoản đã xác nhận email nào cũng được tạo Sunner (review M2, hoãn); `/api/kudos` chưa giới hạn tốc độ.
 - `getCurrentUser()` mới chỉ phục vụ vùng tài khoản; chưa trang hay action nào chặn truy cập dựa trên vai trò. Cổng prelaunch (PERM014) có dùng vai trò `admin` nhưng chỉ để quyết định ai vượt cổng ra mắt, nó fail open ở phía mốc và không thấy `POST`, nên không thay việc tự kiểm tra quyền.
 
 ---
@@ -545,8 +715,8 @@ Cổng ra mắt (F005), không phải kiểm soát an ninh (FR-602). Chỉ `GET`
 
 - [x] All PERM### codes are unique
 - [x] All PERM### codes are referenced in FeatureList.md
-- [x] All related route references are valid (ROUTE### in RouteList: ROUTE001..010 đều tồn tại; `/admin` chỉ ghi chú là chưa có route)
-- [x] All related screen references are valid (SCR001_Login, SCR003_Homepage, SCR003_Homepage/REG001_AccountRegion, SCR003_Homepage/REG002_AwardsGrid, SCR004_AwardsInformation, SCR005_CountdownPrelaunch theo ScreenList; PERM003/PERM004 nhắm vùng REG001_AccountRegion — chỉ ẩn/hiện giao diện, UX-only)
+- [x] All related route references are valid (ROUTE### in RouteList: ROUTE001..015 đều tồn tại; `/admin` chỉ ghi chú là chưa có route)
+- [x] All related screen references are valid (SCR001_Login, SCR003_Homepage, SCR003_Homepage/REG001_AccountRegion, SCR003_Homepage/REG002_AwardsGrid, SCR004_AwardsInformation, SCR005_CountdownPrelaunch, SCR006_SunKudosLiveBoard theo ScreenList; PERM003/PERM004 nhắm vùng REG001_AccountRegion — chỉ ẩn/hiện giao diện, UX-only)
 - [x] All related module references are valid
 - [x] No orphaned permission references
 

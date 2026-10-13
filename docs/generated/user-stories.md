@@ -14,7 +14,7 @@
 
 > Ghi chú tác nhân: dự án có 3 tác nhân theo `permissions-matrix.md` — `guest` (chưa đăng nhập), `signed-in user` (`profiles.role = 'user'`), `admin` (`profiles.role = 'admin'`). Hành vi công khai (xem trang chủ, đổi ngôn ngữ, điều hướng) giống hệt nhau cho cả ba tác nhân (không có PERM phân biệt) nên US ghi tác nhân chính là `guest`; quy tắc này được nhắc lại trong Technical Notes. US có khác biệt theo quyền được tách theo tác nhân (US003 guest, US004..US005/US006 signed-in user, US007 admin).
 
-> Ghi chú đích điều hướng chưa xây: `/sun-kudos`, `/standards`, `/profile`, `/admin` là liên kết bấm được trong code nhưng **chưa có page** (truy cập hiện trả 404). Các US điều hướng tới đó (US009, US010, US005, US007, và US026 cho nút "Chi tiết" của Kudos) mô tả ý định điều hướng của phần tử có thật; phần "đích đến" ghi rõ là chưa xây, không bịa nội dung trang đích. `/awards-information` đã có page từ F004 (US008 và US011 trỏ tới đó, nội dung trang do US022..US027).
+> Ghi chú đích điều hướng chưa xây: `/standards`, `/profile`, `/admin` là liên kết bấm được trong code nhưng **chưa có page** (truy cập hiện trả 404). Các US điều hướng tới đó (US010, US005, US007) mô tả ý định điều hướng của phần tử có thật; phần "đích đến" ghi rõ là chưa xây, không bịa nội dung trang đích. `/awards-information` đã có page từ F004 (US008 và US011 trỏ tới đó, nội dung trang do US022..US027); `/sun-kudos` đã có page từ F006 (US009 và US026 trỏ tới đó, nội dung trang do US034..US057 trong functional-spec của F006..F009, chưa có trong file này vì file đã vượt giới hạn kích thước).
 
 ## Interaction Inventory
 
@@ -31,18 +31,18 @@
 | — (proxy) | `proxy.ts` — mọi request khớp `/`, `/login` (`proxy.ts:18-20`) | system-action | Làm mới phiên; `GET\|HEAD /login` có phiên → 307 `/` → US014, US015 | GET /login, GET / (ROUTE001, ROUTE004) |
 | SCR003_Homepage | SiteHeader — logo "SAA 2025" (`site-header.tsx:26`) và liên kết "About SAA 2025" (`site-header.tsx:41`) | navigation | Liên kết `/` (đã ở trang này) + `SamePageScrollTop` cuộn về đầu trang → US016 | GET / (ROUTE001) |
 | SCR003_Homepage | SiteHeader — liên kết "Awards Information" (`site-header.tsx:49`) | navigation | Điều hướng tới `/awards-information` → US008 | GET /awards-information (ROUTE008) |
-| SCR003_Homepage | SiteHeader — liên kết "Sun* Kudos" (`site-header.tsx:56`) | navigation | Điều hướng tới `/sun-kudos` (chưa xây) → US009 | GET /sun-kudos (chưa có route) |
+| SCR003_Homepage | SiteHeader — liên kết "Sun* Kudos" (`site-header.tsx:56`) | navigation | Điều hướng tới `/sun-kudos` (SCR006_SunKudosLiveBoard) → US009 | GET /sun-kudos (ROUTE011) |
 | SCR003_Homepage | LanguageSelector (slot ngôn ngữ của header, `home-content.tsx:40`) | secondary-action | Chọn VN/EN, gọi `setLocale` → US017 | POST / [Next-Action: setLocale] (ROUTE003) |
 | SCR003_Homepage | HeroSection — CTA "ABOUT AWARDS" (`hero-section.tsx:69`) | navigation | Điều hướng tới `/awards-information` (gộp vào US008) | GET /awards-information (ROUTE008) |
-| SCR003_Homepage | HeroSection — CTA "ABOUT KUDOS" (`hero-section.tsx:74`) | navigation | Điều hướng tới `/sun-kudos` (gộp vào US009) | GET /sun-kudos (chưa có route) |
+| SCR003_Homepage | HeroSection — CTA "ABOUT KUDOS" (`hero-section.tsx:74`) | navigation | Điều hướng tới `/sun-kudos` (gộp vào US009) | GET /sun-kudos (ROUTE011) |
 | SCR003_Homepage | LiveCountdown — ba ô DAYS/HOURS/MINUTES + "Coming soon" (`countdown.tsx:13`, `countdown-tiles.tsx:24`) | secondary-action | Hiển thị đếm ngược tự cập nhật theo phút, không có thao tác bấm (display-only) → US018 | N/A (đọc `SAA_COUNTDOWN_TARGET` phía server, tính phía client) |
 | SCR003_Homepage/REG002_AwardsGrid | AwardsGrid — lưới thẻ + trạng thái rỗng/skeleton (`awards-grid.tsx:20,74`) | secondary-action | Hiển thị các hạng mục giải thưởng đọc từ bảng `awards` (display-only) → US019 | N/A (Server Component đọc `getAwards`, `lib/awards/get-awards.ts:18`) |
 | SCR003_Homepage/REG002_AwardsGrid | AwardsGrid — ba liên kết của mỗi thẻ: ảnh, tiêu đề, "Chi tiết/Details" (`awards-grid.tsx:31,50,59`) | navigation | Điều hướng tới `/awards-information#<slug>` → US011 | GET /awards-information#<slug> (ROUTE008) |
-| SCR003_Homepage | KudosSection — liên kết "Chi tiết/Details" (`kudos-section.tsx:36`) | navigation | Điều hướng tới `/sun-kudos` (gộp vào US009) | GET /sun-kudos (chưa có route) |
+| SCR003_Homepage | KudosSection — liên kết "Chi tiết/Details" (`kudos-section.tsx:36`) | navigation | Điều hướng tới `/sun-kudos` (gộp vào US009) | GET /sun-kudos (ROUTE011) |
 | SCR003_Homepage | WidgetButton — nút nổi góc phải dưới (`widget-button.tsx:9`) | secondary-action | **Inert**: không có handler, không điều hướng (comment code: "Visual only") — không có US `[IPE_INERT]` | N/A |
 | SCR003_Homepage | SiteFooter — logo (`site-footer.tsx:24`) và liên kết "About SAA 2025" (`site-footer.tsx:38`) | navigation | Liên kết `/` + cuộn về đầu trang (gộp vào US016) | GET / (ROUTE001) |
 | SCR003_Homepage | SiteFooter — liên kết "Awards Information" (`site-footer.tsx:46`) | navigation | Điều hướng tới `/awards-information` (gộp vào US008) | GET /awards-information (ROUTE008) |
-| SCR003_Homepage | SiteFooter — liên kết "Sun* Kudos" (`site-footer.tsx:53`) | navigation | Điều hướng tới `/sun-kudos` (gộp vào US009) | GET /sun-kudos (chưa có route) |
+| SCR003_Homepage | SiteFooter — liên kết "Sun* Kudos" (`site-footer.tsx:53`) | navigation | Điều hướng tới `/sun-kudos` (gộp vào US009) | GET /sun-kudos (ROUTE011) |
 | SCR003_Homepage | SiteFooter — liên kết "Tiêu chuẩn chung/General Standards" (`site-footer.tsx:57`) | navigation | Điều hướng tới `/standards` (chưa xây) → US010 | GET /standards (chưa có route) |
 | SCR003_Homepage/REG001_AccountRegion | GuestLoginLink — "Đăng nhập/Login" (`account-slot-parts.tsx:14`, chỉ khi là khách) | navigation | Điều hướng tới `/login` → US003 | GET /login (ROUTE004) |
 | SCR003_Homepage/REG001_AccountRegion | NotificationBell (`account-slot-parts.tsx:26`, chỉ khi đã đăng nhập) | secondary-action | Hiển thị biểu tượng chuông; **không có handler** (UI-only) → US004 | N/A |
@@ -53,7 +53,7 @@
 | SCR004_AwardsInformation | SiteHeader / SiteFooter — liên kết "Awards Information" đang chọn (`awards-information-content.tsx:32,46`) và các liên kết còn lại | navigation | Mở trang bằng `GET /awards-information` không chuyển hướng, header và footer đánh dấu trang hiện tại → US022 | GET /awards-information (ROUTE008) |
 | SCR004_AwardsInformation | AwardDetailsLoader — menu sáu giải và sáu khối giải (`award-details-loader.tsx:13`, `award-block.tsx:54`) | secondary-action | Hiển thị chi tiết giải đọc từ `awards` + `award_prizes` (display-only), khung chờ, trạng thái rỗng/lỗi → US023 | N/A (Server Component đọc `getAwardDetails`, `lib/awards/get-award-details.ts:24`) |
 | SCR004_AwardsInformation | AwardsNavView — mục menu, lặp sáu lần (`awards-nav-view.tsx:23-44`) | navigation | Bấm thì cuộn tới khối giải và đánh dấu mục (US024); cuộn tay hoặc mở bằng `#<slug>` thì mục đang chọn đi theo (US025) | N/A (trạng thái client, `use-awards-nav-active-slug.ts`) |
-| SCR004_AwardsInformation | KudosSection — nút "Chi tiết/Details" (`kudos-section.tsx:37`) | navigation | Điều hướng tới `/sun-kudos` (chưa xây) → US026 | GET /sun-kudos (chưa có route) |
+| SCR004_AwardsInformation | KudosSection — nút "Chi tiết/Details" (`kudos-section.tsx:37`) | navigation | Điều hướng tới `/sun-kudos` (SCR006_SunKudosLiveBoard) → US026 | GET /sun-kudos (ROUTE011) |
 | SCR004_AwardsInformation | LanguageSelector (slot ngôn ngữ của header, `awards-information-content.tsx:34`) | secondary-action | Chọn VN/EN, gọi `setLocale` → US027 | POST /awards-information [Next-Action: setLocale] (ROUTE009) |
 | — (behaviour, không có giao diện) | SamePageScrollTop — lắng nghe click toàn trang (`same-page-scroll-top.tsx:17`) | system-action | Cuộn về đầu trang khi bấm liên kết trỏ về chính trang này; không `preventDefault` — đã tính trong US016 | N/A |
 
@@ -417,13 +417,13 @@ As a guest, I want to bấm liên kết "Sun* Kudos" (hoặc CTA "ABOUT KUDOS", 
 
 - [ ] Criterion 1: Bốn phần tử trỏ `/sun-kudos`: liên kết header (`site-header.tsx:56`), CTA "ABOUT KUDOS" ở hero (`hero-section.tsx:74`), liên kết "Chi tiết/Details" ở khối Kudos (`kudos-section.tsx:36`) và liên kết footer (`site-footer.tsx:53`).
 - [ ] Criterion 2: Bấm một trong bốn phần tử sẽ điều hướng sang `/sun-kudos`.
-- [ ] Criterion 3: `[NOT_BUILT]` Đích `/sun-kudos` chưa có page nên hiện trả 404.
+- [ ] Criterion 3: Đích `/sun-kudos` đã có page từ F006 (SCR006_SunKudosLiveBoard); khi site khoá, người không phải admin bị chuyển 307 `/countdown` trước.
 
 ### Technical Notes
 
-- **Endpoint**: GET /sun-kudos (chưa có route trong RouteList)
+- **Endpoint**: GET /sun-kudos (ROUTE011)
 - **Data Required**: Nhãn từ `home.nav.kudos`, `home.hero.aboutKudos`, `home.kudos.details`
-- **Dependencies**: Trang đích chưa xây; cả ba tác nhân có hành vi giống nhau
+- **Dependencies**: Trang đích do F006 cung cấp; cả ba tác nhân có hành vi giống nhau
 
 ### Screens
 
@@ -434,7 +434,7 @@ As a guest, I want to bấm liên kết "Sun* Kudos" (hoặc CTA "ABOUT KUDOS", 
 | Scenario | Given | When | Then |
 |----------|-------|------|------|
 | Happy Path | Khách ở `/`, cuộn tới khối Kudos | Bấm "Chi tiết" | Trình duyệt điều hướng tới `/sun-kudos` |
-| Error Case | Trang đích chưa xây | Bấm "Sun* Kudos" ở header | Nhận 404 từ Next.js |
+| Error Case | Site đang khoá, người xem không phải admin | Bấm "Sun* Kudos" ở header | `proxy` chuyển 307 `/countdown` (F005) |
 
 ---
 
@@ -1079,13 +1079,13 @@ As a guest, I want to bấm "Chi tiết" ở khối Sun* Kudos cuối trang so t
 
 - [ ] Criterion 1: Cuối trang có `KudosSection` dùng lại của trang chủ với nhãn, tiêu đề, mô tả và nút "Chi tiết/Details" (`awards-information-content.tsx:44`).
 - [ ] Criterion 2: Nút trỏ `/sun-kudos` (`app/_components/home/kudos-section.tsx:37`).
-- [ ] Criterion 3: `[NOT_BUILT]` Đích `/sun-kudos` chưa có page nên hiện trả 404 mặc định của Next.js.
+- [ ] Criterion 3: Đích `/sun-kudos` đã có page từ F006 (SCR006_SunKudosLiveBoard).
 
 ### Technical Notes
 
-- **Endpoint**: GET /sun-kudos (chưa có route trong RouteList)
+- **Endpoint**: GET /sun-kudos (ROUTE011)
 - **Data Required**: Chuỗi `home.kudos`
-- **Dependencies**: Gộp ý định với US009 ở trang chủ; trang đích chưa xây
+- **Dependencies**: Gộp ý định với US009 ở trang chủ; trang đích do F006 cung cấp
 
 ### Screens
 
@@ -1096,7 +1096,7 @@ As a guest, I want to bấm "Chi tiết" ở khối Sun* Kudos cuối trang so t
 | Scenario | Given | When | Then |
 |----------|-------|------|------|
 | Happy Path | Người xem cuộn tới cuối trang | Xem khối Kudos | Thấy nút "Chi tiết" có `href` là `/sun-kudos` |
-| Error Case | Trang `/sun-kudos` chưa xây | Bấm "Chi tiết" | Nhận 404 từ Next.js; trang Awards Information không bị lỗi |
+| Error Case | Site đang khoá, người xem không phải admin | Bấm "Chi tiết" | `proxy` chuyển 307 `/countdown` (F005); trang Awards Information không bị lỗi |
 
 ---
 

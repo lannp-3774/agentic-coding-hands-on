@@ -183,7 +183,7 @@ Trang cuộn dọc gồm bảy vùng: header cố định ở đầu cửa sổ 
 > `## 4. User Actions § Happy Path` narrative keeps its v27 scope rule unchanged: **prose still
 > must not narrate cross-screen navigation**; only the § Exits *table* may name destinations.
 
-`screen-flow.md` đã có màn hình này (mục SCR004_AwardsInformation, Screen Access Paths); các đích chưa xây (`/sun-kudos`, `/standards`) không có mã SCR nên ghi theo route. Điều hướng của vùng tài khoản thuộc feature Menu tài khoản, không liệt kê ở đây.
+`screen-flow.md` đã có màn hình này (mục SCR004_AwardsInformation, Screen Access Paths); đích `/sun-kudos` đã là SCR006_SunKudosLiveBoard (F006); đích chưa xây (`/standards`) không có mã SCR nên ghi theo route. Điều hướng của vùng tài khoản thuộc feature Menu tài khoản, không liệt kê ở đây.
 
 ### Entry Points
 
@@ -199,7 +199,7 @@ Trang cuộn dọc gồm bảy vùng: header cố định ở đầu cửa sổ 
 |--------|---------|-----------|-------------|--------|--------|
 | Về trang chủ | E01, E22 | — | SCR003_Homepage | redirect | `app/_components/site/site-header.tsx:26`, `app/_components/site/site-footer.tsx:24` |
 | Mở "About SAA 2025" | E02, E23 | — | SCR003_Homepage | redirect | `app/_components/site/site-header.tsx:40-46`, `app/_components/site/site-footer.tsx:37-43` |
-| Mở trang Sun* Kudos | E04, E21, E23 (Sun* Kudos) | — | (chưa có page) route `/sun-kudos`, trả 404 mặc định | redirect | `app/_components/home/kudos-section.tsx:37`, `app/_components/site/site-header.tsx:56` |
+| Mở trang Sun* Kudos | E04, E21, E23 (Sun* Kudos) | — | SCR006_SunKudosLiveBoard (route `/sun-kudos`) | redirect | `app/_components/home/kudos-section.tsx:37`, `app/_components/site/site-header.tsx:56` |
 | Mở trang Tiêu chuẩn chung | E23 | — | (chưa có page) route `/standards`, trả 404 mặc định | redirect | `app/_components/site/site-footer.tsx:57` |
 | Chuyển giữa các giải | E11 | có dữ liệu giải | (stays on screen) | cuộn tới khối giải | `app/_components/awards-nav-behaviour/use-awards-nav-active-slug.ts:73-88` |
 

@@ -47,10 +47,10 @@ flowchart LR
 | # | Action (handler) | Method · Path | Codes | Writes | Detail |
 |---|---|---|---|---|---|
 | **A0** | *cross-cutting — belongs to no single action* | — | FR-001, FR-101, FR-601, FR-602, BR-004 | — | § 4.4 |
-| **A1** | `KudosPersonalStats#PersonalStatsRegion` (planned) | `GET` `/sun-kudos` *(vùng D.1 của trang)* | FR-201, FR-202, FR-203, FR-204, FR-205, FR-206, FR-207, FR-208, FR-209, FR-214, BR-001, BR-002, DEC-001, US001, US002 | — *(read-only)* | § 3.1 |
-| **A2** | `KudosGiftRecipients#GiftRecipientsRegion` (planned) | `GET` `/sun-kudos` *(vùng D.3 của trang)* | FR-102, FR-210, FR-211, FR-212, FR-213, FR-215, BR-001, BR-003, DEC-002, US003, US004 | — *(read-only)* | § 3.2 |
+| **A1** | `KudosPersonalStats#PersonalStatsRegion` (planned) | `GET` `/sun-kudos` *(vùng D.1 của trang)* | FR-201, FR-202, FR-203, FR-204, FR-205, FR-206, FR-207, FR-208, FR-209, FR-214, BR-001, BR-002, DEC-001, US054, US055 | — *(read-only)* | § 3.1 |
+| **A2** | `KudosGiftRecipients#GiftRecipientsRegion` (planned) | `GET` `/sun-kudos` *(vùng D.3 của trang)* | FR-102, FR-210, FR-211, FR-212, FR-213, FR-215, BR-001, BR-003, DEC-002, US056, US057 | — *(read-only)* | § 3.2 |
 
-**Rung set** — mọi block trong § 3 dùng đúng thứ tự: **Who** → **FE** → **Request** → **BE** → **Rule** → **Result** → **State** → **Source**; rung không có thì bỏ hẳn. Bản nháp: tên handler là tên dự kiến (planned), mọi `**Source:**` là `TBD (draft)` vì chưa có mã.
+**Rung set** — mọi block trong § 3 dùng đúng thứ tự: **Who** → **FE** → **Request** → **BE** → **Rule** → **Result** → **State** → **Source**; rung không có thì bỏ hẳn. Bản soạn trước khi có mã: tên *(planned)* và `**Source:**` `TBD (draft)` chưa đối chiếu lại, Stage 6 (2026-10-13) chỉ đối chiếu A1, A2 và § 5 (muốn có `path:line` chạy `/tkm:rebuild-spec --features F009`).
 
 ## 3. Actions
 
@@ -58,12 +58,12 @@ flowchart LR
 
 #### A1 · Dựng khối thống kê cá nhân theo phiên
 `GET /sun-kudos` *(vùng D.1 của trang)* → `` `KudosPersonalStats#PersonalStatsRegion` `` (planned)
-`FR-201` `FR-202` `FR-203` `FR-204` `FR-205` `FR-206` `FR-207` `FR-208` `FR-209` `FR-214` `BR-001` `BR-002` `DEC-001` `US001` `US002` · `TBD (draft)`
+`FR-201` `FR-202` `FR-203` `FR-204` `FR-205` `FR-206` `FR-207` `FR-208` `FR-209` `FR-214` `BR-001` `BR-002` `DEC-001` `US054` `US055` · `TBD (draft)`
 
 **Who** · Khách và người dùng đã đăng nhập *(gate A0 — § 4.4: BR-004 — thống kê chỉ của chính người đăng nhập, FR-601)*
 **FE** · Vùng D.1 nằm ở đầu cột sidebar, bọc `<Suspense>` riêng với khung giữ chỗ cố định, không chữ — cùng cách `AccountSlotSkeleton` (`app/_components/site/account-slot-parts.tsx:9-11`) — nên người đã đăng nhập không thấy lời nhắc đăng nhập nhấp nháy (FR-208). Khách: lời nhắc đăng nhập thay cho cả khối, gồm nút "Mở Secret Box" (FR-207): một dòng chữ và nút "Đăng nhập" (`next/link` tạo kiểu như nút "Đăng nhập" của header) tới `/login` (D001); chữ tạm, chờ người sở hữu nội dung: VN "Đăng nhập để xem thống kê Kudos của bạn" + "Đăng nhập", EN "Log in to see your Kudos stats" + "Login". Đã đăng nhập: bảng nhãn–giá trị theo thứ tự FR-201 (Số Kudos bạn nhận được, Số Kudos bạn đã gửi, Số tim bạn nhận được, đường kẻ, Số Secret Box bạn đã mở, Số Secret Box chưa mở) rồi nút "Mở Secret Box" là `<button>` không handler, không hộp thoại, không đổi số (FR-206). Nhãn lấy từ từ điển VN/EN (FR-214). Design basis: Study report (view stateless nhận chuỗi qua props, đặt dưới `app/_components/sun-kudos/`).
 **Request** · cookie phiên Supabase và cookie `NEXT_LOCALE`; không có tham số nào từ URL hay trình duyệt chỉ ra "ai" (FR-601)
-**BE** · `getCurrentUser()` (dùng lại, không đổi — `lib/supabase/current-user.ts:33-59`) trả `null` thì rẽ nhánh khách. Có người dùng thì `getKudosPersonalStats()` (planned, `lib/kudos/`): (1) gọi `get_my_sunner()` (RPC của F006, chỉ trả hàng của `auth.uid()`, không có `email` hay `user_id`) lấy `id`, `kudos_received_count` (FR-202) và `hearts_total` (FR-204, BR-002); (2) `Promise.all` ba lệnh đếm `head: true, count: "exact"`: `kudos` có `sender_id = sunner.id` (FR-203), `secret_boxes` của chủ hộp ấy có `opened_at` khác rỗng (đã mở) và có `opened_at` rỗng (chưa mở) (FR-205). Theo mẫu getter hiện có: `await connection()` ngoài `try`, lỗi thì `console.error("[kudos-sidebar] ...")` và trả `null`, `unstable_rethrow` đầu `catch`, không bao giờ ném ra. Design basis: Study report + scout-report.
+**BE** · `getCurrentUser()` (dùng lại, không đổi — `lib/supabase/current-user.ts:33-59`) trả `null` thì rẽ nhánh khách. Có người dùng thì `getKudosPersonalStats()` (`lib/kudos/get-kudos-personal-stats.ts`): (1) lấy hàng Sunner qua `getMySunnerPerRequest()` (`lib/kudos/get-my-sunner-per-request.ts`: bọc `cache()` của React nên RPC `get_my_sunner()` của F006 chỉ chạy một lần mỗi lần render trang, dùng chung với `getViewerSunnerId` của F006; không dùng cho Server Action hay Route Handler; khách nhận `guest` không gọi RPC; RPC chỉ trả hàng của `auth.uid()`, không có `email` hay `user_id`) lấy `id`, `kudos_received_count` (FR-202) và `hearts_total` (FR-204, BR-002); (2) `Promise.all` ba lệnh đếm `head: true, count: "exact"`: `kudos` có `sender_id = sunner.id` (FR-203), `secret_boxes` của chủ hộp ấy có `opened_at` khác rỗng (đã mở) và có `opened_at` rỗng (chưa mở) (FR-205). Theo mẫu getter hiện có: `await connection()` ngoài `try`, lỗi (kể cả không đọc được hàng Sunner) thì `console.error("[kudos-sidebar] ...")` và trả `{status: "unavailable"}` (mọi giá trị hiện "—"), `unstable_rethrow` đầu `catch`, không bao giờ ném ra; khách trả `{status: "guest"}` không truy vấn. Design basis: Study report + scout-report.
 **Rule** · quyết định khối D.1 hiện gì, và hai quy tắc về nội dung số liệu:
 - **BR-001 — Hộp "đã mở" khi có thời điểm mở, "chưa mở" khi thời điểm mở trống.** Hai số Secret Box ở FR-205 chỉ là hai phép đếm của cột này; không có cột đếm lưu riêng *(§ 4.4)*.
 - **BR-002 — "Số tim bạn nhận được" lấy thẳng từ tổng tim của người gửi do Kudos Hearts giữ.** Sidebar không tự cộng lại từ lượt thích; giá trị này là tim người dùng kiếm được khi là người gửi, không phải tim trên kudos họ nhận (FR-204).
@@ -86,12 +86,12 @@ flowchart LR
 
 #### A2 · Dựng danh sách 10 hộp quà đã mở gần nhất
 `GET /sun-kudos` *(vùng D.3 của trang)* → `` `KudosGiftRecipients#GiftRecipientsRegion` `` (planned)
-`FR-102` `FR-210` `FR-211` `FR-212` `FR-213` `FR-215` `BR-001` `BR-003` `DEC-002` `US003` `US004` · `TBD (draft)`
+`FR-102` `FR-210` `FR-211` `FR-212` `FR-213` `FR-215` `BR-001` `BR-003` `DEC-002` `US056` `US057` · `TBD (draft)`
 
 **Who** · Khách và người dùng đã đăng nhập *(dữ liệu đọc công khai — FR-602, § 4.4)*
-**FE** · Vùng D.3 bọc `<Suspense>` riêng; trong lúc chờ là khung giữ chỗ cùng kích thước, không chữ (FR-213). Tiêu đề "10 SUNNER NHẬN QUÀ MỚI NHẤT" rồi danh sách cuộn được trong cột sidebar; mỗi hàng là một `next/link` gồm avatar tròn 64px viền trắng 1.87px (dùng lại thành phần avatar của F006, chưa có), tên Sunner đậm 22px màu `#FFEA9E`, dòng mô tả 16px trắng "Nhận được 1 <tên quà>" (FR-210). Đích liên kết do viewer quyết: đã đăng nhập → `/profiles/[id]` (trang dự kiến, hiện 404), khách → `/login` (FR-102). Tiêu đề và câu mô tả dịch theo VN/EN, tên Sunner và tên quà giữ nguyên như trong DB (FR-215). Design basis: Study report + MoMorph D.3.
+**FE** · Vùng D.3 bọc `<Suspense>` riêng; trong lúc chờ là khung giữ chỗ cùng kích thước, không chữ (FR-213). Tiêu đề "10 SUNNER NHẬN QUÀ MỚI NHẤT" rồi danh sách cuộn được trong cột sidebar; mỗi hàng là một `next/link` gồm avatar tròn 64px viền trắng 1.87px (`GiftRecipientAvatar`; `avatarUrl` đã qua `safeAvatarUrl`, chỉ nhận đường dẫn cục bộ dưới `/public`, không thì chữ cái đầu), tên Sunner đậm 22px màu `#FFEA9E`, dòng mô tả 16px trắng "Nhận được 1 <tên quà>" (FR-210). Đích liên kết do viewer quyết: đã đăng nhập → `/profiles/[id]` (trang dự kiến, hiện 404), khách → `/login` (FR-102). Tiêu đề và câu mô tả dịch theo VN/EN, tên Sunner và tên quà giữ nguyên như trong DB (FR-215). Design basis: Study report + MoMorph D.3.
 **Request** · cookie phiên (chỉ để chọn đích liên kết) và cookie `NEXT_LOCALE`; không có tham số
-**BE** · `getRecentGiftRecipients(limit)` (planned, `lib/kudos/`): `secret_boxes` chọn `id`, `gift_name`, `opened_at` kèm chủ hộp `sunners` (`id`, `full_name`, `avatar_url`), lọc `opened_at` khác rỗng, sắp `opened_at` giảm dần rồi `id` giảm dần, `limit` 10 (FR-211, BR-003). Cùng mẫu getter như A1 (lỗi → `[]`). Vùng gọi `getCurrentUser()` (dùng lại, `cache()` nên chung kết quả với A1) chỉ để chọn đích liên kết. Không dùng `use cache` (YAGNI): đích liên kết phụ thuộc người xem, và các getter hiện có đều đọc theo request (xem § 5.3 mục 4).
+**BE** · `getRecentGiftRecipients()` (`lib/kudos/get-recent-gift-recipients.ts`; giới hạn `KUDOS_GIFT_LIST_LIMIT`): `secret_boxes` chọn `id`, `gift_name`, `opened_at` kèm chủ hộp `sunners` (`id`, `full_name`, `avatar_url`), lọc `opened_at` khác rỗng, sắp `opened_at` giảm dần rồi `id` giảm dần, `limit` 10 (FR-211, BR-003). Cùng mẫu getter như A1 (lỗi → `[]`). Vùng gọi `getCurrentUser()` (dùng lại, `cache()` nên chung kết quả với A1) chỉ để chọn đích liên kết. Không dùng `use cache` (YAGNI): đích liên kết phụ thuộc người xem, và các getter hiện có đều đọc theo request (xem § 5.3 mục 4).
 **Rule** · quyết định danh sách hiện gì:
 - **BR-001 — Hộp "đã mở" khi có thời điểm mở, "chưa mở" khi thời điểm mở trống.** Danh sách này chỉ lấy hộp có thời điểm mở, nên hộp chưa mở không bao giờ lọt vào *(§ 4.4)*.
 - **BR-003 — Danh sách là 10 hộp đã mở gần nhất, mỗi hộp một hàng, mới nhất trên cùng.** Một Sunner mở nhiều hộp gần đây thì xuất hiện nhiều hàng (functional-spec § 3, D003 đã chốt); hai hộp cùng thời điểm mở thì hộp có `id` lớn hơn xếp trước để thứ tự ổn định.
@@ -240,7 +240,7 @@ Chính sách kiểm thử: `e2e-red-first` (clarifications). Các ca sau viết 
 - **SC-008** *(A0)* RLS: `anon` không đọc được hộp chưa mở, người dùng chỉ đọc hộp chưa mở của chính mình, không ai ghi được từ client; `anon` gọi `rpc('get_my_sunner')` bị từ chối và người dùng đã đăng nhập chỉ nhận hàng của chính mình (covers FR-602, BR-004, FR-601)
 - **SC-009** *(A1, A2)* nhãn đổi VN/EN, tên Sunner và tên quà không đổi (covers FR-214, FR-215)
 
-#### US001 *(A1)*
+#### US054 *(A1)*
 
 **Independent Test:** đăng nhập bằng người dùng seed đã biết số liệu, mở `/sun-kudos`, đọc khối D.1.
 
@@ -249,7 +249,7 @@ Chính sách kiểm thử: `e2e-red-first` (clarifications). Các ca sau viết 
 1. **Given** người dùng seed có K kudos nhận, G kudos gửi, H tim kiếm được, O hộp đã mở và U hộp chưa mở, **When** mở `/sun-kudos`, **Then** năm giá trị là K, G, H, O, U theo đúng thứ tự FR-201.
 2. **Given** cùng người dùng, **When** bấm "Mở Secret Box", **Then** không có hộp thoại, không điều hướng, số liệu không đổi.
 
-#### US002 *(A1)*
+#### US055 *(A1)*
 
 **Independent Test:** mở `/sun-kudos` không có phiên.
 
@@ -257,7 +257,7 @@ Chính sách kiểm thử: `e2e-red-first` (clarifications). Các ca sau viết 
 
 1. **Given** chưa đăng nhập, **When** mở `/sun-kudos`, **Then** D.1 là lời nhắc đăng nhập có nút "Đăng nhập" tới `/login`, không có số hay nút "Mở Secret Box".
 
-#### US003 *(A2)*
+#### US056 *(A2)*
 
 **Independent Test:** seed N hộp đã mở với `opened_at` khác nhau cộng một số hộp chưa mở, mở `/sun-kudos` ở cả hai trạng thái phiên.
 
@@ -266,7 +266,7 @@ Chính sách kiểm thử: `e2e-red-first` (clarifications). Các ca sau viết 
 1. **Given** ≥ 10 hộp đã mở, **When** mở `/sun-kudos`, **Then** D.3 hiện 10 hàng đúng thứ tự `opened_at` giảm dần, mỗi hàng có avatar, tên và "Nhận được 1 <tên quà>".
 2. **Given** không có hộp đã mở, **When** mở `/sun-kudos`, **Then** hiện "Chưa có dữ liệu".
 
-#### US004 *(A2)*
+#### US057 *(A2)*
 
 **Independent Test:** đọc thuộc tính `href` của một hàng D.3 ở hai trạng thái phiên.
 
@@ -286,19 +286,19 @@ Chính sách kiểm thử: `e2e-red-first` (clarifications). Các ca sau viết 
 ### 5.3 Unresolved Questions
 
 1. **Cấp cột `sunners.user_id` cho `authenticated`** *(A1, A0)* — **đã chốt** (clarifications.md, spec gaps): không cấp; `sunners.email` và `sunners.user_id` không mở cho client, A1 và policy `secret_boxes_select_own` dùng hàm `security definer` `get_my_sunner()` của F006 chỉ trả hàng của người gọi. Không còn câu hỏi mở.
-2. **Chỉ mục `kudos(sender_id)` và cột đếm gửi** *(A1)*: đếm kudos đã gửi dùng lệnh đếm chính xác; F006 có sở hữu chỉ mục đó không, hay thêm cột `kudos_sent_count` giống cột nhận?
+2. **Chỉ mục `kudos(sender_id)` và cột đếm gửi** *(A1)* — **đã chốt**: F006 sở hữu chỉ mục `kudos_sender_id_idx` (migration `20261012072146_create_kudos_board.sql`); đếm kudos đã gửi dùng lệnh đếm chính xác, không có cột `kudos_sent_count`.
 3. **Ba lệnh đếm mỗi request so với một RPC/view** *(A1)*: chấp nhận ba lệnh song song ở quy mô hiện tại (dưới vài nghìn hộp); chưa đo.
 4. **`use cache` cho D.3** *(A2)*: bỏ ở bản này vì đích liên kết phụ thuộc người xem; xem lại nếu tải đọc tăng (tách danh sách công khai khỏi chọn đích).
-5. **Avatar `<img>` hay `next/image`** *(A2)*: dùng lại thành phần avatar F006; cần xác nhận nó nhận cả đường dẫn nội bộ `/public` và URL Google.
+5. **Avatar `<img>` hay `next/image`** *(A2)* — **đã chốt** (clarifications 2026-10-13, M1): avatar chỉ là đường dẫn cục bộ dưới `/public` (`next/image`); URL ngoài, kể cả Google, không được nhúng. `sunners.avatar_url` có CHECK cục bộ và `safeAvatarUrl` lọc lần nữa ở phía đọc (F006 § 4.2); giá trị không hợp lệ thì hiện chữ cái đầu.
 
 ### 5.4 Source References
 
-Chưa có mã nguồn — xem `## 7. User Stories` trong functional-spec.md cho hành vi dự kiến. Phần mã sẽ dùng lại không đổi: `getCurrentUser` ở `lib/supabase/current-user.ts` (F003) và `createClient` ở `lib/supabase/server.ts`.
+Mã đã giao: `lib/kudos/get-kudos-personal-stats.ts`, `lib/kudos/get-my-sunner-per-request.ts`, `lib/kudos/get-recent-gift-recipients.ts`, `lib/kudos/sidebar-mapping.ts`, `app/sun-kudos/_components/` (`kudos-sidebar.tsx`, `personal-stats-region.tsx`, `gift-recipients-region.tsx`), `app/_components/sun-kudos/sidebar/`, `supabase/migrations/20261012072258_create_secret_boxes.sql`. Mã có sẵn dùng lại không đổi: `getCurrentUser` ở `lib/supabase/current-user.ts` (F003) và `createClient` ở `lib/supabase/server.ts`.
 
 #### Data Flow
 
 ```text
-A1: cookie phiên -> getCurrentUser -> (null: lời nhắc đăng nhập | có người dùng)
+A1: cookie phiên -> getMySunnerPerRequest (cache() của React: một RPC mỗi lần render, chung với F006) -> (guest: lời nhắc đăng nhập | có người dùng)
     -> get_my_sunner() (chỉ hàng của auth.uid()) -> {id, kudos_received_count, hearts_total}
     -> 3 lệnh đếm (kudos.sender_id, secret_boxes mở / chưa mở) -> 5 giá trị hoặc "—"
 A2: secret_boxes WHERE opened_at IS NOT NULL ORDER BY opened_at DESC, id DESC LIMIT 10
@@ -309,7 +309,7 @@ A2: secret_boxes WHERE opened_at IS NOT NULL ORDER BY opened_at DESC, id DESC LI
 
 | Artifact | File | Codes Used | Reviewed |
 |----------|------|------------|----------|
-| Feature List | [feature-list.md](../feature-list.md) | F009 | [x] |
-| Screens | [functional-spec.md § 6](./functional-spec.md#6-screens) | TBD (draft) | [ ] |
-| Entities | TBD (draft) | TBD (draft) | [ ] |
-| User Stories | TBD (draft) | TBD (draft) | [ ] |
+| Feature List | [feature-list.md](../../generated/feature-list.md) | F009 | [x] |
+| Screens | [functional-spec.md § 6](./functional-spec.md#6-screens) | SCR006_SunKudosLiveBoard (vùng sidebar) | [ ] |
+| Entities | [entities.md](../../generated/entities.md) | MODEL013, MODEL006 | [ ] |
+| User Stories | [functional-spec.md § 7](./functional-spec.md#7-user-stories) | US054..US057 (chưa có trong user-stories.md) | [ ] |

@@ -15,7 +15,7 @@ lang: vi
 **See also:** [`technical-spec.md`](./technical-spec.md) — endpoints, Source citations, pseudocode,
 key entities, and DB writes for a Dev/QA/SA audience.
 
-**Traceability:** F008_KudosSpotlight → TBD (draft) → US001, US002, US003, US004, US005, US006 (mã US cục bộ của bản nháp, cấp lại khi promote)
+**Traceability:** F008_KudosSpotlight → SCR006_SunKudosLiveBoard (vùng Spotlight) → US048, US049, US050, US051, US052, US053 (mã US toàn cục, tiếp sau F007)
 
 ## 1. Overview
 
@@ -34,10 +34,10 @@ key entities, and DB writes for a Dev/QA/SA audience.
 
 | ID | Capability | What the user can do | User Stories | Requirements | Business Rules | Screens |
 |----|------------|------------------------|-----------------|---------------|-------------------|---------|
-| CAP-01 | Xem bảng Spotlight | Thấy tiêu đề, tổng số kudos, bảng tên người nhận bố cục cố định và dải kudos mới nhất; thấy trạng thái đang tải hoặc rỗng khi chưa có dữ liệu | US001, US006 | FR-001, FR-002, FR-101, FR-201, FR-202, FR-203, FR-206, FR-207, FR-208, FR-209, FR-409, FR-601 | BR-001, BR-002, BR-003, BR-004, DEC-001 | SCR006_SunKudosLiveBoard |
-| CAP-02 | Tìm một người nhận | Gõ tên vào ô tìm (tối đa 100 ký tự), thấy các nút khớp được tô sáng và các nút khác mờ đi | US004 | FR-205, FR-404, FR-405, FR-406 | BR-006, DEC-002 | N/A — nằm trên vùng Spotlight, đã tính ở CAP-01 |
-| CAP-03 | Di chuyển và phóng to bảng | Bật Pan/Zoom rồi kéo để dịch bảng, lăn chuột để phóng to hoặc thu nhỏ; tắt thì trang cuộn bình thường | US005 | FR-204, FR-403, FR-407, FR-408 | BR-007, SM-001 | N/A — nằm trên vùng Spotlight, đã tính ở CAP-01 |
-| CAP-04 | Xem và mở kudos từ một tên | Rê chuột để thấy tên và thời gian nhận; bấm để mở kudos (khách được đưa tới đăng nhập) | US002, US003 | FR-401, FR-402 | BR-005, BR-008 | N/A — nằm trên vùng Spotlight, đã tính ở CAP-01 |
+| CAP-01 | Xem bảng Spotlight | Thấy tiêu đề, tổng số kudos, bảng tên người nhận bố cục cố định và dải kudos mới nhất; thấy trạng thái đang tải hoặc rỗng khi chưa có dữ liệu | US048, US053 | FR-001, FR-002, FR-101, FR-201, FR-202, FR-203, FR-206, FR-207, FR-208, FR-209, FR-409, FR-601 | BR-001, BR-002, BR-003, BR-004, DEC-001 | SCR006_SunKudosLiveBoard |
+| CAP-02 | Tìm một người nhận | Gõ tên vào ô tìm (tối đa 100 ký tự), thấy các nút khớp được tô sáng và các nút khác mờ đi | US051 | FR-205, FR-404, FR-405, FR-406 | BR-006, DEC-002 | N/A — nằm trên vùng Spotlight, đã tính ở CAP-01 |
+| CAP-03 | Di chuyển và phóng to bảng | Bật Pan/Zoom rồi kéo để dịch bảng, lăn chuột để phóng to hoặc thu nhỏ; tắt thì trang cuộn bình thường | US052 | FR-204, FR-403, FR-407, FR-408 | BR-007, SM-001 | N/A — nằm trên vùng Spotlight, đã tính ở CAP-01 |
+| CAP-04 | Xem và mở kudos từ một tên | Rê chuột để thấy tên và thời gian nhận; bấm để mở kudos (khách được đưa tới đăng nhập) | US049, US050 | FR-401, FR-402 | BR-005, BR-008 | N/A — nằm trên vùng Spotlight, đã tính ở CAP-01 |
 
 ## 3. Open Decisions
 
@@ -124,7 +124,7 @@ Vùng này là một phần của màn hình Sun* Kudos - Live board, vỏ màn 
 
 ## 7. User Stories
 
-### US001 — Xem bảng Spotlight và tổng số kudos
+### US048 — Xem bảng Spotlight và tổng số kudos
 
 **Actor:** Người xem
 **Goal:** Thấy toàn cảnh những người đã nhận kudos và tổng số kudos trên một bảng.
@@ -136,7 +136,7 @@ Vùng này là một phần của màn hình Sun* Kudos - Live board, vỏ màn 
 - [ ] Trong lúc tải thấy khung chờ không chữ; không có kudos thì thấy "Hiện tại chưa có Kudos nào.".
 - [ ] Khách và Sunner thấy cùng bảng.
 
-### US002 — Xem thời gian nhận kudos qua chú thích
+### US049 — Xem thời gian nhận kudos qua chú thích
 
 **Actor:** Người xem
 **Goal:** Rê chuột hoặc dùng bàn phím vào một tên để biết tên đầy đủ và thời gian nhận kudos.
@@ -146,7 +146,7 @@ Vùng này là một phần của màn hình Sun* Kudos - Live board, vỏ màn 
 - [ ] Rê chuột hoặc Tab tới một nút thì hiện chú thích có tên và thời gian dạng `HH:mm - MM/DD/YYYY`.
 - [ ] Rời nút thì chú thích ẩn.
 
-### US003 — Mở kudos từ một tên
+### US050 — Mở kudos từ một tên
 
 **Actor:** Người xem
 **Goal:** Bấm một tên trên bảng để xem kudos của người đó.
@@ -157,7 +157,7 @@ Vùng này là một phần của màn hình Sun* Kudos - Live board, vỏ màn 
 - [ ] Khách bấm một nút thì được đưa tới trang đăng nhập.
 - [ ] Kéo bảng rồi nhả chuột trên một nút không mở kudos.
 
-### US004 — Tìm tên người nhận
+### US051 — Tìm tên người nhận
 
 **Actor:** Người xem
 **Goal:** Gõ một tên vào ô tìm để làm sáng các nút khớp.
@@ -169,7 +169,7 @@ Vùng này là một phần của màn hình Sun* Kudos - Live board, vỏ màn 
 - [ ] Để trống mà bấm tìm thì bị chặn kèm thông báo bắt buộc nhập.
 - [ ] Xoá hết chữ thì mọi nút trở lại kiểu thường.
 
-### US005 — Kéo và phóng to bảng
+### US052 — Kéo và phóng to bảng
 
 **Actor:** Người xem
 **Goal:** Bật Pan/Zoom rồi kéo và lăn chuột để xem phần bảng mình quan tâm.
@@ -180,7 +180,7 @@ Vùng này là một phần của màn hình Sun* Kudos - Live board, vỏ màn 
 - [ ] Bật rồi kéo thì bảng dịch theo; lăn chuột thì phóng to hoặc thu nhỏ trong khoảng 0.5 đến 4 lần.
 - [ ] Nút Pan/Zoom thể hiện rõ đang bật hay tắt.
 
-### US006 — Xem dải kudos mới nhất
+### US053 — Xem dải kudos mới nhất
 
 **Actor:** Người xem
 **Goal:** Biết kudos nào vừa được trao gần đây nhất.
@@ -193,51 +193,51 @@ Vùng này là một phần của màn hình Sun* Kudos - Live board, vỏ màn 
 
 ## 8. Scenarios
 
-### US001 — Happy Path
+### US048 — Happy Path
 
 **Given** hệ thống có 388 kudos, **When** khách mở trang Sun* Kudos, **Then** vùng Spotlight hiện "388 KUDOS" và các nút tên người nhận (tối đa khoảng 300).
 
-### US001 — Error: Chưa có kudos nào
+### US048 — Error: Chưa có kudos nào
 
 **Given** hệ thống chưa có kudos, **When** người xem mở trang, **Then** vùng hiện "0 KUDOS" và thông báo "Hiện tại chưa có Kudos nào." thay cho bảng, còn các vùng khác của trang vẫn hiện.
 
-### US002 — Happy Path
+### US049 — Happy Path
 
 **Given** một kudos nhận lúc 10:00 ngày 30/10/2025 (giờ Việt Nam), **When** người xem rê chuột vào nút của kudos đó, **Then** chú thích hiện tên người nhận và "10:00 - 10/30/2025".
 
-### US002 — Error: Đưa tiêu điểm bàn phím vào nút
+### US049 — Error: Đưa tiêu điểm bàn phím vào nút
 
 **Given** người xem dùng bàn phím, **When** nhấn Tab tới một nút rồi nhấn Esc, **Then** chú thích hiện khi tiêu điểm vào nút và ẩn sau khi nhấn Esc.
 
-### US003 — Happy Path
+### US050 — Happy Path
 
 **Given** Sunner đã đăng nhập, **When** bấm một nút trên bảng, **Then** trình duyệt chuyển tới kudos tương ứng.
 
-### US003 — Error: Khách bấm một nút
+### US050 — Error: Khách bấm một nút
 
 **Given** khách chưa đăng nhập, **When** bấm một nút, **Then** được đưa tới trang đăng nhập.
 
-### US004 — Happy Path
+### US051 — Happy Path
 
 **Given** bảng có các tên chứa "Nguyễn", **When** người xem gõ "Nguyễn" rồi nhấn Enter, **Then** các nút khớp sáng lên và các nút còn lại mờ đi.
 
-### US004 — Error: Chuỗi tìm không hợp lệ
+### US051 — Error: Chuỗi tìm không hợp lệ
 
 **Given** ô tìm đang trống, **When** người xem bấm kính lúp, **Then** thấy thông báo bắt buộc nhập và tô sáng hiện có không đổi; tương tự, 101 ký tự bị từ chối với thông báo lỗi.
 
-### US005 — Happy Path
+### US052 — Happy Path
 
 **Given** Pan/Zoom đang bật, **When** người xem kéo chuột và lăn chuột trên bảng, **Then** bảng dịch và phóng to theo.
 
-### US005 — Error: Lăn chuột khi Pan/Zoom tắt
+### US052 — Error: Lăn chuột khi Pan/Zoom tắt
 
 **Given** Pan/Zoom đang tắt, **When** người xem lăn chuột trên bảng, **Then** trang cuộn bình thường và bảng không đổi.
 
-### US006 — Happy Path
+### US053 — Happy Path
 
 **Given** kudos mới nhất do "Nguyễn Bá Chức" nhận, **When** người xem mở trang, **Then** dải ở góc dưới trái hiện 5 dòng, dòng trên cùng có giờ `hh:mmAM/PM`, tên đó và câu "đã nhận được một Kudos mới".
 
-### US006 — Error: Chưa có kudos
+### US053 — Error: Chưa có kudos
 
 **Given** hệ thống chưa có kudos, **When** người xem mở trang, **Then** không hiện dải kudos mới nhất.
 

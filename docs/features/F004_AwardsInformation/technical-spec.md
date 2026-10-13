@@ -75,7 +75,7 @@ flowchart LR
 **BE** · `getLocale()` và `getDictionary(locale)` có sẵn trả chữ giao diện; từ điển có thêm một nhánh chữ riêng của trang (tiêu đề, nhãn "Số lượng giải thưởng" / "Giá trị giải thưởng", "Hoặc", đơn vị, thông báo rỗng). Khối Kudos dùng lại chuỗi Kudos đã có của trang chủ. Dữ liệu giải thuộc A2. Header nhận prop `currentPage` (mặc định `about`), footer nhận `currentPage` không có mặc định (bỏ trống thì không liên kết nào được chọn); trang chủ không truyền gì nên không đổi (`site-types.ts:16-30`).
 **Rule**
 - **BR-002 — Mỗi trang đánh dấu đang chọn đúng một liên kết điều hướng, là liên kết trỏ về chính trang đó.** Ở trang này là "Awards Information" (chữ vàng, gạch chân, `aria-current="page"`); "About SAA 2025" trả về kiểu thường. Footer đánh dấu cùng liên kết bằng `aria-current="page"` nhưng theo kiểu chọn riêng của Figma cho footer: nền nhạt và ánh sáng, không gạch chân, góc vuông (D014). Trang chủ không truyền `currentPage` nên header vẫn chọn "About SAA 2025" và footer không chọn liên kết nào. Nguồn: `app/_components/site/site-header.tsx:11-19,40-54`, `app/_components/site/site-footer.tsx:10-17,37-51`.
-- **BR-003 — Liên kết tới trang chưa xây dùng địa chỉ dự kiến.** "Chi tiết" của Kudos, liên kết `/sun-kudos` và `/standards` ở header/footer trỏ đích dự kiến; trang chưa có thì Next trả 404 mặc định, không làm trang lỗi riêng (D007). Nguồn: `app/_components/home/kudos-section.tsx:37`, `site-header.tsx:56`, `site-footer.tsx:53-59`.
+- **BR-003 — Liên kết tới trang chưa xây dùng địa chỉ dự kiến.** "Chi tiết" của Kudos, liên kết `/sun-kudos` và `/standards` ở header/footer trỏ đích dự kiến; trang chưa có thì Next trả 404 mặc định, không làm trang lỗi riêng (D007). Từ 2026-10-13 `/sun-kudos` đã có page (F006) nên chỉ `/standards` còn 404. Nguồn: `app/_components/home/kudos-section.tsx:37`, `site-header.tsx:56`, `site-footer.tsx:53-59`.
 - **BR-004 — Ngôn ngữ chỉ là `vi` hoặc `en` (mặc định `vi`); EN chỉ dịch chữ giao diện.** Tiêu đề, nhãn, "Hoặc", nhãn Kudos theo từ điển; mô tả dài và đoạn Kudos giữ tiếng Việt. *(§ 4.4)*
 
 **Result** · Chỉ đọc, không ghi DB. Người xem thấy đủ khối của trang: header, key visual, tiêu đề, phần giải (A2) hoặc khung chờ, Kudos, footer.
@@ -203,7 +203,7 @@ flowchart LR
 | A4 | Neo không khớp giải nào, ví dụ `#does-not-exist` | không lỗi JavaScript, trang ở đầu, mục đầu đang chọn *(BR-008, DEC-004)* |
 | A4 | Khối cuối không lên tới đường chuẩn khi cuộn hết trang | mục cuối đang chọn *(DEC-004)* |
 | A4 | Địa chỉ đổi `#<slug>` bằng nút Back/Forward | `hashchange` đặt lại mục đang chọn theo neo mới *(DEC-004)* |
-| A1 | Bấm "Chi tiết" của Kudos khi `/sun-kudos` chưa xây | trang 404 mặc định của Next *(BR-003)* |
+| A1 | Bấm "Chi tiết" của Kudos | tới `/sun-kudos` (trang bảng Kudos của F006; trước F006 là 404 mặc định của Next) *(BR-003)* |
 | A5 | Cookie `NEXT_LOCALE` có giá trị lạ | coi là `vi`; `setLocale` nhận giá trị ngoài `vi`/`en` thì thoát sớm *(BR-004)* |
 | A1-A5 | Người đã đăng nhập mở trang | cùng nội dung như khách; chỉ vùng tài khoản khác (F003) *(A0, BR-001)* |
 
@@ -392,7 +392,7 @@ Chính sách kiểm thử: `e2e-red-first` (điều hướng và chuyển trạn
 - **SC-004** *(A2)* Với bảng `awards` rỗng hoặc truy vấn lỗi, tiêu đề trang giữ nguyên và hiện đúng thông báo "Thông tin giải thưởng sẽ sớm được cập nhật." (EN: "Award information will be updated soon.") còn Kudos và footer vẫn hiện; hàng hỏng bị bỏ (covers FR-209, FR-210, DEC-001)
 - **SC-005** *(A3)* Bấm lần lượt từng mục: trang cuộn tới đúng khối, khối không bị header che, chỉ mục vừa bấm đang chọn (chữ vàng, gạch chân), mục trước tắt; rê chuột làm nổi mục; với giảm chuyển động bật thì cuộn tức thì (covers FR-401, FR-405, FR-406, BR-007, DEC-003)
 - **SC-006** *(A4)* Cuộn tay qua các khối thì mục đang chọn đi theo, luôn đúng một mục, mục cuối chọn được khi cuộn hết trang; mở `#<slug>` hợp lệ tới đúng giải; `#does-not-exist` không có lỗi JavaScript, trang ở đầu, "Top Talent" đang chọn (covers FR-002, FR-402, FR-403, FR-404, BR-007, BR-008, DEC-004, ALG-001)
-- **SC-007** *(A1)* "Chi tiết" ở khối Kudos có `href` là `/sun-kudos` (trang chưa xây nên 404 mặc định) (covers FR-407, BR-003)
+- **SC-007** *(A1)* "Chi tiết" ở khối Kudos có `href` là `/sun-kudos` (trang bảng Kudos của F006; trước F006 là 404 mặc định) (covers FR-407, BR-003)
 - **SC-008** *(A5, A1, A2)* Mặc định "VN"; chọn EN đặt cookie `NEXT_LOCALE=en`, chữ giao diện đổi (tiêu đề, nhãn, ghi chú, đơn vị, "Or"), mô tả dài và đoạn Kudos vẫn tiếng Việt; cookie lạ cho kết quả `vi` (covers FR-408, BR-004)
 - **SC-009** *(A0, A2)* Với vai trò `anon`, `select` trên `awards` và `award_prizes` thành công còn `insert`, `update`, `delete` bị từ chối; cột cũ trang chủ đọc vẫn trả đủ (covers FR-001, FR-601, BR-001)
 

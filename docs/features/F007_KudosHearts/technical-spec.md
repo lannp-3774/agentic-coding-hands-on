@@ -18,7 +18,7 @@ edge cases, and configuration for a BA/QA audience.
 
 **How to read this file:** § 2 is the index — pick the action you care about and read its block
 in § 3 straight through; each block is one complete thread, top to bottom. § 4 is the shared
-appendix — jump in only when a § 3 block points you there. Bản nháp greenfield (2026-10-12): chưa có mã của feature, nên mọi `Source` là `TBD (draft)`; chỉ các tệp có sẵn và dùng lại không đổi (`getCurrentUser`, `createClient`) mới có trích dẫn `path:line` đã đối chiếu với mã.
+appendix — jump in only when a § 3 block points you there. Bản soạn trước khi có mã (2026-10-12); Stage 6 (2026-10-13) đã đối chiếu `Source` của A1 đến A5 với mã đã giao, các `TBD (draft)` còn lại và tên *(planned)* chưa đối chiếu (muốn có `path:line` chạy `/tkm:rebuild-spec --features F007`).
 
 ## 1. Technical Overview
 
@@ -57,12 +57,12 @@ flowchart LR
 | # | Action (handler) | Method · Path | Codes | Writes | Detail |
 |---|---|---|---|---|---|
 | **A0** | *cross-cutting — belongs to no single action* | — | FR-603, FR-604 | — | § 4.4 |
-| **A1** | `likeKudos` (planned) | `POST` `/sun-kudos` *(Next-Action: `likeKudos`)* | FR-001, FR-401, FR-601, FR-602, BR-001, BR-006, DEC-001, SM-001, INT-001, US001, US003 | `kudos_likes` | § 3.1 |
-| **A2** | `unlikeKudos` (planned) | `POST` `/sun-kudos` *(Next-Action: `unlikeKudos`)* | FR-402, FR-601, FR-602, BR-004, BR-006, SM-001, INT-001, US002 | `kudos_likes` | § 3.1 |
-| **A3** | `KudosHeartButton` (planned) *(client behaviour, no HTTP)* | — | FR-201, FR-202, FR-203, FR-403, FR-404, FR-601, DEC-002, SM-001, US001, US002, US003, US004 | — *(chỉ trạng thái client)* | § 3.1 |
-| **A4** | `kudos_likes_before_insert` (planned) *(background, no FE)* | trigger · `BEFORE INSERT` `kudos_likes` | FR-203, FR-405, BR-002, BR-003, ALG-001, US004, US005 | `kudos_likes` | § 3.2 ▸ **diagram** |
-| **A5** | `kudos_likes_after_change` (planned) *(background, no FE)* | trigger · `AFTER INSERT` `AFTER DELETE` `kudos_likes` | FR-003, FR-405, BR-003, BR-004, BR-005, US005 | `kudos`, `sunners` | § 3.2 ▸ **diagram** |
-| **A6** | `special_days#setSpecialDay` (planned) *(operator, no FE; thao tác SQL, không có hàm trong mã)* | operator · `service_role` | FR-002, US006 | `special_days` | § 3.2 |
+| **A1** | `likeKudos` | `POST` `/sun-kudos` *(Next-Action: `likeKudos`)* | FR-001, FR-401, FR-601, FR-602, BR-001, BR-006, DEC-001, SM-001, INT-001, US042, US044 | `kudos_likes` | § 3.1 |
+| **A2** | `unlikeKudos` | `POST` `/sun-kudos` *(Next-Action: `unlikeKudos`)* | FR-402, FR-601, FR-602, BR-004, BR-006, SM-001, INT-001, US043 | `kudos_likes` | § 3.1 |
+| **A3** | `KudosHeartButton` *(client behaviour, no HTTP)* | — | FR-201, FR-202, FR-203, FR-403, FR-404, FR-601, DEC-002, SM-001, US042, US043, US044, US045 | — *(chỉ trạng thái client)* | § 3.1 |
+| **A4** | `kudos_likes_before_insert` *(background, no FE)* | trigger · `BEFORE INSERT` `kudos_likes` | FR-203, FR-405, BR-002, BR-003, ALG-001, US045, US046 | `kudos_likes` | § 3.2 ▸ **diagram** |
+| **A5** | `kudos_likes_after_change` + `release_kudos_like_hearts` *(background, no FE)* | trigger · `AFTER INSERT` `AFTER DELETE` `kudos_likes`; trigger · `BEFORE DELETE` `kudos` | FR-003, FR-405, BR-003, BR-004, BR-005, US046 | `kudos`, `sunners` | § 3.2 ▸ **diagram** |
+| **A6** | `special_days#setSpecialDay` (planned) *(operator, no FE; thao tác SQL, không có hàm trong mã)* | operator · `service_role` | FR-002, US047 | `special_days` | § 3.2 |
 
 **Rung set** — mỗi khối trong § 3 theo thứ tự **Who** → **FE** → **Request** → **BE** → **Rule** → **Result** → **State** → **Source**; rung vắng thì bỏ hẳn. Bản nháp không có rung **State** (chưa có mã để đối chiếu); vòng đời một lượt thích nằm ở SM-001 (§ 4.3) và các cạnh của nó thuộc A1, A2. A4 và A5 là action nền (trigger DB, không có HTTP); chuỗi A1/A2 → A4 → A5 ghi nhiều bảng nên có một `sequenceDiagram` đặt ở cấp CAP-02 (§ 3.2).
 
@@ -71,10 +71,10 @@ flowchart LR
 ### 3.1 CAP-01 — Thả và rút tim ở kudos của người khác
 
 #### A1 · Thả tim cho kudos của người khác
-`POST /sun-kudos` *(Next-Action: `likeKudos`)* → `` `likeKudos` (planned) ``
-`FR-001` `FR-401` `FR-601` `FR-602` `BR-001` `BR-006` `DEC-001` `SM-001` `INT-001` `US001` `US003` · `TBD (draft)` *(vùng nút tim của màn hình `/sun-kudos`; vỏ màn hình do kudos-board-browse sở hữu)*
+`POST /sun-kudos` *(Next-Action: `likeKudos`)* → `` `likeKudos` ``
+`FR-001` `FR-401` `FR-601` `FR-602` `BR-001` `BR-006` `DEC-001` `SM-001` `INT-001` `US042` `US044` · `TBD (draft)` *(vùng nút tim của màn hình `/sun-kudos`; vỏ màn hình do kudos-board-browse sở hữu)*
 
-**Who** · Sunner đã đăng nhập, không phải người gửi kudos (US001: thả tim cho kudos của người khác). Khách cũng thấy nút nhưng A3 đưa họ tới `/login` trước khi gọi action (US003); action vẫn kiểm lại phiên nên người gọi thẳng cũng không ghi được *(gate A0 — § 4.4)*
+**Who** · Sunner đã đăng nhập, không phải người gửi kudos (US042: thả tim cho kudos của người khác). Khách cũng thấy nút nhưng A3 đưa họ tới `/login` trước khi gọi action (US044); action vẫn kiểm lại phiên nên người gọi thẳng cũng không ghi được *(gate A0 — § 4.4)*
 **FE** · không có giao diện riêng — A3 gọi action trong một transition và dựng lại nút từ giá trị trả về (FR-401: thả tim thấy ngay, số tim +1).
 **Request** · tham số `kudosId` *(mã kudos, `uuid` theo `kudos.id` của F006)*; cookie phiên Supabase đi kèm. Không có trường `weight` hay `userId` trong yêu cầu: người thích lấy từ phiên, trọng số do DB quyết (A4).
 **BE** · `` `likeKudos` `` — (1) kiểm `kudosId` có đúng hình dạng; (2) `getCurrentUser()` (`lib/supabase/current-user.ts:33-59`, có sẵn, fail closed): `null` thì trả `{ status: "unauthenticated" }` *(FR-602: máy chủ kiểm lại phiên, giao diện chỉ là tiện ích)*; (3) `createClient()` gắn cookie (`lib/supabase/server.ts:19-50`, có sẵn) rồi chèn `{ kudos_id, user_id }` vào `kudos_likes` với `on conflict do nothing` *(INT-001 — ghi lượt thích bằng phiên của chính người dùng để RLS áp dụng, § 4.5)*; (4) đọc lại `kudos.like_count` để trả số chuẩn; (5) lỗi `check_violation` từ A4 → `{ status: "forbidden" }`, lỗi khoá ngoại → `{ status: "not_found" }`, lỗi khác → `{ status: "error" }` và log `[kudos-likes]`. Server Action là mutation (client gửi tuần tự, không dùng cho đọc). *Design basis: Study report (researcher-01 § 1–2).*
@@ -91,17 +91,17 @@ flowchart LR
 | **DEC-001** | flow | hợp lệ, chưa thích | ghi một dòng `kudos_likes`; A4 và A5 chạy trong cùng giao dịch; số tim +1 | `TBD (draft)` |
 
 **Result** · Ghi `kudos_likes` ← một dòng `(kudos_id, user_id, weight, created_at)`; `weight` do A4 gán (ALG-001), không do action. Số tim của kudos và tổng tim của người gửi đổi ở A5, không do action ghi trực tiếp (FR-001: mỗi lượt thích lưu thành một dòng riêng). SM-001 (vòng đời một lượt thích) đi cạnh "chưa thích → đã thích". User sees: nút chuyển xám → đỏ và số tim +1, rồi được khớp với `likeCount` trả về (FR-401).
-**Source:** `TBD (draft)`
+**Source:** `lib/kudos/kudos-heart-actions.ts` (`likeKudos`, `writeHeart`)
 
 <!-- Không vẽ sequenceDiagram riêng: action chỉ ghi một bảng; phần nối A1 → A4 → A5 nằm ở diagram cấp CAP-02 (§ 3.2). -->
 
 ---
 
 #### A2 · Rút tim đã thả
-`POST /sun-kudos` *(Next-Action: `unlikeKudos`)* → `` `unlikeKudos` (planned) ``
-`FR-402` `FR-601` `FR-602` `BR-004` `BR-006` `SM-001` `INT-001` `US002` · `TBD (draft)` *(vùng nút tim của màn hình `/sun-kudos`)*
+`POST /sun-kudos` *(Next-Action: `unlikeKudos`)* → `` `unlikeKudos` ``
+`FR-402` `FR-601` `FR-602` `BR-004` `BR-006` `SM-001` `INT-001` `US043` · `TBD (draft)` *(vùng nút tim của màn hình `/sun-kudos`)*
 
-**Who** · Sunner đã đăng nhập đã thả tim trước đó (US002: rút tim đã thả); khách bị A3 đưa tới `/login`, nhưng action vẫn tự kiểm lại phiên *(gate A0 — § 4.4)*
+**Who** · Sunner đã đăng nhập đã thả tim trước đó (US043: rút tim đã thả); khách bị A3 đưa tới `/login`, nhưng action vẫn tự kiểm lại phiên *(gate A0 — § 4.4)*
 **FE** · không có giao diện riêng — A3 gọi action khi nút đang đỏ và dựng lại từ giá trị trả về (FR-402: rút tim thấy ngay, số tim −1).
 **Request** · tham số `kudosId`; cookie phiên. Action biểu thị ý định "rút", không phải nút bật/tắt: hai lần bấm nhanh không thể đảo nhau ngoài ý muốn.
 **BE** · `` `unlikeKudos` `` — (1) kiểm `kudosId`; (2) `getCurrentUser()` như A1, `null` thì `{ status: "unauthenticated" }` (FR-602); (3) `createClient()` rồi xoá dòng `kudos_likes` có `kudos_id` này và `user_id` là chính người dùng (RLS chỉ cho xoá dòng của mình; INT-001, § 4.5); (4) đọc lại `kudos.like_count`; (5) lỗi → `{ status: "error" }` và log `[kudos-likes]`. Không tìm thấy dòng nào để xoá không phải lỗi.
@@ -110,17 +110,17 @@ flowchart LR
 - **BR-006 — Thao tác lặp lại là vô hại.** Rút khi chưa thả không xoá gì, không báo lỗi, bộ đếm không đổi *(§ 4.4)*.
 
 **Result** · Xoá `kudos_likes` ← dòng của người dùng cho kudos này (nếu có); A5 trừ `kudos.like_count` và tổng tim người gửi trong cùng giao dịch. SM-001 đi cạnh "đã thích → chưa thích". User sees: nút chuyển đỏ → xám và số tim −1 rồi khớp với `likeCount` trả về (FR-402).
-**Source:** `TBD (draft)`
+**Source:** `lib/kudos/kudos-heart-actions.ts` (`unlikeKudos`, `writeHeart`)
 
 <!-- Không vẽ sequenceDiagram riêng: một bảng ghi trực tiếp; chuỗi trigger ở diagram cấp CAP-02 (§ 3.2). -->
 
 ---
 
 #### A3 · Nút tim trên thẻ kudos: thả/rút lạc quan, vô hiệu cho người gửi, khách tới đăng nhập
-`—` *(client behaviour, no HTTP)* → `` `KudosHeartButton` (planned) ``
-`FR-201` `FR-202` `FR-203` `FR-403` `FR-404` `FR-601` `DEC-002` `SM-001` `US001` `US002` `US003` `US004` · `TBD (draft)` *(vùng nút tim của màn hình `/sun-kudos`)*
+`—` *(client behaviour, no HTTP)* → `` `KudosHeartButton` ``
+`FR-201` `FR-202` `FR-203` `FR-403` `FR-404` `FR-601` `DEC-002` `SM-001` `US042` `US043` `US044` `US045` · `TBD (draft)` *(vùng nút tim của màn hình `/sun-kudos`)*
 
-**Who** · Mọi người xem: khách, Sunner đã đăng nhập, người gửi kudos (US001: thả tim; US002: rút tim; US003: khách bấm thì tới đăng nhập; US004: người gửi thấy nút vô hiệu) *(gate A0 — § 4.4)*
+**Who** · Mọi người xem: khách, Sunner đã đăng nhập, người gửi kudos (US042: thả tim; US043: rút tim; US044: khách bấm thì tới đăng nhập; US045: người gửi thấy nút vô hiệu) *(gate A0 — § 4.4)*
 **FE** · Client Component trong vùng nút tim của thẻ, dùng ở cả carousel Highlight và All Kudos: biểu tượng tim + số tim (FR-201: số tim hiện cho mọi người kể cả khách; FR-202: xám khi người xem chưa thích, đỏ khi đã thích). Nhận từ thẻ (F006) mã kudos, `likeCount`, `likedByMe`, loại người xem (`guest` hoặc `member`) và `isSender` (hợp đồng prop đã chốt: trang F006 truyền hai giá trị `likedByMe`, `isSender` cho từng thẻ, § 5.2). Lỗi thả/rút hiện một thông báo nhỏ `role="status"` (cùng cơ chế thông báo nhỏ của trang, tự tắt sau vài giây); chữ tạm, chờ người sở hữu nội dung, thêm vào `lib/i18n/sun-kudos-copy.ts` của F006: VN "Không cập nhật được tim. Vui lòng thử lại." / EN "Could not update the heart. Please try again." (D003). Nút của người gửi dùng `disabled` thật và không bao giờ đỏ (FR-203). Bấm tạo một transition gọi A1 (đang xám) hoặc A2 (đang đỏ); trong lúc chờ nút giữ trạng thái lạc quan và bỏ qua bấm tiếp (`aria-busy`), nên hai lần bấm nhanh chỉ tạo một yêu cầu tại một thời điểm.
 **Request** · gọi A1 hoặc A2 với `kudosId`; không gửi giá trị `liked` hay `weight`. Khách không gọi action mà điều hướng thẳng tới `/login` (FR-601).
 **Rule** · quyết định hiển thị và hành vi của nút (DEC-002), cùng hai cách xử lý lỗi và đồng bộ:
@@ -132,7 +132,7 @@ flowchart LR
 | **DEC-002** | render, interaction | đã đăng nhập, không phải người gửi, `likedByMe` đúng | tim đỏ; bấm gọi A2, tim xám và số −1 ngay | `TBD (draft)` |
 | **DEC-002** | render | đã đăng nhập, là người gửi (`isSender`) | tim xám, nút vô hiệu, số tim vẫn hiện; không bấm được | `TBD (draft)` |
 | **DEC-002** | interaction | action đang chạy (`pending`) | giữ trạng thái lạc quan, bấm tiếp bị bỏ qua | `TBD (draft)` |
-| **DEC-002** | interaction | action trả `forbidden`, `not_found`, `error` hoặc ném lỗi | nút và số hoàn về giá trị trước khi bấm và hiện thông báo lỗi ngắn (FR-403, D003) | `TBD (draft)` |
+| **DEC-002** | interaction | action trả `forbidden`, `not_found`, `error` hoặc ném lỗi | nút và số hoàn về giá trị trước khi bấm (hoặc về giá trị máy chủ mới hơn mà đợt đồng bộ bộ lọc nhận trong lúc chờ; chỉ hoàn giá trị lạc quan do chính lần bấm này ghi) và hiện thông báo lỗi ngắn (FR-403, D003) | `TBD (draft)` |
 | **DEC-002** | interaction | action trả `unauthenticated` (phiên hết hạn giữa chừng) | chuyển tới `/login`; nút hoàn về giá trị trước khi bấm (không có thông báo lỗi vì đã chuyển trang) | `TBD (draft)` |
 
 - FR-404 (cùng một kudos hiện ở Highlight và All Kudos thì hai nút luôn cùng trạng thái): trạng thái lạc quan giữ trong một kho client chung theo mã kudos thay vì mỗi nút tự giữ; F007 cấp kho (provider + hook), F006 gắn provider vào vỏ trang bao quanh cả Highlight lẫn All Kudos (đã chốt, clarifications.md) và mỗi thẻ đăng ký `{likeCount, likedByMe}` ban đầu vào kho. *Design basis: clarifications.md ("one like per user per kudos") + Study report.*
@@ -174,10 +174,10 @@ sequenceDiagram
 ```
 
 #### A4 · Chặn người gửi tự thích và gán trọng số cho lượt thích *(background, no FE)*
-`trigger · BEFORE INSERT kudos_likes` → `` `kudos_likes_before_insert` (planned) ``
-`FR-203` `FR-405` `BR-002` `BR-003` `ALG-001` `US004` `US005` · `TBD (draft)` *(không có màn hình; chạy trong DB)*
+`trigger · BEFORE INSERT kudos_likes` → `` `kudos_likes_before_insert` ``
+`FR-203` `FR-405` `BR-002` `BR-003` `ALG-001` `US045` `US046` · `TBD (draft)` *(không có màn hình; chạy trong DB)*
 
-**Who** · *không có người dùng — trigger DB chạy khi A1 chèn một dòng* (US004: người gửi không thích được kudos của chính mình; US005: người gửi được cộng đúng tim). Hàm `security definer` với `set search_path = ''`, thu quyền `execute` của `public`, `anon`, `authenticated` để không gọi được qua API — cùng công thức với `handle_new_user` của F001 *(gate A0 — § 4.4)*.
+**Who** · *không có người dùng — trigger DB chạy khi A1 chèn một dòng* (US045: người gửi không thích được kudos của chính mình; US046: người gửi được cộng đúng tim). Hàm `security definer` với `set search_path = ''`, thu quyền `execute` của `public`, `anon`, `authenticated` để không gọi được qua API — cùng công thức với `handle_new_user` của F001 *(gate A0 — § 4.4)*.
 **Request** · *không có yêu cầu HTTP* — dòng mới `NEW` gồm `kudos_id`, `user_id` (từ phiên của người gọi qua policy RLS); mọi giá trị `weight` client gửi, nếu có, bị ghi đè.
 **BE** · `` `kudos_likes_before_insert` `` — (1) tìm Sunner của người thích: `sunners.user_id = NEW.user_id`; không có thì từ chối; (2) đọc `kudos.sender_id` của `NEW.kudos_id`; trùng thì từ chối bằng `check_violation`; (3) gán `NEW.weight` bằng ALG-001 (§ 4.5). Cột `weight` còn bị ràng buộc `check (weight in (1,2))`.
 **Rule**
@@ -185,17 +185,17 @@ sequenceDiagram
 - **BR-003 — Người gửi nhận +1 tim cho mỗi lượt thích, +2 nếu lượt thích xảy ra vào ngày đặc biệt.** Ngày tính theo giờ Asia/Ho_Chi_Minh lúc chèn; trọng số lưu cùng lượt thích (A5 cộng, § 4.4). Ở A4 đây là bước gán `weight` (ALG-001: tra `special_days` theo ngày hôm nay, không có thì 1).
 
 **Result** · Ghi `kudos_likes.weight` ← ALG-001 (ghi đè mọi giá trị client); hoặc từ chối cả lượt chèn bằng `check_violation` (người gửi tự thích, hoặc người thích chưa có Sunner). Trọng số quyết ở DB nên client không giả mạo được (FR-405: tim người gửi đổi đúng trọng số).
-**Source:** `TBD (draft)`
+**Source:** `supabase/migrations/20261012072217_create_kudos_likes.sql` (`kudos_likes_before_insert`, trigger `kudos_likes_before_insert`)
 
 <!-- sequenceDiagram: ở đầu § 3.2, vì A4 và A5 là hai bước của cùng một chuỗi bắt đầu từ A1. -->
 
 ---
 
 #### A5 · Cập nhật số tim của kudos và tổng tim của người gửi *(background, no FE)*
-`trigger · AFTER INSERT, AFTER DELETE kudos_likes` → `` `kudos_likes_after_change` (planned) ``
-`FR-003` `FR-405` `BR-003` `BR-004` `BR-005` `US005` · `TBD (draft)` *(không có màn hình; chạy trong DB)*
+`trigger · AFTER INSERT, AFTER DELETE kudos_likes` + `trigger · BEFORE DELETE kudos` → `` `kudos_likes_after_change` ``, `` `release_kudos_like_hearts` ``
+`FR-003` `FR-405` `BR-003` `BR-004` `BR-005` `US046` · `TBD (draft)` *(không có màn hình; chạy trong DB)*
 
-**Who** · *không có người dùng — trigger DB chạy sau khi A1 chèn hoặc A2 xoá* (US005: người gửi kudos được cộng tim khi kudos được thích và bị thu hồi khi bỏ thích). Cùng cấu hình `security definer`, `search_path = ''`, thu `execute` như A4 *(gate A0 — § 4.4)*.
+**Who** · *không có người dùng — trigger DB chạy sau khi A1 chèn hoặc A2 xoá* (US046: người gửi kudos được cộng tim khi kudos được thích và bị thu hồi khi bỏ thích). Cùng cấu hình `security definer`, `search_path = ''`, thu `execute` như A4 *(gate A0 — § 4.4)*.
 **Request** · *không có yêu cầu HTTP* — dòng `NEW` (chèn) hoặc `OLD` (xoá) của `kudos_likes`, gồm `kudos_id` và `weight`.
 **BE** · `` `kudos_likes_after_change` `` — khi chèn: `kudos.like_count += 1` và `sunners.hearts_total += NEW.weight` cho Sunner là `kudos.sender_id`; khi xoá: `-= 1` và `-= OLD.weight`. Cùng giao dịch với dòng thích nên hoặc cả ba thay đổi cùng có hiệu lực, hoặc không cái nào. Hàng `kudos` bị khoá cho tới hết giao dịch nên các lượt thích đồng thời trên cùng một kudos xếp hàng (đủ cho quy mô hiện tại, không cần sharded counter). *Design basis: Study report (researcher-01 § 1).*
 **Rule**
@@ -206,8 +206,8 @@ sequenceDiagram
 **Result**
 - Ghi `kudos.like_count` ← `+1` khi chèn, `−1` khi xoá (FR-003: bộ đếm do DB tự cập nhật, client không ghi được)
 - Ghi `sunners.hearts_total` ← `+weight` khi chèn, `−weight` khi xoá, cho Sunner là người gửi (FR-405)
-- Xoá kudos (trực tiếp bằng SQL, ngoài giao diện) kéo theo xoá các lượt thích (cascade) nên cùng trigger trừ đúng `OLD.weight` đã lưu khỏi tổng tim của người gửi; hành vi này đã chốt là đúng ý (functional-spec.md D001).
-**Source:** `TBD (draft)`
+- Xoá kudos (trực tiếp bằng SQL `service_role`, ngoài giao diện): không dựa vào `kudos_likes_after_change`, vì cascade chỉ xoá các lượt thích sau khi hàng `kudos` đã mất nên trigger đó không còn tìm được người gửi. Thay vào đó trigger `kudos_before_delete_release_like_hearts` (`BEFORE DELETE` trên `kudos`, hàm `release_kudos_like_hearts`, `security definer`, thu `execute` như A4) cộng `weight` đã lưu của mọi lượt thích của kudos đó rồi trừ tổng khỏi `sunners.hearts_total` của người gửi (`greatest(.., 0)`); hành vi đã chốt là đúng ý (functional-spec.md D001).
+**Source:** `supabase/migrations/20261012072217_create_kudos_likes.sql` (`kudos_likes_after_change`, trigger `kudos_likes_after_change`; `release_kudos_like_hearts`, trigger `kudos_before_delete_release_like_hearts`)
 
 <!-- sequenceDiagram: ở đầu § 3.2. -->
 
@@ -215,9 +215,9 @@ sequenceDiagram
 
 #### A6 · Vận hành khai báo ngày đặc biệt
 `—` → `` `special_days#setSpecialDay` (planned) *(operator, no FE; migration + seed + cập nhật bằng service_role)* ``
-`FR-002` `US006` · `TBD (draft)` *(không có màn hình; không có trang quản trị)*
+`FR-002` `US047` · `TBD (draft)` *(không có màn hình; không có trang quản trị)*
 
-**Who** · Người vận hành, bằng khoá `service_role` (Supabase Studio, SQL hoặc helper E2E); không phải người dùng cuối (US006: khai báo ngày đặc biệt để lượt thích vào ngày đó tính gấp đôi) *(gate A0 — § 4.4)*
+**Who** · Người vận hành, bằng khoá `service_role` (Supabase Studio, SQL hoặc helper E2E); không phải người dùng cuối (US047: khai báo ngày đặc biệt để lượt thích vào ngày đó tính gấp đôi) *(gate A0 — § 4.4)*
 **FE** · *no entry point found* — chưa có giao diện quản trị ngày đặc biệt trong phạm vi vòng này (clarifications.md: "special days are a seeded table with no admin UI this round"); chỉ thao tác trực tiếp trên DB.
 **Request** · `insert into public.special_days (day, weight) values ('<YYYY-MM-DD>', 2)` hoặc `delete` dòng của ngày đó; `day` kiểu `date` là khoá chính nên mỗi ngày có tối đa một trọng số.
 **BE** · migration tạo `special_days(day date primary key, weight smallint not null default 2 check (weight in (1, 2)))`, bật RLS, policy chọn công khai cho `anon`, `authenticated`; thu hết quyền rồi cấp `select` cho hai vai trò đó và đủ ghi cho `service_role` — cùng mẫu `site_settings` của F005; seed local đặt một vài ngày đặc biệt để E2E dùng *(§ 4.2)*. *Design basis: Study report (researcher-01 § 1), mẫu migration có sẵn.*
@@ -293,7 +293,7 @@ Ghi chú migration và quyền *(dự kiến — design basis: Study report + m�
 - Migration chỉ thêm, có chú thích ROLLBACK STRATEGY; không tạo `kudos.like_count` hay `sunners.hearts_total` (F006 đã tạo, mặc định 0), chỉ thêm `kudos_likes`, `special_days` và hai trigger bảo trì hai cột đó; `kudos_likes` và `special_days` bật RLS rồi `revoke all ... from public, anon, authenticated` trước khi cấp quyền cụ thể.
 - `kudos_likes`: policy `insert ... to authenticated with check (user_id = (select auth.uid()))`, `delete ... using (user_id = (select auth.uid()))`, `select` CHỈ dòng của mình (`user_id = (select auth.uid())`) nên không ai biết ai đã thích kudos nào; không cấp `update`; chỉ cấp `insert (kudos_id, user_id)` theo cột để `weight` không do client chọn; chỉ mục theo cột của policy (`user_id`) cho đúng hướng dẫn hiệu năng RLS.
 - `special_days`: đọc công khai, chỉ `service_role` ghi. Không có quyền ghi nào của client lên `kudos.like_count` hay `sunners.hearts_total`; hai cột chỉ đổi qua trigger A5.
-- Index `(like_count desc, seq desc)` cho Highlight thuộc F006; F007 chỉ phụ thuộc vào nó.
+- Chỉ mục: F007 thêm `kudos_likes_user_id_idx (user_id)` (cột của policy RLS); `(like_count desc, seq desc)` cho Highlight và `kudos(sender_id)` thuộc F006 (cột `seq` có chỉ mục duy nhất, đủ cho `ORDER BY seq DESC`); F007 chỉ phụ thuộc vào chúng.
 
 #### Polymorphic Behavior
 
@@ -417,7 +417,7 @@ Chính sách kiểm thử: `e2e-red-first` (thả/rút tim, chuyển hướng kh
 - **SC-009** *(A3)* Khi action lỗi (chặn mạng hoặc kudos đã bị xoá): nút và số hoàn về giá trị trước khi bấm và thông báo lỗi ngắn hiện ra (covers FR-403, D003)
 - **SC-010** *(A3)* Cùng một kudos có mặt ở Highlight và All Kudos: bấm ở một nơi thì nơi kia đổi theo (covers FR-404)
 
-#### US001 *(A1, A3)*
+#### US042 *(A1, A3)*
 
 **Independent Test:** Đăng nhập một Sunner không phải người gửi, thả tim một kudos của người khác trên `/sun-kudos`.
 
@@ -426,7 +426,7 @@ Chính sách kiểm thử: `e2e-red-first` (thả/rút tim, chuyển hướng kh
 1. **Given** Sunner đã đăng nhập chưa thích kudos X của người khác, **When** bấm nút tim, **Then** tim chuyển đỏ, số tim +1, và tải lại trang vẫn đỏ với số mới.
 2. **Given** Sunner đã thích kudos X, **When** gọi action thả tim lần nữa, **Then** không có lượt thích thứ hai và số tim không đổi.
 
-#### US002 *(A2, A3)*
+#### US043 *(A2, A3)*
 
 **Independent Test:** Từ trạng thái đã thả tim, bấm lại nút.
 
@@ -435,7 +435,7 @@ Chính sách kiểm thử: `e2e-red-first` (thả/rút tim, chuyển hướng kh
 1. **Given** tim đang đỏ, **When** bấm nút, **Then** tim chuyển xám, số tim −1.
 2. **Given** chưa thả tim, **When** gọi action rút tim, **Then** không lỗi và số tim không đổi.
 
-#### US003 *(A1, A3)*
+#### US044 *(A1, A3)*
 
 **Independent Test:** Mở `/sun-kudos` như khách rồi bấm nút tim.
 
@@ -444,7 +444,7 @@ Chính sách kiểm thử: `e2e-red-first` (thả/rút tim, chuyển hướng kh
 1. **Given** khách chưa đăng nhập, **When** bấm nút tim, **Then** được chuyển tới `/login` và không có lượt thích nào được ghi.
 2. **Given** phiên hết hạn trong lúc trang vẫn hiện như đã đăng nhập, **When** bấm tim, **Then** action trả `unauthenticated` và giao diện chuyển tới `/login`.
 
-#### US004 *(A3, A4)*
+#### US045 *(A3, A4)*
 
 **Independent Test:** Đăng nhập bằng tài khoản là người gửi của một kudos và nhìn nút tim trên kudos đó.
 
@@ -453,7 +453,7 @@ Chính sách kiểm thử: `e2e-red-first` (thả/rút tim, chuyển hướng kh
 1. **Given** người gửi xem kudos của chính mình, **When** nhìn nút tim, **Then** nút bị vô hiệu và số tim vẫn hiện.
 2. **Given** người gửi gọi thẳng action thả tim kudos của mình, **When** DB xử lý, **Then** lượt chèn bị từ chối và không bộ đếm nào đổi.
 
-#### US005 *(A4, A5)*
+#### US046 *(A4, A5)*
 
 **Independent Test:** Cho Sunner B thích kudos do Sunner A gửi và đọc `sunners.hearts_total` của A trước/sau, ngày thường rồi ngày đặc biệt.
 
@@ -462,7 +462,7 @@ Chính sách kiểm thử: `e2e-red-first` (thả/rút tim, chuyển hướng kh
 1. **Given** hôm nay không phải ngày đặc biệt, **When** B thích kudos của A, **Then** tổng tim của A tăng 1; **And** khi B bỏ thích thì giảm lại 1.
 2. **Given** hôm nay là ngày đặc biệt, **When** B thích kudos của A, **Then** tổng tim của A tăng 2; **And** bỏ thích (kể cả sau ngày đó) giảm đúng 2.
 
-#### US006 *(A6)*
+#### US047 *(A6)*
 
 **Independent Test:** Dùng `service_role` thêm một dòng `special_days` cho hôm nay rồi cho một Sunner thích một kudos.
 
@@ -492,7 +492,7 @@ Chính sách kiểm thử: `e2e-red-first` (thả/rút tim, chuyển hướng kh
 
 ### 5.4 Source References
 
-Bản nháp greenfield: chưa có mã mới nên bảng này để trống có chủ ý; hành vi xem `## 7. User Stories` trong functional-spec.md. Mã có sẵn được dùng lại không đổi: `lib/supabase/current-user.ts` (hàm `getCurrentUser`, dòng 33-59) và `lib/supabase/server.ts` (hàm `createClient`, dòng 19-50); mẫu migration/RLS/GRANT lấy từ `supabase/migrations/20261009083754_create_site_settings.sql` và `supabase/migrations/20261008045415_create_profiles.sql`.
+Mã đã giao: `lib/kudos/kudos-heart-actions.ts` (Server Action `likeKudos`, `unlikeKudos`), `lib/kudos/kudos-heart-store.tsx` (kho tim dùng chung, hoàn tác khi lỗi), `app/_components/sun-kudos-behaviour/kudos-heart-button.tsx`, `supabase/migrations/20261012072217_create_kudos_likes.sql`, `supabase/seeds/common/05-special-days.sql`. Mã có sẵn được dùng lại không đổi: `lib/supabase/current-user.ts` (hàm `getCurrentUser`, dòng 33-59) và `lib/supabase/server.ts` (hàm `createClient`, dòng 19-50); mẫu migration/RLS/GRANT lấy từ `supabase/migrations/20261009083754_create_site_settings.sql` và `supabase/migrations/20261008045415_create_profiles.sql`.
 
 #### Data Flow
 
@@ -513,7 +513,8 @@ Operator (service_role) -> A6 insert/delete special_days -> chỉ ảnh hưởng
 | System Overview | [overview.md](../../system/overview.md) | — | [ ] |
 | Architecture | [architecture.md](../../system/architecture.md) | — | [ ] |
 | Feature List | [feature-list.md](../../generated/feature-list.md) | F007 | [ ] |
-| Entities | [entities.md](../../generated/entities.md) | TBD (draft) | [ ] |
-| Screens | [functional-spec.md § 6](./functional-spec.md#6-screens) | TBD (draft) | [ ] |
-| Permissions Matrix | [permissions-matrix.md](../../generated/permissions-matrix.md) | TBD (draft) | [ ] |
-| User Stories | [user-stories.md](../../generated/user-stories.md) | TBD (draft) | [ ] |
+| API Map | [api-map.md](../../generated/api-map.md) | ROUTE012, ROUTE013 | [ ] |
+| Entities | [entities.md](../../generated/entities.md) | MODEL011, MODEL012 | [ ] |
+| Screens | [functional-spec.md § 6](./functional-spec.md#6-screens) | SCR006_SunKudosLiveBoard (vùng nút tim) | [ ] |
+| Permissions Matrix | [permissions-matrix.md](../../generated/permissions-matrix.md) | PERM015, PERM017, PERM019 | [ ] |
+| User Stories | [functional-spec.md § 7](./functional-spec.md#7-user-stories) | US042..US047 (chưa có trong user-stories.md) | [ ] |

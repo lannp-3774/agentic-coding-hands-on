@@ -18,7 +18,7 @@ edge cases, and configuration for a BA/QA audience.
 
 **How to read this file:** § 2 is the index — pick the action you care about and read its block
 in § 3 straight through; each block is one complete thread, top to bottom. § 4 is the shared
-appendix — jump in only when a § 3 block points you there. Đây là bản nháp greenfield (chưa có mã nguồn): tên handler là tên dự kiến, mọi `**Source:**` ghi `TBD (draft)`; căn cứ thiết kế là báo cáo nghiên cứu (Design basis: Study report, topic 3) và `clarifications.md`.
+appendix — jump in only when a § 3 block points you there. Bản soạn trước khi có mã: tên handler là tên dự kiến và `**Source:**` còn `TBD (draft)`, Stage 6 (2026-10-13) chỉ đối chiếu ALG-002 và INT-001 với mã đã giao (muốn có `path:line` cho phần còn lại chạy `/tkm:rebuild-spec --features F008`); căn cứ thiết kế là báo cáo nghiên cứu (Design basis: Study report, topic 3) và `clarifications.md`.
 
 ## 1. Technical Overview
 
@@ -59,13 +59,13 @@ flowchart LR
 | # | Action (handler) | Method · Path | Codes | Writes | Detail |
 |---|---|---|---|---|---|
 | **A0** | *cross-cutting — belongs to no single action* | — | FR-601, BR-001 | — | § 4.4 |
-| **A1** | `SpotlightSection#render` (planned) | `GET` `/sun-kudos` *(đoạn Spotlight sau `<Suspense>` riêng)* | FR-101, FR-201, FR-202, FR-203, FR-206, FR-207, FR-208, FR-209, FR-409, BR-002, BR-003, BR-004, DEC-001, ALG-001, US001, US006 | — *(read-only)* | § 3.1 |
-| **A2** | `getSpotlightData#read` (planned) | `GET` `/sun-kudos` *(đọc dữ liệu trong cùng request)* | FR-001, FR-002, FR-209, BR-002, BR-004, BR-005, INT-001, US001 | — *(read-only: `kudos`, `sunners`)* | § 3.1 |
-| **A3** | `useSpotlightSearch#submit` (planned) *(client behaviour, no HTTP)* | — | FR-205, FR-404, FR-405, FR-406, BR-006, DEC-002, ALG-002, US004 | — *(read-only, chỉ đổi kiểu hiển thị nút)* | § 3.2 |
-| **A4** | `useSpotlightPanZoom#toggle` (planned) *(client behaviour, no HTTP)* | — | FR-204, FR-403, BR-007, SM-001, US005 | — *(read-only, chỉ đổi chế độ)* | § 3.3 |
-| **A5** | `useSpotlightPanZoom#onGesture` (planned) *(client behaviour, no HTTP)* | — | FR-403, FR-407, FR-408, BR-007, SM-001, ALG-003, US005 | — *(read-only, chỉ đổi dịch chuyển/thu phóng)* | § 3.3 |
-| **A6** | `SpotlightTooltip#show` (planned) *(client behaviour, no HTTP)* | — | FR-401, BR-005, US002 | — *(read-only)* | § 3.4 |
-| **A7** | `SpotlightNode#open` (planned) | `GET` `/sun-kudos/[id]` *(đã đăng nhập)* · `/login` *(khách)* | FR-402, BR-008, US003 | — *(read-only)* | § 3.4 |
+| **A1** | `SpotlightSection#render` (planned) | `GET` `/sun-kudos` *(đoạn Spotlight sau `<Suspense>` riêng)* | FR-101, FR-201, FR-202, FR-203, FR-206, FR-207, FR-208, FR-209, FR-409, BR-002, BR-003, BR-004, DEC-001, ALG-001, US048, US053 | — *(read-only)* | § 3.1 |
+| **A2** | `getSpotlightData#read` (planned) | `GET` `/sun-kudos` *(đọc dữ liệu trong cùng request)* | FR-001, FR-002, FR-209, BR-002, BR-004, BR-005, INT-001, US048 | — *(read-only: `kudos`, `sunners`)* | § 3.1 |
+| **A3** | `useSpotlightSearch#submit` (planned) *(client behaviour, no HTTP)* | — | FR-205, FR-404, FR-405, FR-406, BR-006, DEC-002, ALG-002, US051 | — *(read-only, chỉ đổi kiểu hiển thị nút)* | § 3.2 |
+| **A4** | `useSpotlightPanZoom#toggle` (planned) *(client behaviour, no HTTP)* | — | FR-204, FR-403, BR-007, SM-001, US052 | — *(read-only, chỉ đổi chế độ)* | § 3.3 |
+| **A5** | `useSpotlightPanZoom#onGesture` (planned) *(client behaviour, no HTTP)* | — | FR-403, FR-407, FR-408, BR-007, SM-001, ALG-003, US052 | — *(read-only, chỉ đổi dịch chuyển/thu phóng)* | § 3.3 |
+| **A6** | `SpotlightTooltip#show` (planned) *(client behaviour, no HTTP)* | — | FR-401, BR-005, US049 | — *(read-only)* | § 3.4 |
+| **A7** | `SpotlightNode#open` (planned) | `GET` `/sun-kudos/[id]` *(đã đăng nhập)* · `/login` *(khách)* | FR-402, BR-008, US050 | — *(read-only)* | § 3.4 |
 
 **Rung set** — mỗi khối trong § 3 theo thứ tự **Who** → **FE** → **Request** → **BE** → **Rule** → **Result** → **State** → **Source**; rung vắng thì bỏ hẳn. Feature không ghi bảng nào và không chạy nền nên không khối nào vượt ngưỡng `sequenceDiagram`. Rung **State** bỏ hẳn trong bản nháp (chưa có mã để xác nhận chuyển trạng thái); máy trạng thái giao diện SM-001 nằm ở § 4.3.
 
@@ -75,7 +75,7 @@ flowchart LR
 
 #### A1 · Hiển thị vùng Spotlight (tiêu đề, tổng số, bảng tên, dải kudos mới nhất, trạng thái chờ/rỗng)
 `GET /sun-kudos` → `` `SpotlightSection#render` (planned) ``
-`FR-101` `FR-201` `FR-202` `FR-203` `FR-206` `FR-207` `FR-208` `FR-209` `FR-409` `BR-002` `BR-003` `BR-004` `DEC-001` `ALG-001` `US001` `US006` · TBD (draft)
+`FR-101` `FR-201` `FR-202` `FR-203` `FR-206` `FR-207` `FR-208` `FR-209` `FR-409` `BR-002` `BR-003` `BR-004` `DEC-001` `ALG-001` `US048` `US053` · TBD (draft)
 
 **Who** · Người xem, khách hoặc đã đăng nhập *(gate A0 — § 4.4)*
 **FE** · Vùng nằm giữa Highlight và All Kudos trên `/sun-kudos`; vỏ trang và khe (slot) do F006 cấp, F008 chỉ lấp nội dung vùng B.6–B.7. Server Component bọc trong `<Suspense>` riêng, khung chờ không chữ cùng kích thước vùng thật (FR-207). Khi đã đọc xong: tiêu đề (chữ nhỏ "Sun* Annual Awards 2025" + chữ lớn "SPOTLIGHT BOARD"), nhãn tổng `{n} KUDOS`, nút Pan/Zoom (A4), ô tìm kiếm (A3), khung bảng (`role="group"` có nhãn) chứa các nút tên (A6, A7), dải kudos mới nhất ở góc dưới trái (5 dòng xếp chồng, tĩnh). Rỗng thì thay khung bảng bằng thông báo. Nhãn, placeholder, thông báo lấy từ từ điển theo ngôn ngữ; tên người nhận giữ nguyên (FR-409).
@@ -93,7 +93,7 @@ flowchart LR
 | **DEC-001** | render | đọc xong VÀ không có nút nào (rỗng) | tiêu đề và nhãn `0 KUDOS` giữ nguyên; thông báo "Hiện tại chưa có Kudos nào." thay bảng; nút Pan/Zoom và ô tìm kiếm bị vô hiệu; không có dải kudos mới nhất | TBD (draft) |
 | **DEC-001** | render | truy vấn lỗi hoặc ném ngoại lệ | hiện như rỗng; lỗi ghi log `[sun-kudos]` ở máy chủ; các vùng khác của trang vẫn hiện | TBD (draft) |
 
-**Result** · Chỉ đọc, không ghi DB. Người xem thấy vùng Spotlight theo trạng thái ở DEC-001. Dải kudos mới nhất (FR-206, US006) là 5 nút đầu của danh sách thô (đã `seq desc` nên là 5 kudos mới nhất) nên không tốn truy vấn thêm; mỗi dòng xếp chồng (mới nhất ở trên cùng) hiện giờ dạng 12 giờ `hh:mmAM/PM` theo Asia/Ho_Chi_Minh, tên người nhận và câu "đã nhận được một Kudos mới" (D005 đã chốt); dữ liệu đọc một lần lúc tải trang, không có cập nhật trực tiếp. Dải dùng `aria-live="off"` (không tự đọc), dưới giảm chuyển động thì đứng yên (FR-408).
+**Result** · Chỉ đọc, không ghi DB. Người xem thấy vùng Spotlight theo trạng thái ở DEC-001. Dải kudos mới nhất (FR-206, US053) là 5 nút đầu của danh sách thô (đã `seq desc` nên là 5 kudos mới nhất) nên không tốn truy vấn thêm; mỗi dòng xếp chồng (mới nhất ở trên cùng) hiện giờ dạng 12 giờ `hh:mmAM/PM` theo Asia/Ho_Chi_Minh, tên người nhận và câu "đã nhận được một Kudos mới" (D005 đã chốt); dữ liệu đọc một lần lúc tải trang, không có cập nhật trực tiếp. Dải dùng `aria-live="off"` (không tự đọc), dưới giảm chuyển động thì đứng yên (FR-408).
 **Source:** TBD (draft)
 
 <!-- Không vẽ sequenceDiagram: dưới ngưỡng (chỉ đọc, không ghi bảng nào, đồng bộ trong request). Phần phân nhánh là bảng DEC-001. -->
@@ -102,7 +102,7 @@ flowchart LR
 
 #### A2 · Đọc dữ liệu Spotlight (tên người nhận, thời điểm, tổng kudos)
 `GET /sun-kudos` *(đọc dữ liệu trong cùng request)* → `` `getSpotlightData#read` (planned) ``
-`FR-001` `FR-002` `FR-209` `BR-002` `BR-004` `BR-005` `INT-001` `US001` · TBD (draft)
+`FR-001` `FR-002` `FR-209` `BR-002` `BR-004` `BR-005` `INT-001` `US048` · TBD (draft)
 
 **Who** · Người xem *(vai trò DB `anon` hoặc `authenticated`; gate A0 — § 4.4)*
 **Request** · locale (chỉ để chọn chữ); không có tham số
@@ -122,14 +122,14 @@ flowchart LR
 
 #### A3 · Tìm một tên và tô sáng các nút khớp
 `(client) submit tìm kiếm` → `` `useSpotlightSearch#submit` (planned) ``
-`FR-205` `FR-404` `FR-405` `FR-406` `BR-006` `DEC-002` `ALG-002` `US004` · TBD (draft)
+`FR-205` `FR-404` `FR-405` `FR-406` `BR-006` `DEC-002` `ALG-002` `US051` · TBD (draft)
 
 **Who** · Người xem *(không cần đăng nhập)*
 **FE** · Ô nhập có biểu tượng kính lúp và placeholder "Tìm kiếm" (B.7.3); Enter hoặc bấm kính lúp thì tìm. Nút khớp có lớp tô sáng, nút không khớp bị làm mờ (`opacity`); không tính lại bố cục. Số nút khớp thông báo qua vùng `aria-live="polite"`. Lỗi (quá 100 ký tự hoặc để trống) hiện dưới ô, gắn `aria-describedby`/`role="alert"`.
 **Request** · giá trị ô nhập `query` *(chuỗi, 0–100 ký tự sau khi cắt khoảng trắng hai đầu)*
 **BE** · không có máy chủ; `matchSpotlightNodes(nodes, query)` chạy ở client trên danh sách đã có (ALG-002 *— chuẩn hoá bỏ dấu và hoa thường rồi so khớp chuỗi con, § 4.5*).
 **Rule**
-- **BR-006 — Chuỗi tìm tối đa 100 ký tự và không được để trống.** 100 ký tự được chấp nhận; 101 bị từ chối kèm thông báo lỗi; để trống mà tìm thì bị chặn kèm thông báo bắt buộc nhập; khớp không phân biệt hoa thường và dấu tiếng Việt (đã chốt, functional-spec.md § 3 D003, D004). Ô nhập không đặt `maxLength`: gõ quá 100 ký tự vẫn được, lỗi chỉ hiện khi bấm tìm; kiểm tra làm trong hàm submit nên cũng chặn được chuỗi dán hoặc điền sẵn vượt giới hạn.
+- **BR-006 — Chuỗi tìm tối đa 100 ký tự và không được để trống.** 100 ký tự được chấp nhận; 101 bị từ chối kèm thông báo lỗi; để trống mà tìm thì bị chặn kèm thông báo bắt buộc nhập; khớp không phân biệt hoa thường và dấu tiếng Việt (đã chốt, functional-spec.md § 3 D003, D004); chuỗi chỉ có dấu kết hợp (chuẩn hoá xong rỗng) bị coi như để trống (`evaluateSpotlightSearch`, `lib/kudos/spotlight-search-match.ts`). Ô nhập không đặt `maxLength`: gõ quá 100 ký tự vẫn được, lỗi chỉ hiện khi bấm tìm; kiểm tra làm trong hàm submit nên cũng chặn được chuỗi dán hoặc điền sẵn vượt giới hạn.
 
 | DEC | subtype | Condition | What the user sees | Source |
 |---|---|---|---|---|
@@ -150,7 +150,7 @@ flowchart LR
 
 #### A4 · Bật hoặc tắt chế độ Pan/Zoom
 `(client) click nút Pan/Zoom` → `` `useSpotlightPanZoom#toggle` (planned) ``
-`FR-204` `FR-403` `BR-007` `SM-001` `US005` · TBD (draft)
+`FR-204` `FR-403` `BR-007` `SM-001` `US052` · TBD (draft)
 
 **Who** · Người xem *(không cần đăng nhập)*
 **FE** · Nút `<button aria-pressed>` có tooltip "Pan/Zoom" (B.7.2), tiếp cận bằng Tab. Bật: khung bảng `touch-action: none`, con trỏ `grab`; tắt: khung bảng trả `touch-action` mặc định, trang cuộn bình thường.
@@ -166,7 +166,7 @@ flowchart LR
 
 #### A5 · Kéo, lăn chuột hoặc dùng bàn phím để dịch chuyển và thu phóng bảng
 `(client) pointerdown/pointermove/wheel/keydown` → `` `useSpotlightPanZoom#onGesture` (planned) ``
-`FR-403` `FR-407` `FR-408` `BR-007` `SM-001` `ALG-003` `US005` · TBD (draft)
+`FR-403` `FR-407` `FR-408` `BR-007` `SM-001` `ALG-003` `US052` · TBD (draft)
 
 **Who** · Người xem *(không cần đăng nhập)*
 **FE** · Một khung chứa duy nhất có `transform: translate(x,y) scale(k)`, `transform-origin: 0 0`; trạng thái `{x, y, k}` trong hook. Kéo: `setPointerCapture` trên khung. Lăn chuột: gắn bằng `addEventListener("wheel", …, { passive: false })` trong `useEffect` (React `onWheel` là passive nên không gọi được `preventDefault`). Bàn phím khi khung có tiêu điểm và Pan/Zoom bật: phím mũi tên dịch, `+`/`-` thu phóng. Không dùng `will-change` lúc nghỉ (chữ nhoè). Giảm chuyển động bật thì bỏ `transition` của transform (FR-408).
@@ -184,7 +184,7 @@ flowchart LR
 
 #### A6 · Hiện tooltip tên và thời gian khi rê chuột hoặc lấy tiêu điểm vào một nút
 `(client) pointerenter/focus` → `` `SpotlightTooltip#show` (planned) ``
-`FR-401` `BR-005` `US002` · TBD (draft)
+`FR-401` `BR-005` `US049` · TBD (draft)
 
 **Who** · Người xem *(không cần đăng nhập)*
 **FE** · MỘT phần tử tooltip dùng chung, `position: fixed` đặt ngoài khung có `transform` (để không bị phóng to theo bảng), `role="tooltip"`, nút liên kết gắn `aria-describedby` khi đang hiện; hiện khi `pointerenter` hoặc `focus` vào một nút, ẩn khi `pointerleave` hoặc `blur`. Nội dung: tên người nhận và nhãn thời gian.
@@ -200,7 +200,7 @@ flowchart LR
 
 #### A7 · Bấm một nút để mở kudos tương ứng (khách thì đến đăng nhập)
 `GET /sun-kudos/[id]` *(đã đăng nhập)* · `GET /login` *(khách)* → `` `SpotlightNode#open` (planned) ``
-`FR-402` `BR-008` `US003` · TBD (draft)
+`FR-402` `BR-008` `US050` · TBD (draft)
 
 **Who** · Sunner đã đăng nhập hoặc khách *(gate A0 — § 4.4)*
 **FE** · Mỗi nút là một thẻ `<a>` thật (Tab, Enter, trình đọc màn hình, `getByRole("link")` trong e2e) có `href` do máy chủ chọn sẵn; không dùng `onClick` điều hướng. Kéo bảng (A5) không được kích hoạt nhấp: nếu con trỏ dịch quá ngưỡng nhỏ giữa `pointerdown` và `pointerup` thì huỷ nhấp.
@@ -356,7 +356,7 @@ return sorted
 **Used in:** A3
 **Source:** TBD (draft)
 **Input:** `query` (≤ 100 ký tự) và danh sách tên · **Output:** tập mã nút khớp · **Complexity:** O(n · L)
-**Description:** Chuẩn hoá cả `query` lẫn tên bằng chuẩn hoá Unicode NFD, bỏ dấu kết hợp, đổi `đ`/`Đ` thành `d`, đưa về chữ thường, rồi khớp chuỗi con. Quyết định D003 (functional-spec.md § 3) đã chốt.
+**Description:** Chuẩn hoá cả `query` lẫn tên bằng chuẩn hoá Unicode NFD, bỏ dấu kết hợp, đổi `đ`/`Đ` thành `d`, đưa về chữ thường, rồi khớp chuỗi con. Query chuẩn hoá xong rỗng thì không khớp nút nào (`matchSpotlightNodes` trả tập rỗng). Quyết định D003 (functional-spec.md § 3) đã chốt.
 
 **Pseudocode:**
 ```text
@@ -385,7 +385,7 @@ return { x: x2, y: y2, k: k2 }
 **Source:** TBD (draft)
 **Type:** api-call
 **Target:** Supabase Data API (PostgREST) qua `createClient()` server có sẵn; vai trò `anon` hoặc `authenticated`
-**Payload:** truy vấn chỉ đọc: danh sách kudos (cột tường minh, kèm tên và số kudos đã nhận của người nhận, `order seq desc limit SPOTLIGHT_MAX_NODES`) và đếm chính xác tổng số hàng `kudos`; không gửi dữ liệu người dùng
+**Payload:** truy vấn chỉ đọc: danh sách kudos (cột tường minh `SPOTLIGHT_COLUMNS` trong `lib/kudos/spotlight-mapping.ts`, kèm tên và số kudos đã nhận của người nhận; `seq` ép sang `text` (`seq::text`) vì bigint dạng số JSON mất chính xác quá 2^53, và `isSpotlightRow` chỉ nhận chuỗi số nguyên dương; `order seq desc limit SPOTLIGHT_MAX_NODES`) và đếm chính xác tổng số hàng `kudos`; không gửi dữ liệu người dùng
 **Failure handling:** lỗi truy vấn hoặc ngoại lệ → log `[sun-kudos]` một dòng có mã lỗi, trả `{ total: 0, nodes: [], latest: [] }` (không retry); `unstable_rethrow` chạy trước để không nuốt tín hiệu của Next.
 
 ### 4.6 Configuration
@@ -421,7 +421,7 @@ Chính sách kiểm thử `e2e-red-first` (hành vi: tìm kiếm, bật/tắt Pa
 - **SC-011** *(A0)* Với vai trò `anon`, đọc kudos/sunners thành công và ghi bị từ chối (đã do e2e RLS của F006 bảo vệ, F008 không thêm bảng nên không có test riêng) (covers FR-601, BR-001)
 - **SC-012** *(A1)* Chọn EN thì nhãn và placeholder đổi sang tiếng Anh, tên người nhận giữ nguyên (covers FR-409)
 
-#### US001 *(A1, A2)*
+#### US048 *(A1, A2)*
 
 **Independent Test:** Mở `/sun-kudos` với dữ liệu seed; vùng Spotlight hiện đúng nhãn tổng và các nút tên.
 
@@ -430,7 +430,7 @@ Chính sách kiểm thử `e2e-red-first` (hành vi: tìm kiếm, bật/tắt Pa
 1. **Given** DB có 388 kudos, **When** khách mở trang, **Then** nhãn "388 KUDOS" và 300 nút (BR-004).
 2. **Given** DB không có kudos, **When** mở trang, **Then** thông báo rỗng thay bảng.
 
-#### US002 *(A6)*
+#### US049 *(A6)*
 
 **Independent Test:** Rê chuột vào nút đầu tiên và đọc nội dung tooltip.
 
@@ -438,7 +438,7 @@ Chính sách kiểm thử `e2e-red-first` (hành vi: tìm kiếm, bật/tắt Pa
 
 1. **Given** một nút của kudos tạo 10:00 ngày 30/10/2025 (giờ VN), **When** rê chuột vào nút, **Then** tooltip hiện tên người nhận và `10:00 - 10/30/2025`.
 
-#### US003 *(A7)*
+#### US050 *(A7)*
 
 **Independent Test:** Đọc `href` của nút và bấm với từng loại người xem.
 
@@ -447,7 +447,7 @@ Chính sách kiểm thử `e2e-red-first` (hành vi: tìm kiếm, bật/tắt Pa
 1. **Given** khách, **When** bấm một nút, **Then** đến `/login`.
 2. **Given** Sunner đã đăng nhập, **When** bấm một nút, **Then** đến `/sun-kudos/<id>` của kudos đó.
 
-#### US004 *(A3)*
+#### US051 *(A3)*
 
 **Independent Test:** Nhập chuỗi vào ô tìm và kiểm lớp tô sáng.
 
@@ -456,7 +456,7 @@ Chính sách kiểm thử `e2e-red-first` (hành vi: tìm kiếm, bật/tắt Pa
 1. **Given** bảng có tên chứa "Nguyễn", **When** tìm "Nguyễn" rồi Enter, **Then** các nút đó sáng, các nút khác mờ.
 2. **Given** ô trống, **When** bấm kính lúp, **Then** hiện thông báo bắt buộc nhập.
 
-#### US005 *(A4, A5)*
+#### US052 *(A4, A5)*
 
 **Independent Test:** Bật Pan/Zoom, kéo và lăn chuột; tắt rồi lăn chuột.
 
@@ -465,7 +465,7 @@ Chính sách kiểm thử `e2e-red-first` (hành vi: tìm kiếm, bật/tắt Pa
 1. **Given** Pan/Zoom bật, **When** kéo 100px sang phải, **Then** khung dịch tương ứng.
 2. **Given** Pan/Zoom tắt, **When** lăn chuột trên bảng, **Then** trang cuộn và bảng không đổi.
 
-#### US006 *(A1)*
+#### US053 *(A1)*
 
 **Independent Test:** So tên trong dải với kudos mới nhất.
 
@@ -514,9 +514,9 @@ GET /sun-kudos (đoạn Spotlight)
 |----------|------|------------|----------|
 | Architecture | [architecture.md](../../system/architecture.md) | — | [ ] |
 | Feature List | [feature-list.md](../../generated/feature-list.md) | F008 | [ ] |
-| API Map | [api-map.md](../../generated/api-map.md) | TBD (draft) | [ ] |
-| Entities | [entities.md](../../generated/entities.md) | TBD (draft) | [ ] |
-| Screens | [functional-spec.md § 6](./functional-spec.md#6-screens) | TBD (draft) | [ ] |
-| Behavior Logic | [behavior-logic.md](../../generated/behavior-logic.md) | TBD (draft) | [ ] |
-| Permissions Matrix | [permissions-matrix.md](../../generated/permissions-matrix.md) | TBD (draft) | [ ] |
-| User Stories | [user-stories.md](../../generated/user-stories.md) | TBD (draft) | [ ] |
+| API Map | [api-map.md](../../generated/api-map.md) | ROUTE011 (đọc trong trang, không có route riêng) | [ ] |
+| Entities | [entities.md](../../generated/entities.md) | MODEL006, MODEL007 (dùng lại của F006) | [ ] |
+| Screens | [functional-spec.md § 6](./functional-spec.md#6-screens) | SCR006_SunKudosLiveBoard (vùng Spotlight) | [ ] |
+| Behavior Logic | [behavior-logic.md](../../generated/behavior-logic.md) | — (không có BL riêng) | [ ] |
+| Permissions Matrix | [permissions-matrix.md](../../generated/permissions-matrix.md) | PERM015 | [ ] |
+| User Stories | [functional-spec.md § 7](./functional-spec.md#7-user-stories) | US048..US053 (chưa có trong user-stories.md) | [ ] |

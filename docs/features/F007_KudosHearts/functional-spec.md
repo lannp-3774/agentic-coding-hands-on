@@ -35,8 +35,8 @@ key entities, and DB writes for a Dev/QA/SA audience.
 
 | ID | Capability | What the user can do | User Stories | Requirements | Business Rules | Screens |
 |----|------------|------------------------|-----------------|---------------|-------------------|---------|
-| CAP-01 | Thả và rút tim ở kudos của người khác | Bấm nút tim trên thẻ để thả hoặc rút tim và thấy số tim, màu tim đổi ngay; khách bấm thì được đưa tới đăng nhập; người gửi thấy nút vô hiệu ở kudos của mình | US001, US002, US003, US004 | FR-001, FR-201, FR-202, FR-203, FR-401, FR-402, FR-403, FR-404, FR-601, FR-602, FR-603 | BR-001, BR-002, BR-006, DEC-001, DEC-002, SM-001 | SCR006_SunKudosLiveBoard |
-| CAP-02 | Cộng và thu hồi tim cho người gửi kudos | Người gửi được cộng 1 tim cho mỗi lượt thích, 2 tim nếu vào ngày đặc biệt, và bị thu hồi đúng số đó khi lượt thích bị rút; vận hành khai báo ngày đặc biệt | US005, US006 | FR-002, FR-003, FR-405, FR-604 | BR-003, BR-004, BR-005 | N/A — chạy ở tầng dữ liệu, màn hình duy nhất của feature đã tính ở CAP-01 |
+| CAP-01 | Thả và rút tim ở kudos của người khác | Bấm nút tim trên thẻ để thả hoặc rút tim và thấy số tim, màu tim đổi ngay; khách bấm thì được đưa tới đăng nhập; người gửi thấy nút vô hiệu ở kudos của mình | US042, US043, US044, US045 | FR-001, FR-201, FR-202, FR-203, FR-401, FR-402, FR-403, FR-404, FR-601, FR-602, FR-603 | BR-001, BR-002, BR-006, DEC-001, DEC-002, SM-001 | SCR006_SunKudosLiveBoard |
+| CAP-02 | Cộng và thu hồi tim cho người gửi kudos | Người gửi được cộng 1 tim cho mỗi lượt thích, 2 tim nếu vào ngày đặc biệt, và bị thu hồi đúng số đó khi lượt thích bị rút; vận hành khai báo ngày đặc biệt | US046, US047 | FR-002, FR-003, FR-405, FR-604 | BR-003, BR-004, BR-005 | N/A — chạy ở tầng dữ liệu, màn hình duy nhất của feature đã tính ở CAP-01 |
 
 ## 3. Open Decisions
 
@@ -107,7 +107,7 @@ Cả bốn điểm dưới đây đã chốt ở clarifications.md (lượt "spe
 
 ## 7. User Stories
 
-### US001 — Thả tim cho kudos của người khác
+### US042 — Thả tim cho kudos của người khác
 
 **Actor:** Sunner đã đăng nhập
 **Goal:** tỏ lòng ghi nhận một kudos của người khác bằng một cái tim
@@ -118,7 +118,7 @@ Cả bốn điểm dưới đây đã chốt ở clarifications.md (lượt "spe
 - [ ] Tải lại trang vẫn thấy tim đỏ và số tim mới
 - [ ] Bấm thả khi đã thả sẵn không tạo lượt thích thứ hai và không đổi số tim
 
-### US002 — Rút tim đã thả
+### US043 — Rút tim đã thả
 
 **Actor:** Sunner đã đăng nhập
 **Goal:** bỏ lượt tim mình đã thả
@@ -129,7 +129,7 @@ Cả bốn điểm dưới đây đã chốt ở clarifications.md (lượt "spe
 - [ ] Tải lại trang vẫn thấy tim xám và số tim mới
 - [ ] Rút khi chưa thả không báo lỗi và không đổi số tim
 
-### US003 — Khách bấm tim được đưa tới đăng nhập
+### US044 — Khách bấm tim được đưa tới đăng nhập
 
 **Actor:** Khách
 **Goal:** thả tim nhưng phải đăng nhập trước
@@ -140,7 +140,7 @@ Cả bốn điểm dưới đây đã chốt ở clarifications.md (lượt "spe
 - [ ] Không có lượt thích nào được ghi và số tim không đổi
 - [ ] Khách vẫn thấy số tim của mọi thẻ
 
-### US004 — Người gửi không thả tim cho kudos của chính mình
+### US045 — Người gửi không thả tim cho kudos của chính mình
 
 **Actor:** Người gửi kudos
 **Goal:** xem kudos của mình mà không thể tự cộng tim cho mình
@@ -150,7 +150,7 @@ Cả bốn điểm dưới đây đã chốt ở clarifications.md (lượt "spe
 - [ ] Nút tim trên kudos của chính mình bị vô hiệu, số tim vẫn hiện
 - [ ] Dù gọi thẳng vào hệ thống, lượt thích của người gửi cho kudos của mình bị từ chối và không đổi số tim nào
 
-### US005 — Người gửi nhận tim theo lượt thích
+### US046 — Người gửi nhận tim theo lượt thích
 
 **Actor:** Người gửi kudos
 **Goal:** được cộng tim khi kudos mình gửi được đồng nghiệp tán thưởng, nhiều hơn vào ngày đặc biệt
@@ -161,7 +161,7 @@ Cả bốn điểm dưới đây đã chốt ở clarifications.md (lượt "spe
 - [ ] Bỏ thích thu hồi đúng số tim lượt đó đã cộng, kể cả sau khi ngày đặc biệt đã qua
 - [ ] Người nhận kudos không được cộng tim từ lượt thích
 
-### US006 — Vận hành khai báo ngày đặc biệt
+### US047 — Vận hành khai báo ngày đặc biệt
 
 **Actor:** Người vận hành
 **Goal:** chọn những ngày mà lượt thích được tính gấp đôi cho người gửi
@@ -173,51 +173,51 @@ Cả bốn điểm dưới đây đã chốt ở clarifications.md (lượt "spe
 
 ## 8. Scenarios
 
-### US001 — Happy Path
+### US042 — Happy Path
 
 **Given** Sunner đã đăng nhập đang xem kudos của người khác với tim xám và số tim 10, **When** bấm tim, **Then** tim chuyển đỏ, số tim hiện 11 và tải lại trang vẫn thế.
 
-### US001 — Error: Thất bại khi thả
+### US042 — Error: Thất bại khi thả
 
 **Given** Sunner đã đăng nhập bấm tim đúng lúc mất mạng, **When** yêu cầu không tới được máy chủ, **Then** tim trở về xám, số tim trở về 10 và hiện thông báo lỗi ngắn (D003).
 
-### US002 — Happy Path
+### US043 — Happy Path
 
 **Given** Sunner đã thả tim (tim đỏ, số tim 11), **When** bấm lại, **Then** tim chuyển xám và số tim hiện 10.
 
-### US002 — Error: Rút khi chưa thả
+### US043 — Error: Rút khi chưa thả
 
 **Given** một tab cũ vẫn hiện tim đỏ nhưng lượt thích đã được rút ở tab khác, **When** bấm tim ở tab cũ, **Then** không có lỗi; hệ thống giữ trạng thái chưa thích và số tim khớp lại với số thật.
 
-### US003 — Happy Path
+### US044 — Happy Path
 
 **Given** khách chưa đăng nhập đang xem bảng kudos, **When** bấm tim của một thẻ, **Then** được đưa tới trang đăng nhập và số tim của thẻ không đổi.
 
-### US003 — Error: Phiên hết hạn giữa chừng
+### US044 — Error: Phiên hết hạn giữa chừng
 
 **Given** Sunner đã đăng nhập nhưng phiên đã hết hạn trong lúc trang còn mở, **When** bấm tim, **Then** máy chủ không chấp nhận lượt thích, người dùng được đưa tới trang đăng nhập và tim trở về trạng thái trước khi bấm.
 
-### US004 — Happy Path
+### US045 — Happy Path
 
 **Given** người gửi mở bảng kudos có kudos do mình gửi, **When** nhìn nút tim của kudos đó, **Then** nút bị vô hiệu, tim xám và số tim vẫn hiện.
 
-### US004 — Error: Gọi thẳng để tự thích
+### US045 — Error: Gọi thẳng để tự thích
 
 **Given** người gửi bỏ qua giao diện và yêu cầu thả tim cho kudos của mình, **When** hệ thống xử lý, **Then** yêu cầu bị từ chối và cả số tim của kudos lẫn tổng tim của người gửi đều không đổi.
 
-### US005 — Happy Path
+### US046 — Happy Path
 
 **Given** hôm nay không phải ngày đặc biệt và tổng tim của người gửi là 40, **When** một Sunner khác thả tim kudos của người đó, **Then** tổng tim của người gửi là 41; và khi Sunner kia rút tim thì về lại 40.
 
-### US005 — Error: Rút tim sau ngày đặc biệt
+### US046 — Error: Rút tim sau ngày đặc biệt
 
 **Given** một Sunner đã thả tim vào ngày đặc biệt (người gửi được cộng 2), **When** ngày đặc biệt đã qua và Sunner đó rút tim, **Then** người gửi bị trừ đúng 2, không phải 1.
 
-### US006 — Happy Path
+### US047 — Happy Path
 
 **Given** vận hành thêm ngày hôm nay vào danh sách ngày đặc biệt, **When** một Sunner thả tim kudos của người khác, **Then** người gửi được cộng 2 tim.
 
-### US006 — Error: Người không phải vận hành ghi danh sách
+### US047 — Error: Người không phải vận hành ghi danh sách
 
 **Given** khách hoặc người dùng thường cố ghi vào danh sách ngày đặc biệt, **When** hệ thống xử lý, **Then** yêu cầu bị từ chối và danh sách không đổi.
 

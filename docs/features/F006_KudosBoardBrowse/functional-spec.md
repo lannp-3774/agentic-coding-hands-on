@@ -15,7 +15,7 @@ lang: vi
 **See also:** [`technical-spec.md`](./technical-spec.md) — endpoints, Source citations, pseudocode,
 key entities, and DB writes for a Dev/QA/SA audience.
 
-**Traceability:** F006_KudosBoardBrowse (mã tạm, cấp chính thức khi promote) → SCR006_SunKudosLiveBoard → US001, US002, US003, US004, US005, US006, US007, US008 (mã US cục bộ của bản nháp, cấp lại khi promote)
+**Traceability:** F006_KudosBoardBrowse → SCR006_SunKudosLiveBoard → US034, US035, US036, US037, US038, US039, US040, US041 (mã US toàn cục, tiếp sau US033 của F005)
 
 ## 1. Overview
 
@@ -36,12 +36,12 @@ key entities, and DB writes for a Dev/QA/SA audience.
 
 | ID | Capability | What the user can do | User Stories | Requirements | Business Rules | Screens |
 |----|------------|------------------------|-----------------|---------------|-------------------|---------|
-| CAP-01 | Mở trang bảng Kudos | Vào `/sun-kudos` không cần đăng nhập, thấy banner, thanh gửi kudos, chỗ giữ cho tim/Spotlight/sidebar, chọn VN/EN | US001 | FR-101, FR-102, FR-201, FR-202, FR-203, FR-404, FR-601 | BR-001, BR-002, BR-009 | SCR006_SunKudosLiveBoard |
-| CAP-02 | Xem Kudos nổi bật | Xem tối đa 5 kudos nhiều tim nhất trong carousel, chuyển thẻ bằng mũi tên, thấy số thứ tự `n/tổng` | US002 | FR-204, FR-205, FR-206, FR-207, FR-208 | BR-004, DEC-001, DEC-002 | N/A — nằm trên màn hình Sun* Kudos Live board, đã tính ở CAP-01 |
-| CAP-03 | Đọc dòng All Kudos | Cuộn dòng kudos mới nhất trước và đọc từng thẻ: người gửi, người nhận, danh hiệu Hero, giờ, nội dung, hashtag, ảnh | US003, US007 | FR-209, FR-210, FR-211, FR-212, FR-213, FR-214, FR-215 | BR-003, BR-005, BR-007, BR-008, DEC-003, DEC-004 | N/A — nằm trên màn hình Sun* Kudos Live board, đã tính ở CAP-01 |
-| CAP-04 | Lọc kudos theo Hashtag và Phòng ban | Chọn hashtag hoặc phòng ban để thu hẹp cả Highlight lẫn All Kudos, bấm hashtag trên thẻ để lọc, bỏ lọc để xem tất cả | US004 | FR-301, FR-302, FR-303, FR-304, FR-305 | BR-006, DEC-005 | N/A — nằm trên màn hình Sun* Kudos Live board, đã tính ở CAP-01 |
-| CAP-05 | Chia sẻ và mở kudos | Chép liên kết của một kudos, mở chi tiết kudos hoặc hồ sơ một Sunner (khách được đưa tới đăng nhập) | US005, US006 | FR-401, FR-402, FR-403 | BR-010, BR-013, DEC-006, DEC-007 | N/A — nằm trên màn hình Sun* Kudos Live board, đã tính ở CAP-01 |
-| CAP-06 | Nền dữ liệu Sunner và kudos | Mỗi tài khoản đăng nhập có một Sunner tương ứng; số kudos nhận của người nhận luôn khớp số kudos thật; dữ liệu seed đủ để duyệt và lọc | US008 | FR-001, FR-002, FR-003 | BR-011, BR-012 | N/A — nền dữ liệu chạy nền, không có màn hình riêng |
+| CAP-01 | Mở trang bảng Kudos | Vào `/sun-kudos` không cần đăng nhập, thấy banner, thanh gửi kudos, chỗ giữ cho tim/Spotlight/sidebar, chọn VN/EN | US034 | FR-101, FR-102, FR-201, FR-202, FR-203, FR-404, FR-601 | BR-001, BR-002, BR-009 | SCR006_SunKudosLiveBoard |
+| CAP-02 | Xem Kudos nổi bật | Xem tối đa 5 kudos nhiều tim nhất trong carousel, chuyển thẻ bằng mũi tên, thấy số thứ tự `n/tổng` | US035 | FR-204, FR-205, FR-206, FR-207, FR-208 | BR-004, DEC-001, DEC-002 | N/A — nằm trên màn hình Sun* Kudos Live board, đã tính ở CAP-01 |
+| CAP-03 | Đọc dòng All Kudos | Cuộn dòng kudos mới nhất trước và đọc từng thẻ: người gửi, người nhận, danh hiệu Hero, giờ, nội dung, hashtag, ảnh | US036, US040 | FR-209, FR-210, FR-211, FR-212, FR-213, FR-214, FR-215 | BR-003, BR-005, BR-007, BR-008, DEC-003, DEC-004 | N/A — nằm trên màn hình Sun* Kudos Live board, đã tính ở CAP-01 |
+| CAP-04 | Lọc kudos theo Hashtag và Phòng ban | Chọn hashtag hoặc phòng ban để thu hẹp cả Highlight lẫn All Kudos, bấm hashtag trên thẻ để lọc, bỏ lọc để xem tất cả | US037 | FR-301, FR-302, FR-303, FR-304, FR-305 | BR-006, DEC-005 | N/A — nằm trên màn hình Sun* Kudos Live board, đã tính ở CAP-01 |
+| CAP-05 | Chia sẻ và mở kudos | Chép liên kết của một kudos, mở chi tiết kudos hoặc hồ sơ một Sunner (khách được đưa tới đăng nhập) | US038, US039 | FR-401, FR-402, FR-403 | BR-010, BR-013, DEC-006, DEC-007 | N/A — nằm trên màn hình Sun* Kudos Live board, đã tính ở CAP-01 |
+| CAP-06 | Nền dữ liệu Sunner và kudos | Mỗi tài khoản đăng nhập có một Sunner tương ứng; số kudos nhận của người nhận luôn khớp số kudos thật; dữ liệu seed đủ để duyệt và lọc | US041 | FR-001, FR-002, FR-003 | BR-011, BR-012 | N/A — nền dữ liệu chạy nền, không có màn hình riêng |
 
 ## 3. Open Decisions
 
@@ -77,7 +77,7 @@ D001 đến D012 đã chốt trong clarifications.md ngày 2026-10-12 (hai lư�
 ### Foundation (0xx)
 
 - **FR-001** Người, phòng ban, kudos, hashtag và ảnh đính kèm nằm trong dữ liệu của hệ thống, có sẵn dữ liệu seed local theo nội dung Figma đủ để duyệt, lọc và cuộn nhiều trang. Mỗi kudos có một tiêu đề là chữ tự do riêng (không phải hashtag, D014); mỗi kudos có số tim và mỗi Sunner có tổng tim, cả hai mặc định 0 và cùng do feature này tạo cột (F007 chỉ thêm lượt thích, ngày đặc biệt và bước giữ cho hai số đó đúng).
-- **FR-002** Mỗi tài khoản đăng nhập có đúng một Sunner tương ứng: khớp với Sunner có sẵn cùng email hoặc tạo mới, để các feature sau biết người đang xem là Sunner nào. Sunner của người đang xem được tra bằng một hàm của cơ sở dữ liệu chỉ trả hàng của chính người gọi; email và mã tài khoản của Sunner không mở cho trình duyệt.
+- **FR-002** Mỗi tài khoản đăng nhập có đúng một Sunner tương ứng: khớp với Sunner có sẵn cùng email hoặc tạo mới (chỉ khi email đã xác nhận; chưa xác nhận thì chưa có Sunner cho tới khi xác nhận), để các feature sau biết người đang xem là Sunner nào. Sunner của người đang xem được tra bằng một hàm của cơ sở dữ liệu chỉ trả hàng của chính người gọi; email và mã tài khoản của Sunner không mở cho trình duyệt.
 - **FR-003** Số kudos nhận của mỗi Sunner được hệ thống tự cập nhật mỗi khi kudos được thêm hoặc xoá, và là căn cứ của sao và nhãn Hero.
 
 ### Navigation (1xx)
@@ -134,7 +134,7 @@ D001 đến D012 đã chốt trong clarifications.md ngày 2026-10-12 (hai lư�
 - Giờ hiển thị luôn là `HH:mm - MM/DD/YYYY` theo múi giờ Asia/Ho_Chi_Minh, không phụ thuộc múi giờ của người xem (BR-008)
 - Ngôn ngữ chỉ là VN hoặc EN (mặc định VN); EN chỉ dịch nhãn giao diện, nội dung kudos, tên, hashtag, phòng ban giữ nguyên (BR-009)
 - Liên kết tới trang chưa xây dùng địa chỉ dự kiến; khách bấm thì tới đăng nhập (xong về trang chủ, không quay lại), Sunner đã đăng nhập tới đích dự kiến (BR-010)
-- Một tài khoản chỉ ứng với tối đa một Sunner: khớp Sunner có sẵn chưa gắn cùng email đã xác nhận, không khớp thì tạo mới; không bao giờ giành Sunner của tài khoản khác (BR-011)
+- Một tài khoản chỉ ứng với tối đa một Sunner: khớp Sunner có sẵn chưa gắn cùng email đã xác nhận, không khớp thì tạo mới; tài khoản chưa xác nhận email không gắn và không tạo Sunner nào cho tới khi xác nhận; không bao giờ giành Sunner của tài khoản khác (BR-011)
 - Số kudos nhận của người nhận do hệ thống tự cộng, trừ theo kudos được thêm, xoá; không ai sửa trực tiếp (BR-012)
 - Địa chỉ Copy Link là địa chỉ tuyệt đối của chi tiết kudos, dựng lúc bấm từ địa chỉ trang đang mở (BR-013)
 - Highlight: có kudos thì hiện carousel; không có hoặc không đọc được dữ liệu thì hiện thông báo rỗng thay cho carousel (DEC-001)
@@ -164,7 +164,7 @@ D001 đến D012 đã chốt trong clarifications.md ngày 2026-10-12 (hai lư�
 
 ## 7. User Stories
 
-### US001 — Mở trang bảng Kudos
+### US034 — Mở trang bảng Kudos
 
 **Actor:** Khách chưa đăng nhập
 **Goal:** Vào được trang Sun* Kudos từ các liên kết đã có hoặc bằng địa chỉ trực tiếp mà không phải đăng nhập.
@@ -178,7 +178,7 @@ Sunner đã đăng nhập cũng thấy cùng nội dung; chỉ vùng tài khoả
 - [ ] Thanh gửi kudos có đúng chữ gợi ý của Figma và bấm vào chưa làm gì.
 - [ ] Chọn EN thì nhãn giao diện đổi sang tiếng Anh, nội dung kudos giữ nguyên.
 
-### US002 — Xem kudos nổi bật bằng carousel
+### US035 — Xem kudos nổi bật bằng carousel
 
 **Actor:** Khách chưa đăng nhập
 **Goal:** Xem nhanh các kudos được yêu thích nhất và duyệt từng cái bằng mũi tên.
@@ -190,7 +190,7 @@ Sunner đã đăng nhập cũng thấy cùng nội dung; chỉ vùng tài khoả
 - [ ] Mũi tên trước tắt ở thẻ 1, mũi tên sau tắt ở thẻ cuối; bấm mũi tên đổi thẻ và bộ đếm.
 - [ ] Không có kudos phù hợp thì hiện "Hiện tại chưa có Kudos nào." thay cho carousel.
 
-### US003 — Cuộn dòng All Kudos
+### US036 — Cuộn dòng All Kudos
 
 **Actor:** Khách chưa đăng nhập
 **Goal:** Đọc lần lượt các kudos từ mới tới cũ mà không phải bấm chuyển trang.
@@ -202,7 +202,7 @@ Sunner đã đăng nhập cũng thấy cùng nội dung; chỉ vùng tài khoả
 - [ ] Nội dung dài bị cắt ở 5 dòng, hashtag dư thì "...", ảnh đính kèm tối đa 5 hình vuông căn trái, bấm một ảnh mở ảnh gốc ở tab mới.
 - [ ] Không có kudos thì hiện "Hiện tại chưa có Kudos nào."; nạp thêm lỗi thì giữ thẻ đã có và cho thử lại.
 
-### US004 — Lọc kudos theo Hashtag và Phòng ban
+### US037 — Lọc kudos theo Hashtag và Phòng ban
 
 **Actor:** Khách chưa đăng nhập
 **Goal:** Thu hẹp Highlight và All Kudos theo một chủ đề hoặc một phòng ban.
@@ -214,7 +214,7 @@ Sunner đã đăng nhập cũng thấy cùng nội dung; chỉ vùng tài khoả
 - [ ] Bấm một hashtag trên thẻ đặt bộ lọc Hashtag và giữ bộ lọc Phòng ban.
 - [ ] Chọn "Tất cả" thì bỏ lọc; mở địa chỉ có sẵn giá trị lọc thì trang lọc ngay từ đầu.
 
-### US005 — Chép liên kết một kudos
+### US038 — Chép liên kết một kudos
 
 **Actor:** Khách chưa đăng nhập
 **Goal:** Chép địa chỉ của một kudos để gửi cho người khác.
@@ -225,7 +225,7 @@ Sunner đã đăng nhập cũng thấy cùng nội dung; chỉ vùng tài khoả
 - [ ] Hiện thông báo nhỏ "Link copied — ready to share!".
 - [ ] Trình duyệt không có clipboard hiện đại vẫn chép được; thất bại thì báo lỗi rõ ràng.
 
-### US006 — Mở chi tiết kudos hoặc hồ sơ từ thẻ
+### US039 — Mở chi tiết kudos hoặc hồ sơ từ thẻ
 
 **Actor:** Sunner đã đăng nhập
 **Goal:** Từ một thẻ, mở chi tiết kudos hoặc hồ sơ của người gửi, người nhận.
@@ -236,7 +236,7 @@ Sunner đã đăng nhập cũng thấy cùng nội dung; chỉ vùng tài khoả
 - [ ] Trang đích chưa xây thì thấy trang không tìm thấy mặc định, trang bảng không bị lỗi.
 - [ ] Khách bấm cùng các liên kết đó thì được đưa tới `/login`; đăng nhập xong về trang chủ.
 
-### US007 — Thấy sao và nhãn Hero của người gửi, người nhận
+### US040 — Thấy sao và nhãn Hero của người gửi, người nhận
 
 **Actor:** Khách chưa đăng nhập
 **Goal:** Nhìn ra mức đóng góp của người gửi và người nhận ngay trên thẻ.
@@ -247,7 +247,7 @@ Sunner đã đăng nhập cũng thấy cùng nội dung; chỉ vùng tài khoả
 - [ ] Rê chuột hoặc lấy tiêu điểm vào sao hiện lời giải thích đúng mức sao; 0 sao không có.
 - [ ] Số kudos nhận đổi khi có kudos mới hoặc bị xoá thì nhãn đổi theo, không cần sửa tay.
 
-### US008 — Gắn tài khoản đăng nhập với một Sunner
+### US041 — Gắn tài khoản đăng nhập với một Sunner
 
 **Actor:** Hệ thống (nền)
 **Goal:** Mỗi tài khoản vừa tạo được gắn với đúng một Sunner, có sẵn hoặc mới tạo.
@@ -255,74 +255,75 @@ Sunner đã đăng nhập cũng thấy cùng nội dung; chỉ vùng tài khoả
 
 **Acceptance Criteria:**
 - [ ] Tài khoản có email đã xác nhận, trùng email một Sunner chưa gắn thì được gắn vào Sunner đó.
-- [ ] Không có Sunner trùng thì một Sunner mới được tạo, mang tên và ảnh đại diện (nếu có) của tài khoản.
+- [ ] Không có Sunner trùng thì một Sunner mới được tạo, mang tên của tài khoản (không mang ảnh đại diện: ảnh chỉ là đường dẫn cục bộ, không sao chép từ tài khoản).
+- [ ] Tài khoản chưa xác nhận email chưa có Sunner (không gắn, không tạo) cho tới khi email được xác nhận.
 - [ ] Đăng ký tài khoản không bao giờ thất bại vì bước gắn này; tài khoản đã có Sunner không bị gắn lại.
 
 ## 8. Scenarios
 
-### US001 — Happy Path
+### US034 — Happy Path
 
 **Given** khách chưa đăng nhập đang ở trang chủ, **When** bấm "Sun* Kudos" ở header, **Then** trang bảng Kudos hiện đủ banner, khối Highlight, dòng All Kudos, không có màn hình đăng nhập chen vào, và "Sun* Kudos" ở header đang chọn.
 
-### US001 — Error: Site còn khoá trước giờ mở
+### US034 — Error: Site còn khoá trước giờ mở
 
 **Given** site đang khoá theo F005 và người mở không phải admin, **When** mở `/sun-kudos`, **Then** được đưa tới trang đếm ngược thay vì trang bảng; admin xem bình thường.
 
-### US002 — Happy Path
+### US035 — Happy Path
 
 **Given** có hơn 5 kudos và không có bộ lọc, **When** mở trang, **Then** carousel hiện 5 kudos nhiều tim nhất, bộ đếm là 1/5, mũi tên trước tắt; bấm mũi tên sau bốn lần thì bộ đếm là 5/5 và mũi tên sau tắt.
 
-### US002 — Error: Bộ lọc không khớp kudos nào
+### US035 — Error: Bộ lọc không khớp kudos nào
 
 **Given** bộ lọc đặt cho một cặp hashtag và phòng ban không có kudos, **When** trang tải, **Then** thay cho carousel là "Hiện tại chưa có Kudos nào." và không có lỗi.
 
-### US003 — Happy Path
+### US036 — Happy Path
 
 **Given** hệ thống có nhiều hơn một trang kudos, **When** người xem cuộn gần cuối danh sách, **Then** kudos cũ hơn nối tiếp xuống dưới, không lặp thẻ nào, và dừng khi hết kudos.
 
-### US003 — Error: Nạp thêm thất bại
+### US036 — Error: Nạp thêm thất bại
 
 **Given** mạng mất đúng lúc nạp thêm, **When** yêu cầu nạp lỗi, **Then** các thẻ đã có vẫn còn, bên dưới hiện "Không tải thêm được Kudos." kèm nút "Thử lại", bấm nút thì nạp lại.
 
-### US004 — Happy Path
+### US037 — Happy Path
 
 **Given** người xem ở trang không có bộ lọc, **When** chọn một phòng ban rồi bấm một hashtag trên thẻ, **Then** địa chỉ trang mang cả hai giá trị lọc, carousel về thẻ 1, dòng All Kudos nạp lại và chỉ còn kudos thoả cả hai.
 
-### US004 — Error: Giá trị lọc không hợp lệ trên địa chỉ
+### US037 — Error: Giá trị lọc không hợp lệ trên địa chỉ
 
 **Given** địa chỉ mang giá trị lọc sai định dạng, **When** trang tải, **Then** giá trị đó bị bỏ qua, trang hiện như chưa lọc, không lỗi.
 
-### US005 — Happy Path
+### US038 — Happy Path
 
 **Given** người xem ở trang bảng, **When** bấm "Copy Link" ở một thẻ, **Then** clipboard có địa chỉ tuyệt đối của chi tiết kudos và hiện "Link copied — ready to share!".
 
-### US005 — Error: Không chép được
+### US038 — Error: Không chép được
 
 **Given** trình duyệt từ chối mọi cách chép, **When** bấm "Copy Link", **Then** hiện thông báo "Không sao chép được liên kết", trang không lỗi.
 
-### US006 — Happy Path
+### US039 — Happy Path
 
 **Given** Sunner đã đăng nhập, **When** bấm "Xem chi tiết" ở một thẻ, **Then** trình duyệt chuyển tới địa chỉ chi tiết dự kiến của kudos đó (hiện là trang không tìm thấy mặc định).
 
-### US006 — Error: Khách bấm liên kết cần đăng nhập
+### US039 — Error: Khách bấm liên kết cần đăng nhập
 
 **Given** khách chưa đăng nhập, **When** bấm ảnh đại diện của một người nhận, **Then** được đưa tới màn hình đăng nhập, không tới hồ sơ.
 
-### US007 — Happy Path
+### US040 — Happy Path
 
 **Given** một người nhận có đúng 20 kudos nhận, **When** thẻ của họ hiện, **Then** khối người nhận hiện 2 sao và "Super Hero"; rê vào sao thấy lời giải thích của mức 2 sao.
 
-### US007 — Error: Người chưa nhận kudos nào
+### US040 — Error: Người chưa nhận kudos nào
 
 **Given** một Sunner chưa nhận kudos nào, **When** họ xuất hiện là người gửi trên thẻ, **Then** hiện "New Hero", không có sao và không có tooltip sao.
 
-### US008 — Happy Path
+### US041 — Happy Path
 
 **Given** có Sunner sẵn email `a@x` chưa gắn tài khoản, **When** một tài khoản có email đã xác nhận `a@x` được tạo, **Then** tài khoản đó được gắn vào Sunner này, không tạo Sunner thứ hai.
 
-### US008 — Error: Email chưa xác nhận
+### US041 — Error: Email chưa xác nhận
 
-**Given** có Sunner sẵn email `a@x`, **When** một tài khoản email `a@x` nhưng chưa xác nhận được tạo, **Then** Sunner có sẵn không bị gắn; tài khoản nhận một Sunner mới và việc đăng ký vẫn thành công.
+**Given** có Sunner sẵn email `a@x`, **When** một tài khoản email `a@x` nhưng chưa xác nhận được tạo, **Then** Sunner có sẵn không bị gắn và tài khoản chưa có Sunner nào; việc đăng ký vẫn thành công, và khi email được xác nhận thì tài khoản được gắn hoặc nhận Sunner.
 
 ## 9. Edge Cases
 
@@ -379,13 +380,13 @@ Sunner đã đăng nhập cũng thấy cùng nội dung; chỉ vùng tài khoả
 
 | ID | Type | Description | Impact | Status |
 |----|------|--------------|--------|--------|
-| RISK-01 | risk | Bài kiểm thử Awards Information hiện mong `/sun-kudos` là 404 và vài tài liệu (F002, F004, screen-flow, permissions-matrix) ghi "/sun-kudos chưa xây" | QA hoặc người đọc tài liệu thấy mâu thuẫn sau khi trang có thật | [EXPECTED] sửa bài kiểm thử và các tài liệu đó khi promote |
+| RISK-01 | risk | Bài kiểm thử Awards Information hiện mong `/sun-kudos` là 404 và vài tài liệu (F002, F004, screen-flow, permissions-matrix) ghi "/sun-kudos chưa xây" | QA hoặc người đọc tài liệu thấy mâu thuẫn sau khi trang có thật | [RESOLVED] bài kiểm thử và các tài liệu đó đã sửa ở bước giao (Stage 6, 2026-10-13) |
 | RISK-02 | risk | Số tim của kudos nạp thẳng bằng dữ liệu seed, còn F007 mới bảo trì số này sau; chưa có lượt thích thật nào đứng sau các số seed | Sau khi F007 chạy, số tim seed không khớp bản ghi lượt thích; bỏ tim không bao giờ làm số âm | [INFERRED] chấp nhận vì chỉ là dữ liệu seed local |
 | RISK-03 | risk | Gắn tài khoản với Sunner có sẵn theo email có thể bị lợi dụng nếu email chưa được xác nhận | Người đăng ký email trùng có thể chiếm hồ sơ Sunner có sẵn | [EXPECTED] chỉ gắn khi email đã xác nhận (BR-011) |
 | RISK-04 | risk | Cuộn vô hạn nối tiếp theo thứ tự chèn, không theo giờ ghi trên kudos | Kudos nhập lùi ngày hiện theo thứ tự chèn, giờ trên thẻ có thể không giảm đều | [EXPECTED] seed chèn theo thứ tự thời gian (D021) |
 | RISK-05 | risk | Nhãn Hero hiện theo số kudos nhận hiện tại, không phải số lúc kudos được gửi | Cùng một thẻ cũ có thể đổi nhãn theo thời gian | [INFERRED] đúng với quy tắc đã chốt (D004) |
 | RISK-06 | risk | Khung Figma đang ở trạng thái thiết kế "in_progress" và chưa có khổ nhỏ; thanh "Tìm kiếm profile Sunner" không có mục spec | Thiết kế có thể đổi sau khi làm | [EXPECTED] D013 và D022 đã chốt (hiện đúng Figma nhưng chưa làm gì; một cột khi hẹp); thiết kế còn `in_progress` nên có thể đổi |
-| RISK-07 | risk | Ảnh đại diện Google là ảnh của bên thứ ba, có thể bị giới hạn khi nhúng | Một số avatar có thể không hiện, thay bằng chữ cái đầu | [INFERRED] |
+| RISK-07 | risk | Ảnh đại diện chỉ là đường dẫn cục bộ dưới `/public`; không nhúng ảnh ngoài, không sao chép avatar Google hay `user_metadata` | Tài khoản mới hiện chữ cái đầu cho tới khi có cách đưa ảnh cục bộ vào | [EXPECTED] đã chốt 2026-10-13 (clarifications, review M1) |
 | RISK-08 | risk | Test case mong "bấm ảnh đại diện mở trang hồ sơ" và "bấm chi tiết mở trang chi tiết" nhưng hai trang chưa xây | Các ca đó chưa đạt, chỉ đạt ở mức liên kết đúng và trang lỗi mặc định | [EXPECTED] chấp nhận cho tới khi hai trang được xây (D002) |
 
 ## 12. Dependencies
@@ -395,7 +396,7 @@ Sunner đã đăng nhập cũng thấy cùng nội dung; chỉ vùng tài khoả
 | F001_LoginWithGoogle | feature | Đăng nhập Google tạo tài khoản mà feature này gắn với Sunner; quy tắc làm mới phiên áp cho mọi trang | FR-002, FR-601 |
 | F002_HomepageSaa | feature | Dùng lại vỏ trang, header, footer, bộ chọn ngôn ngữ; trang chủ trỏ vào đây | FR-101, FR-102, FR-404 |
 | F003_AccountMenuAdminRole | feature | Vùng tài khoản và chuông ở header; biết ai đã đăng nhập để quyết định liên kết thẻ | FR-402, FR-403 |
-| F005_CountdownPrelaunch | feature | Trang bảng bị khoá như mọi trang trước giờ mở site | US001 |
+| F005_CountdownPrelaunch | feature | Trang bảng bị khoá như mọi trang trước giờ mở site | US034 |
 | F007_KudosHearts | feature | Cắm nút tim vào vùng giữ chỗ trên thẻ, cấp kho trạng thái tim dùng chung (F006 gắn vào trang) và duy trì số tim dùng để xếp Highlight | FR-203, FR-205 |
 | F008_KudosSpotlight | feature | Cắm bảng Spotlight vào vùng giữ chỗ; đọc lại dữ liệu kudos và Sunner của feature này | FR-203 |
 | F009_KudosPersonalSidebar | feature | Cắm sidebar vào vùng giữ chỗ bên phải; đọc lại dữ liệu Sunner và kudos | FR-203 |
