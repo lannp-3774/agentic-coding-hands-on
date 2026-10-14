@@ -2,7 +2,7 @@
 
 **Project**: my-app (SAA 2025 — Sun* Annual Awards 2025)
 **Generated**: 2026-10-08
-**Analysis Scope**: Điều hướng giữa `/login` (SCR001_Login), `/` (SCR003_Homepage), `/awards-information` (SCR004_AwardsInformation), `/countdown` (SCR005_CountdownPrelaunch, F005) và `/sun-kudos` (SCR006_SunKudosLiveBoard, F006–F009), đường quay về OAuth `/auth/callback`, chuyển hướng của `proxy.ts`, Server Action `signInWithGoogle` / `signOut` / `setLocale`. SCR002_Todo đã gỡ (2026-10-08), không có cạnh điều hướng.
+**Analysis Scope**: Điều hướng giữa `/login` (SCR001_Login), `/` (SCR003_Homepage), `/awards-information` (SCR004_AwardsInformation), `/countdown` (SCR005_CountdownPrelaunch, F005) và `/sun-kudos` (SCR006_SunKudosLiveBoard, F006–F009), đường quay về OAuth `/auth/callback`, chuyển hướng của `proxy.ts`, Server Action `signInWithGoogle` / `signOut` / `setLocale` (và, ở `/sun-kudos`, `likeKudos` / `unlikeKudos` / `sendKudos` / `searchSunners` cùng route ảnh `/api/kudos/images`). SCR002_Todo đã gỡ (2026-10-08), không có cạnh điều hướng.
 
 **Code Format**: All SCR codes MUST follow `SCR###_NameSlug` format (e.g., SCR001_LoginForm, SCR002_Dashboard) | `SCR###/REG###` for region-scoped transitions
 
@@ -32,7 +32,7 @@ graph TD
     W -->|"Chi tiết (Kudos), header, footer"| K
     K -->|"logo, About SAA 2025"| H
     K -->|"Awards Information"| W
-    K -->|"khách bấm tim, avatar, tên, chi tiết, Login"| L
+    K -->|"khách bấm tim, thanh gửi kudos, avatar, tên, chi tiết, Login"| L
     K -->|"proxy 307 khi site khoá, không phải admin"| CD
     H -.->|"liên kết, chưa có page"| U["/standards, /profile, /admin"]
     W -.->|"liên kết footer, chưa có page"| U
@@ -80,7 +80,8 @@ graph TD
 | START (truy cập trực tiếp / liên kết ngoài) | SCR006_SunKudosLiveBoard | Tải trang `GET /sun-kudos`, kèm hoặc không kèm `hashtag`, `department` (ROUTE011) | Không cần phiên; khi site đã mở khách không bị chuyển hướng; giá trị lọc sai định dạng bị bỏ qua | |
 | SCR006_SunKudosLiveBoard | SCR006_SunKudosLiveBoard | Chọn hoặc bỏ bộ lọc Hashtag/Phòng ban, hoặc bấm hashtag trên thẻ → `router.replace` URL mới; cuộn gần cuối All Kudos → `GET /api/kudos?cursor=…` (ROUTE015); bấm "Copy Link" → toast | Đổi lọc: carousel về thẻ 1, All Kudos nạp lại, Spotlight giữ trạng thái; hashtag trên thẻ chỉ đặt `hashtag`, giữ `department` | |
 | SCR006_SunKudosLiveBoard | SCR006_SunKudosLiveBoard | Thả/rút tim → Server Action `likeKudos` / `unlikeKudos` (ROUTE012, ROUTE013); chọn ngôn ngữ → `setLocale` (ROUTE014) | Đã đăng nhập và không phải người gửi (tim); giá trị ngôn ngữ thuộc danh sách cho phép | |
-| SCR006_SunKudosLiveBoard | SCR001_Login | Khách bấm tim, avatar, tên, "Xem chi tiết" hoặc nút "Đăng nhập" ở sidebar / dòng quà | Khách (không có phiên hoặc không xác định được phiên) | |
+| SCR006_SunKudosLiveBoard | SCR006_SunKudosLiveBoard | Bấm thanh gửi kudos (A.1) → hộp thoại "Viết Kudo" mở trên cùng màn hình, URL không đổi; gõ Người nhận hoặc `@` → `searchSunners` (ROUTE020); chọn ảnh → `POST /api/kudos/images` (ROUTE016), gỡ ảnh nháp → `DELETE /api/kudos/images/<file>` (ROUTE018); Gửi → `sendKudos` (ROUTE019), rồi đóng hộp thoại, toast thành công và `router.refresh()` | Đã đăng nhập; Gửi chỉ bật khi người nhận, Danh hiệu, nội dung và ≥ 1 hashtag hợp lệ và không còn ảnh đang tải; người gửi là Sunner của tài khoản (máy chủ quyết); Hủy hoặc Escape đóng và không lưu gì | |
+| SCR006_SunKudosLiveBoard | SCR001_Login | Khách bấm thanh gửi kudos, tim, avatar, tên, "Xem chi tiết" hoặc nút "Đăng nhập" ở sidebar / dòng quà; người đã đăng nhập mà `sendKudos` trả `unauthenticated` (phiên hết hạn) | Khách (không có phiên hoặc không xác định được phiên) | |
 | SCR006_SunKudosLiveBoard | SCR003_Homepage | Bấm logo hoặc "About SAA 2025" ở header/footer | Liên kết `/` | |
 | SCR006_SunKudosLiveBoard | SCR004_AwardsInformation | Bấm "Awards Information" ở header/footer | Không cần phiên | |
 | SCR006_SunKudosLiveBoard | SCR005_CountdownPrelaunch | Mở `GET`/`HEAD /sun-kudos` khi site khoá → `proxy` chuyển 307 `/countdown` | Như dòng SCR003; `GET /api/kudos` cũng bị cổng | |
@@ -186,7 +187,7 @@ graph TD
 
 **Exit Points**:
 - Sang SCR003_Homepage: logo, "About SAA 2025"; sang SCR004_AwardsInformation: "Awards Information"
-- Sang SCR001_Login: khách bấm tim, avatar, tên, "Xem chi tiết" hoặc "Đăng nhập" (sidebar)
+- Sang SCR001_Login: khách bấm thanh gửi kudos, tim, avatar, tên, "Xem chi tiết" hoặc "Đăng nhập" (sidebar); phiên hết hạn lúc bấm Gửi
 - Sang SCR005_CountdownPrelaunch: `proxy` chuyển 307 khi site khoá và người mở không phải admin
 - Sang các đích chưa có page: `/sun-kudos/[id]`, `/profiles/[id]` (người đã đăng nhập; 404 mặc định)
 
@@ -195,6 +196,7 @@ graph TD
 - Đọc dữ liệu từng khối (Highlight, All Kudos, nút lọc, Spotlight, sidebar): lỗi hoặc rỗng → thông báo rỗng của khối đó, khối khác vẫn hiện; All Kudos nạp thêm lỗi → giữ thẻ đã có và hiện "Thử lại"
 - Thả/rút tim: khách → `/login`; người gửi → nút vô hiệu; lỗi → hoàn lại tim và số, hiện thông báo lỗi ngắn
 - Sidebar D.1: khách → lời nhắc đăng nhập; đã đăng nhập → thống kê, hoặc "—" khi không đọc được
+- Thanh gửi kudos (A.1): khách → `/login`; đã đăng nhập → hộp thoại Viết Kudo; Gửi: lỗi theo trường → hiện ở trường, chưa có Sunner hoặc lỗi chung → thông báo lỗi và hộp thoại giữ nguyên, hết phiên → `/login`, thành công → đóng, thông báo, All Kudos có kudos mới đứng đầu
 
 ---
 
@@ -270,6 +272,9 @@ sequenceDiagram
 | SCR001_Login, SCR003_Homepage, SCR004_AwardsInformation | `proxy` kiểm tra phiên lỗi (thiếu biến môi trường Supabase, mạng lỗi) | Coi là khách, request đi tiếp, ghi log; khi site khoá khách bị chuyển `/countdown` (`lib/supabase/proxy-session.ts:110-126`) | screen |
 | SCR005_CountdownPrelaunch | Mốc `prelaunch_ends_at` thiếu dòng, `NULL`, sai kiểu, quá 2 giây hoặc lỗi mạng | Fail open: site mở, `/countdown` chuyển 307 `/`; ghi một dòng `[prelaunch]` mỗi thông báo một lần mỗi tiến trình (trừ `NULL`, im lặng) (`lib/prelaunch/read-prelaunch-ends-at.ts:32-66`) | screen |
 | SCR001_Login, SCR003_Homepage, SCR004_AwardsInformation, SCR005_CountdownPrelaunch | Tra `profiles.role` của người dùng đã đăng nhập lỗi, quá 2 giây hoặc không có dòng khi site khoá | Fail closed: coi là `user`, 307 `/countdown`, log `[profiles]` (`lib/prelaunch/read-gate-user-role.ts:24-49`) | screen |
+| SCR006_SunKudosLiveBoard | `sendKudos` trả `invalid` (bộ kiểm hoặc `create_kudos` từ chối một trường) | Hộp thoại giữ nguyên dữ liệu, lỗi hiện ở đúng trường (`app/_components/write-kudos-behaviour/write-kudos-modal.tsx:63`) | screen |
+| SCR006_SunKudosLiveBoard | `sendKudos` trả `noSunner` hoặc `error` | Thông báo lỗi ("Tài khoản của bạn chưa được liên kết với hồ sơ Sunner." hoặc "Gửi Kudos không thành công. Vui lòng thử lại."), hộp thoại giữ nguyên (`write-kudos-modal.tsx:64`) | screen |
+| SCR006_SunKudosLiveBoard | Tải ảnh lên bị từ chối (sai loại, quá 5 MB) hoặc lỗi | Không tạo ảnh nhỏ, lỗi hiện ở nhóm Image, các trường khác không bị chặn (`use-kudos-image-uploads.ts`) | screen |
 
 > Scope values: `screen` (affects entire screen) | `region:REG###` (error contained within the named region).
 

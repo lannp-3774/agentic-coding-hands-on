@@ -287,12 +287,12 @@ erDiagram
 | `KudosLike` *(mới)* | `kudos_likes` | `kudos_id` (FK `kudos`, `on delete cascade`), `user_id` (FK `auth.users`, `on delete cascade`), PK `(kudos_id, user_id)`, `weight smallint not null check (weight in (1,2))`, `created_at` | một lượt thích của một người trên một kudos, kèm trọng số đã chốt lúc thích; A1 chèn, A2 xoá, A4 gán `weight`, A5 đọc |
 | `SpecialDay` *(mới)* | `special_days` | `day date` (PK), `weight smallint not null default 2 check (weight in (1,2))` | ngày đặc biệt cấu hình bởi vận hành; A6 ghi, A4 đọc |
 | `Kudos` *(của F006)* | `kudos` | `id`, `sender_id` (FK `sunners.id`), `like_count int not null default 0` | thẻ kudos; F006 sở hữu bảng và cột `like_count`, F007 chỉ cập nhật cột đó qua A5 (A1, A2 gián tiếp, Highlight sắp theo cột này) |
-| `Sunner` *(của F006)* | `sunners` | `id`, `user_id` (liên kết tới `auth.users`, có thể null, không mở cho client), `hearts_total int not null default 0` | người gửi/nhận; `hearts_total` là tổng tim người gửi kiếm được; F006 tạo cột (mặc định 0, `check >= 0`), A5 chỉ cập nhật |
+| `Sunner` *(của F006)* | `sunners` | `id`, `user_id` (liên kết tới `auth.users`, có thể null, không mở cho client), `hearts_total int not null default 0` | người gửi/nhận; `hearts_total` là tổng tim người gửi kiếm được; F006 tạo cột (mặc định 0, `check >= 0`), A5 chỉ cập nhật; từ F010 (review C2) cột này không mở `select` cho `anon`/`authenticated`, chủ đọc qua `get_my_sunner()` |
 
 Ghi chú migration và quyền *(dự kiến — design basis: Study report + mẫu `site_settings`, `profiles` có sẵn)*:
 - Migration chỉ thêm, có chú thích ROLLBACK STRATEGY; không tạo `kudos.like_count` hay `sunners.hearts_total` (F006 đã tạo, mặc định 0), chỉ thêm `kudos_likes`, `special_days` và hai trigger bảo trì hai cột đó; `kudos_likes` và `special_days` bật RLS rồi `revoke all ... from public, anon, authenticated` trước khi cấp quyền cụ thể.
 - `kudos_likes`: policy `insert ... to authenticated with check (user_id = (select auth.uid()))`, `delete ... using (user_id = (select auth.uid()))`, `select` CHỈ dòng của mình (`user_id = (select auth.uid())`) nên không ai biết ai đã thích kudos nào; không cấp `update`; chỉ cấp `insert (kudos_id, user_id)` theo cột để `weight` không do client chọn; chỉ mục theo cột của policy (`user_id`) cho đúng hướng dẫn hiệu năng RLS.
-- `special_days`: đọc công khai, chỉ `service_role` ghi. Không có quyền ghi nào của client lên `kudos.like_count` hay `sunners.hearts_total`; hai cột chỉ đổi qua trigger A5.
+- `special_days`: đọc công khai, chỉ `service_role` ghi. Không có quyền ghi nào của client lên `kudos.like_count` hay `sunners.hearts_total`; hai cột chỉ đổi qua trigger A5. Từ F010 (review C2) `sunners.hearts_total` còn bị thu `select` của client: A5 vẫn cộng tim cho người gửi kể cả kudos ẩn danh, nhưng không ai đọc được tổng của người khác nên so sánh trước và sau một lượt thích không lộ người gửi; `kudos.like_count` vẫn công khai.
 - Chỉ mục: F007 thêm `kudos_likes_user_id_idx (user_id)` (cột của policy RLS); `(like_count desc, seq desc)` cho Highlight và `kudos(sender_id)` thuộc F006 (cột `seq` có chỉ mục duy nhất, đủ cho `ORDER BY seq DESC`); F007 chỉ phụ thuộc vào chúng.
 
 #### Polymorphic Behavior
@@ -326,7 +326,7 @@ Cross-cutting: policy `select` của `kudos_likes` chỉ trả dòng của chín
 **Design basis:** Study report (researcher-01 § 1, "Liked by me") + `Related Permissions` của feature-list.
 
 **A0 · FR-604 — Client không ghi trực tiếp lên bộ đếm hay trọng số.**
-Cross-cutting: `kudos.like_count`, `sunners.hearts_total` và `kudos_likes.weight` chỉ đổi qua trigger A4, A5 trong cùng giao dịch với lượt thích; không vai trò client nào có quyền ghi các cột đó, hàm trigger không gọi được qua API. Nhờ vậy gọi thẳng API cũng không tự cộng tim hay chọn trọng số.
+Cross-cutting: `kudos.like_count`, `sunners.hearts_total` và `kudos_likes.weight` chỉ đổi qua trigger A4, A5 trong cùng giao dịch với lượt thích; không vai trò client nào có quyền ghi các cột đó, hàm trigger không gọi được qua API. Nhờ vậy gọi thẳng API cũng không tự cộng tim hay chọn trọng số. `sunners.hearts_total` cũng không đọc được từ client (F010 review C2).
 **Design basis:** Study report (researcher-01 § 1) + acceptance criteria "no client writes to counters".
 
 #### Bin 2 — used by ≥2 named actions
@@ -455,7 +455,7 @@ Chính sách kiểm thử: `e2e-red-first` (thả/rút tim, chuyển hướng kh
 
 #### US046 *(A4, A5)*
 
-**Independent Test:** Cho Sunner B thích kudos do Sunner A gửi và đọc `sunners.hearts_total` của A trước/sau, ngày thường rồi ngày đặc biệt.
+**Independent Test:** Cho Sunner B thích kudos do Sunner A gửi và đọc `sunners.hearts_total` của A trước/sau bằng `service_role` (client không đọc được cột này từ F010 review C2), ngày thường rồi ngày đặc biệt.
 
 **Acceptance Scenarios:**
 
@@ -473,7 +473,7 @@ Chính sách kiểm thử: `e2e-red-first` (thả/rút tim, chuyển hướng kh
 
 ### 5.2 Assumptions
 
-- *(A1, A3)* Thẻ của F006 cung cấp cho vùng nút tim mã kudos, `likeCount`, `likedByMe`, loại người xem và `isSender` (người xem là người gửi); F006 tự tính `isSender` bằng cách so `viewerSunnerId` (lấy từ `get_my_sunner()`) với `sender.id`. Hợp đồng prop này đã chốt: trang F006 truyền `likedByMe` và `isSender` cho từng thẻ.
+- *(A1, A3)* Thẻ của F006 cung cấp cho vùng nút tim mã kudos, `likeCount`, `likedByMe`, loại người xem và `isSender` (người xem là người gửi); F006 tự tính `isSender` bằng cách so `viewerSunnerId` (lấy từ `get_my_sunner()`) với `sender.id`. Hợp đồng prop này đã chốt: trang F006 truyền `likedByMe` và `isSender` cho từng thẻ. Từ F010 thẻ ẩn danh có `sender: null` nên `withViewerFlags` cho `isSender = false` (trình duyệt không biết người gửi); nút tim của người gửi thật bật, và trigger `kudos_likes_before_insert` vẫn từ chối tự thích.
 - *(A3)* Thông báo lỗi dùng cùng cơ chế thông báo nhỏ `role="status"` của trang (F006 dựng cho Copy Link) thay vì dựng cơ chế thứ hai; nếu F006 không xuất cơ chế đó dùng chung thì F007 thêm một thông báo nhỏ tối thiểu.
 - *(A4)* Mỗi tài khoản đăng nhập đều có một hàng `sunners` liên kết qua `user_id` (trigger trên `auth.users` của F006 tạo hoặc liên kết lúc đăng ký); người chưa có hàng đó không thích được và bị A4 từ chối. Cần ca kiểm trường hợp này.
 - *(A1, A4, A5)* `insert ... on conflict do nothing` chạy trigger trước cho dòng sau đó bị bỏ qua nhưng KHÔNG chạy trigger sau, nên bộ đếm không cộng lần hai (BR-006). Đây là hành vi Postgres theo hiểu biết chung, bản nháp không chạy thử; ca SC-002 là chỗ kiểm.

@@ -64,6 +64,9 @@ erDiagram
         text body
         integer like_count
         timestamptz created_at
+        boolean is_anonymous
+        text anonymous_name
+        uuid public_sender_id FK
     }
     MODEL008_Hashtag {
         text slug PK
@@ -105,6 +108,7 @@ erDiagram
     MODEL005_Department |o--o{ MODEL006_Sunner : "department_code (set null on delete)"
     MODEL006_Sunner ||--o{ MODEL007_Kudos : "sends (sender_id, cascade)"
     MODEL006_Sunner ||--o{ MODEL007_Kudos : "receives (receiver_id, cascade)"
+    MODEL006_Sunner |o--o{ MODEL007_Kudos : "public sender (public_sender_id, generated, NULL when anonymous, cascade)"
     MODEL007_Kudos ||--o{ MODEL009_KudosHashtag : "tagged (cascade)"
     MODEL008_Hashtag ||--o{ MODEL009_KudosHashtag : "tags (cascade)"
     MODEL007_Kudos ||--o{ MODEL010_KudosImage : "gallery (cascade)"
@@ -228,9 +232,9 @@ erDiagram
 
 ### MODEL006_Sunner
 
-**Description**: Người trong bảng kudos (F006): người gửi, người nhận, chủ Secret Box; có thể liên kết một tài khoản `auth.users`. Đọc công khai **theo cột** (không có `email`, `user_id`); hàng của chính người xem lấy qua hàm `get_my_sunner()`. Hai bộ đếm (`kudos_received_count`, `hearts_total`) chỉ đổi qua trigger. Ghi chỉ `service_role` và các hàm `security definer`. Tài khoản đã xác nhận email được gắn hoặc tạo Sunner bởi hai trigger trên `auth.users` (xem Relationships).
+**Description**: Người trong bảng kudos (F006): người gửi, người nhận, chủ Secret Box; có thể liên kết một tài khoản `auth.users`. Đọc công khai **theo cột** (không có `email`, `user_id`, `hearts_total`); hàng của chính người xem (kèm `hearts_total`) lấy qua hàm `get_my_sunner()`. Hai bộ đếm (`kudos_received_count`, `hearts_total`) chỉ đổi qua trigger. Ghi chỉ `service_role` và các hàm `security definer`. Tài khoản đã xác nhận email được gắn hoặc tạo Sunner bởi hai trigger trên `auth.users` (xem Relationships).
 
-**Source:** `supabase/migrations/20261012072146_create_kudos_board.sql:38-51` (bảng), `:53-54` (chỉ mục duy nhất), `:105,112` (RLS), `:127-128` (column grant), `:206-225` (`get_my_sunner`); `supabase/migrations/20261013060400_restrict_sunner_avatars_and_index_department.sql:66-73` (CHECK avatar cục bộ, chỉ mục `department_code`); đọc: `lib/kudos/kudos-card-columns.ts`, `lib/kudos/get-my-sunner-per-request.ts`.
+**Source:** `supabase/migrations/20261012072146_create_kudos_board.sql:38-51` (bảng), `:53-54` (chỉ mục duy nhất), `:105,112` (RLS), `:127-128` (column grant gốc); `supabase/migrations/20261014004700_hide_sunner_hearts_total.sql:24-26` (thu `select` theo bảng rồi cấp lại không có `hearts_total`); `20261012072146_create_kudos_board.sql:206-225` (`get_my_sunner`); `supabase/migrations/20261013060400_restrict_sunner_avatars_and_index_department.sql:66-73` (CHECK avatar cục bộ, chỉ mục `department_code`); đọc: `lib/kudos/kudos-card-columns.ts`, `lib/kudos/get-my-sunner-per-request.ts`.
 
 | Attribute | Type | Constraints | Description |
 |-----------|------|-------------|-------------|
@@ -241,7 +245,7 @@ erDiagram
 | department_code | text | NULL, FK → `departments.code` ON DELETE SET NULL ON UPDATE CASCADE; chỉ mục `sunners_department_code_idx` | Phòng ban; bộ lọc Department của All Kudos lọc theo cột này của người nhận. |
 | avatar_url | text | NULL, CHECK (≤ 2048 ký tự và khớp `^/[^/\\[:space:]][^\\[:space:]]*$`) | **Chỉ đường dẫn cục bộ dưới `/public`** (một `/` đầu, không `//`, không `\`, không khoảng trắng); NULL hiện chữ cái đầu. Không bao giờ sao chép từ `user_metadata`. Migration `20261013060400_restrict_sunner_avatars_and_index_department.sql` xoá giá trị https cũ và bỏ nhánh https của CHECK (clarifications 2026-10-13, M1). |
 | kudos_received_count | integer | NOT NULL, DEFAULT 0, CHECK (>= 0) | Số kudos nhận, trigger `kudos_sync_received_count` giữ; quyết định hạng Hero. |
-| hearts_total | integer | NOT NULL, DEFAULT 0, CHECK (>= 0) | Tổng tim kiếm được khi là người gửi, trigger của `kudos_likes` giữ (F007). |
+| hearts_total | integer | NOT NULL, DEFAULT 0, CHECK (>= 0) | Tổng tim kiếm được khi là người gửi (kể cả kudos ẩn danh), trigger của `kudos_likes` giữ (F007). **Không cấp `select` cho client** từ F010 review C2 (đọc được thì lộ người gửi ẩn danh qua so sánh trước/sau một lượt thích); chủ đọc qua `get_my_sunner()`. |
 | created_at | timestamptz | NOT NULL, DEFAULT now() | Thời điểm tạo. |
 
 **Relationships**:
@@ -255,23 +259,26 @@ erDiagram
 
 ### MODEL007_Kudos
 
-**Description**: Một lời cảm ơn từ Sunner này tới Sunner khác (F006); một người nhận mỗi kudos. Đọc công khai; ghi chỉ `service_role` (không có giao diện gửi kudos trong phạm vi hiện tại). `like_count` do trigger của `kudos_likes` giữ. Xoá kudos trực tiếp bằng SQL kích hoạt trigger `kudos_before_delete_release_like_hearts` (BEFORE DELETE, hàm `release_kudos_like_hearts`) trả lại đúng trọng số tim đã lưu cho người gửi trước khi cascade xoá các lượt thích, và `kudos_sync_received_count` giảm số nhận của người nhận.
+**Description**: Một lời cảm ơn từ Sunner này tới Sunner khác (F006); một người nhận mỗi kudos. Đọc công khai theo cột (từ F010 không gồm `sender_id`); client ghi chỉ qua hàm `create_kudos` (hộp thoại Viết Kudo, F010), `insert/update/delete` trực tiếp chỉ `service_role`. Kudos có thể ẩn danh (`is_anonymous`, tên tuỳ chọn `anonymous_name`): người gửi thật nằm ở `sender_id` (không đọc được từ client), người gửi công khai ở `public_sender_id` (NULL khi ẩn danh). `like_count` do trigger của `kudos_likes` giữ. Xoá kudos trực tiếp bằng SQL kích hoạt trigger `kudos_before_delete_release_like_hearts` (BEFORE DELETE, hàm `release_kudos_like_hearts`) trả lại đúng trọng số tim đã lưu cho người gửi trước khi cascade xoá các lượt thích, và `kudos_sync_received_count` giảm số nhận của người nhận.
 
-**Source:** `supabase/migrations/20261012072146_create_kudos_board.sql:56-65` (bảng), `:67-69` (chỉ mục), `:106,113` (RLS), `:189-205,227-229` (trigger đếm nhận); `supabase/migrations/20261012072217_create_kudos_likes.sql:121-135,147-149` (trigger trả tim trước khi xoá); đọc: `lib/kudos/get-kudos-page.ts`, `lib/kudos/kudos-card-columns.ts`, `lib/kudos/spotlight-mapping.ts`.
+**Source:** `supabase/migrations/20261012072146_create_kudos_board.sql:56-65` (bảng), `:67-69` (chỉ mục), `:106,113` (RLS), `:189-205,227-229` (trigger đếm nhận); `supabase/migrations/20261012072217_create_kudos_likes.sql:121-135,147-149` (trigger trả tim trước khi xoá); `supabase/migrations/20261014004500_create_kudos_write.sql:34-66` (cột ẩn danh, cột sinh `public_sender_id`, quyền cột không gồm `sender_id`), `:69-181` (`create_kudos`), `:183-195` (`get_my_sent_kudos_count`); đọc: `lib/kudos/get-kudos-page.ts`, `lib/kudos/kudos-card-columns.ts`, `lib/kudos/spotlight-mapping.ts`.
 
 | Attribute | Type | Constraints | Description |
 |-----------|------|-------------|-------------|
 | id | uuid | PK, DEFAULT gen_random_uuid() | Định danh; dùng cho `/sun-kudos/[id]` (trang đích chưa xây). |
 | seq | bigint | GENERATED ALWAYS AS IDENTITY, UNIQUE | Thứ tự chèn, con trỏ phân trang (`GET /api/kudos?cursor=<seq>`); chỉ mục duy nhất của ràng buộc phục vụ `ORDER BY seq DESC`. Đọc về dạng `text` để không mất chính xác quá 2^53. |
-| sender_id | uuid | NOT NULL, FK → `sunners.id` ON DELETE CASCADE ON UPDATE CASCADE; chỉ mục `kudos_sender_id_idx` | Người gửi (nhận tim từ lượt thích; đếm "kudos đã gửi" của F009). |
+| sender_id | uuid | NOT NULL, FK → `sunners.id` ON DELETE CASCADE ON UPDATE CASCADE; chỉ mục `kudos_sender_id_idx` | Người gửi thật, kể cả kudos ẩn danh (nhận tim từ lượt thích). **Không cấp `select` cho client** từ F010 (chọn, lọc, nhúng qua cột này hay `select *` bị từ chối); "kudos đã gửi" của F009 đếm qua `get_my_sent_kudos_count()`. |
 | receiver_id | uuid | NOT NULL, FK → `sunners.id` ON DELETE CASCADE ON UPDATE CASCADE; chỉ mục `kudos_receiver_seq_idx (receiver_id, seq desc)` | Người nhận (bộ lọc Department theo phòng ban người nhận). |
 | title | text | NULL, CHECK (btrim(title) <> '') | Nhãn tiêu đề chữ tự do (D.4); bấm lọc theo hashtag chỉ khi có hashtag cùng chữ. |
 | body | text | NOT NULL, CHECK (btrim(body) <> '') | Nội dung. |
 | like_count | integer | NOT NULL, DEFAULT 0, CHECK (>= 0); chỉ mục `kudos_highlight_idx (like_count desc, seq desc)` | Số lượt thích, khoá sắp xếp Highlight. |
 | created_at | timestamptz | NOT NULL, DEFAULT now() | Giờ gửi, hiển thị `HH:mm - MM/DD/YYYY` theo Asia/Ho_Chi_Minh. |
+| is_anonymous | boolean | NOT NULL, DEFAULT false | F010: kudos ẩn danh thì thẻ không hiện người gửi (`public_sender_id` là NULL). |
+| anonymous_name | text | NULL, CHECK (NULL, hoặc `is_anonymous` và không rỗng sau `btrim` và ≤ 50 ký tự) | F010: tên ẩn danh tuỳ chọn; NULL = thẻ hiện chữ mặc định "Người gửi ẩn danh". |
+| public_sender_id | uuid | GENERATED ALWAYS AS (`case when is_anonymous then null else sender_id end`) STORED, FK → `sunners.id` ON DELETE CASCADE; chỉ mục `kudos_public_sender_id_idx` | F010: người gửi công khai; đường duy nhất để client nhúng người gửi (`sender:sunners!public_sender_id(...)`). |
 
 **Relationships**:
-- Many-to-One với MODEL006_Sunner hai lần (`sender_id`, `receiver_id`, cascade).
+- Many-to-One với MODEL006_Sunner hai lần (`sender_id`, `receiver_id`, cascade), cộng quan hệ tuỳ chọn `public_sender_id` (cột sinh, NULL khi ẩn danh, cascade).
 - One-to-Many với MODEL009_KudosHashtag, MODEL010_KudosImage, MODEL011_KudosLike (đều `on delete cascade`).
 
 **Discriminator Fields**: None.
@@ -317,15 +324,15 @@ erDiagram
 
 ### MODEL010_KudosImage
 
-**Description**: Ảnh đính kèm của kudos (F006), đường dẫn gốc dưới `/public` (gallery chỉ nhận đường dẫn cục bộ; bấm ảnh mở ảnh gốc ở tab mới). Đọc công khai, ghi chỉ `service_role`.
+**Description**: Ảnh đính kèm của kudos (F006), đường dẫn gốc dưới `/public` (gallery chỉ nhận đường dẫn cục bộ; bấm ảnh mở ảnh gốc ở tab mới). Từ F010 `image_path` còn có thể là `/api/kudos/images/<uuid>.<jpg|png>`: ảnh người dùng tải lên, đối tượng `kudos/<uuid>.<ext>` trong bucket riêng `images`, một ảnh gắn tối đa một kudos. Đọc công khai; ghi qua `create_kudos` hoặc `service_role`.
 
-**Source:** `supabase/migrations/20261012072146_create_kudos_board.sql:85-90` (bảng), `:109,116` (RLS); guard phía đọc: `lib/kudos/safe-media-path.ts` (`isAllowedImagePath`).
+**Source:** `supabase/migrations/20261012072146_create_kudos_board.sql:85-90` (bảng), `:109,116` (RLS); guard phía đọc: `lib/kudos/safe-media-path.ts` (`isAllowedImagePath`); `supabase/migrations/20261014004500_create_kudos_write.sql:47-50` (chỉ mục duy nhất `kudos_images_uploaded_path_key`), `supabase/migrations/20261014004600_create_kudos_images_storage.sql` (bucket `images`, bốn policy Storage).
 
 | Attribute | Type | Constraints | Description |
 |-----------|------|-------------|-------------|
 | kudos_id | uuid | PK (thành phần), FK → `kudos.id` ON DELETE CASCADE ON UPDATE CASCADE | Kudos sở hữu ảnh. |
 | sort_order | smallint | PK (thành phần), CHECK (>= 1) | Thứ tự ảnh; thẻ hiện tối đa 5 ảnh. |
-| image_path | text | NOT NULL, CHECK (khớp `^/[^/\\[:space:]][^\\[:space:]]*$`) | Đường dẫn dưới `/public`, không `//`, không `\`, không khoảng trắng. |
+| image_path | text | NOT NULL, CHECK (khớp `^/[^/\\[:space:]][^\\[:space:]]*$`); chỉ mục duy nhất một phần `kudos_images_uploaded_path_key` khi `image_path like '/api/kudos/images/%'` | Đường dẫn dưới `/public`, không `//`, không `\`, không khoảng trắng; từ F010 có thể là `/api/kudos/images/<uuid>.<jpg|png>` (duy nhất giữa các dòng loại này). |
 
 **Relationships**:
 - Many-to-One với MODEL007_Kudos (cascade).
@@ -443,12 +450,12 @@ erDiagram
 | Role không do user ghi | role | Không có grant/policy insert/update/delete cho `anon`/`authenticated` | Ghi bị từ chối; chỉ `service_role` ghi được |
 | Tạo profile idempotent | id | `insert ... on conflict (id) do nothing` (trigger và backfill) | Không lỗi khi đã tồn tại |
 
-### Sun* Kudos (F006, F007, F009)
+### Sun* Kudos (F006, F007, F009, F010)
 
 | Rule | Field | Constraint | Error Message |
 |------|-------|------------|---------------|
 | Avatar chỉ cục bộ | sunners.avatar_url | CHECK ≤ 2048 ký tự và `^/[^/\\[:space:]][^\\[:space:]]*$`; phía đọc `safeAvatarUrl` kiểm lại và quy giá trị lạ về NULL | Lỗi Postgres 23514 khi ghi giá trị khác; ở phía đọc không có thông báo, hiện chữ cái đầu |
-| Email và tài khoản không lộ | sunners.email, sunners.user_id | Không nằm trong column grant của `anon`/`authenticated`; `select *` bị từ chối | Lỗi Postgres 42501 (permission denied) |
+| Email, tài khoản và tổng tim không lộ | sunners.email, sunners.user_id, sunners.hearts_total | Không nằm trong column grant của `anon`/`authenticated`; `select *` bị từ chối | Lỗi Postgres 42501 (permission denied) |
 | Một tài khoản một Sunner | sunners.user_id | Chỉ mục duy nhất một phần (`user_id is not null`) | Lỗi Postgres 23505 |
 | Email Sunner duy nhất | sunners.email | Chỉ mục duy nhất theo `lower(email)` khi không NULL | Lỗi Postgres 23505 |
 | Bộ đếm không âm | sunners.kudos_received_count, sunners.hearts_total, kudos.like_count | NOT NULL, DEFAULT 0, CHECK (>= 0); client không có quyền ghi; trigger dùng `greatest(.., 0)` | Lỗi Postgres 23514 |
@@ -458,11 +465,15 @@ erDiagram
 | Trọng số do DB quyết | kudos_likes.weight | CHECK (1, 2); client chỉ được chèn `(kudos_id, user_id)` | Lỗi Postgres 42501 khi chèn cột khác |
 | Chỉ chủ lượt thích đọc, chèn, xoá | kudos_likes | RLS `kudos_likes_select_own`, `kudos_likes_insert_own`, `kudos_likes_delete_own` (`user_id = auth.uid()`); không có quyền update | Hàng người khác không trả về; ghi bị từ chối |
 | Hộp chưa mở chỉ chủ hộp đọc | secret_boxes | RLS `secret_boxes_select_opened_public` (`opened_at is not null`) và `secret_boxes_select_own` (qua `get_my_sunner()`); không có quyền ghi cho client | Hàng không đủ điều kiện không trả về |
-| Bảng kudos chỉ đọc cho client | departments, sunners (theo cột), kudos, hashtags, kudos_hashtags, kudos_images, special_days | RLS policy `*_select_public`; thu hồi hết quyền rồi chỉ cấp `select` | Ghi bị từ chối (`insert/update/delete` chỉ `service_role`) |
+| Bảng kudos chỉ đọc cho client | departments, sunners (theo cột), kudos (theo cột, từ F010), hashtags, kudos_hashtags, kudos_images, special_days | RLS policy `*_select_public`; thu hồi hết quyền rồi chỉ cấp `select`; client chỉ ghi kudos, hashtag của kudos và ảnh qua `create_kudos` | Ghi trực tiếp bị từ chối (`insert/update/delete` chỉ `service_role`) |
+| Người gửi không đọc được từ client | kudos.sender_id | Không nằm trong column grant của `anon`/`authenticated`; chọn, lọc, nhúng qua cột này và `select *` bị từ chối | Lỗi Postgres 42501 (permission denied) |
+| Tên ẩn danh chỉ khi ẩn danh | kudos.anonymous_name | CHECK `kudos_anonymous_name_check`; `create_kudos` đổi tên trống thành NULL và chỉ nhận tên khi `p_is_anonymous` | Lỗi Postgres 23514; `create_kudos` trả `anonymousName: tooLong` (22023) |
+| Một ảnh tải lên gắn một kudos | kudos_images.image_path | Chỉ mục duy nhất một phần `kudos_images_uploaded_path_key`; `create_kudos` tra trước và bắt `unique_violation` | `images: uploadFailed` (22023) |
+| Luật của một kudos mới | kudos.title, kudos.body, kudos_hashtags, kudos_images | `create_kudos`: người nhận có thật và khác người gửi; title 1–50, body 1–2000 sau trim (cùng tập khoảng trắng với JS `trim()`); hashtag 1–5 thuộc danh sách; ảnh 0–5, mỗi ảnh là đối tượng của chính người gọi và chưa gắn | SQLSTATE `22023` thông điệp `<field>: <code>` (`recipient`, `title`, `body`, `hashtags`, `images`, `anonymousName`); `P0002` `sender: noSunner` |
 
 ---
 
 ## Summary
 
 - **Total Entities**: 13 (MODEL001_Award, MODEL002_Profile, MODEL003_AwardPrize, MODEL004_SiteSettings; MODEL005..MODEL013 của Sun* Kudos: Department, Sunner, Kudos, Hashtag, KudosHashtag, KudosImage, KudosLike, SpecialDay, SecretBox; `auth.users` là thực thể ngoài, không tính)
-- **Total Relationships**: 12 (Profile 1—1 `auth.users`, cascade delete; Award 1—n AwardPrize, cascade delete; MODEL004_SiteSettings không có quan hệ; Sun* Kudos: Sunner—`auth.users`, Department—Sunner, Sunner—Kudos hai chiều (gửi, nhận), Kudos—KudosHashtag—Hashtag, Kudos—KudosImage, Kudos—KudosLike, `auth.users`—KudosLike, Sunner—SecretBox; MODEL012_SpecialDay không có khoá ngoại)
+- **Total Relationships**: 13 (Profile 1—1 `auth.users`, cascade delete; Award 1—n AwardPrize, cascade delete; MODEL004_SiteSettings không có quan hệ; Sun* Kudos: Sunner—`auth.users`, Department—Sunner, Sunner—Kudos hai chiều (gửi, nhận) cùng quan hệ công khai `public_sender_id` (F010), Kudos—KudosHashtag—Hashtag, Kudos—KudosImage, Kudos—KudosLike, `auth.users`—KudosLike, Sunner—SecretBox; MODEL012_SpecialDay không có khoá ngoại)

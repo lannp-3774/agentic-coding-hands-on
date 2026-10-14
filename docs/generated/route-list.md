@@ -50,16 +50,31 @@
 
 | Method | Path | Code | Owner F### | Handler | Middleware |
 |--------|------|------|------------|---------|------------|
-| GET | /sun-kudos | ROUTE011 | F006 | `app/sun-kudos/page.tsx:7` SunKudosPage (kèm searchParams `hashtag`, `department`; vùng Spotlight F008 và sidebar F009 nằm trong cùng route, không có route riêng) | proxy (updateSession; khi site đã mở khách không bị chuyển hướng; khi khoá, người không phải admin → 307 `/countdown`) |
+| GET | /sun-kudos | ROUTE011 | F006 | `app/sun-kudos/page.tsx:7` SunKudosPage (kèm searchParams `hashtag`, `department`; vùng Spotlight F008, sidebar F009 và hộp thoại Viết Kudo F010 (mở từ thanh gửi kudos) nằm trong cùng route, không có route riêng) | proxy (updateSession; khi site đã mở khách không bị chuyển hướng; khi khoá, người không phải admin → 307 `/countdown`) |
 | POST | /sun-kudos [Next-Action: likeKudos] | ROUTE012 | F007 | `lib/kudos/kudos-heart-actions.ts:33` likeKudos (Server Action, gọi từ kho tim: `lib/kudos/kudos-heart-store.tsx:128`; khách → `unauthenticated`, phiên kiểm lại phía máy chủ) | proxy (updateSession) |
 | POST | /sun-kudos [Next-Action: unlikeKudos] | ROUTE013 | F007 | `lib/kudos/kudos-heart-actions.ts:41` unlikeKudos (Server Action, gọi từ kho tim: `lib/kudos/kudos-heart-store.tsx:128`) | proxy (updateSession) |
 | POST | /sun-kudos [Next-Action: setLocale] | ROUTE014 | F001, F002, F004, F006 | `lib/i18n/actions.ts:8` setLocale (Server Action, gọi từ bộ chọn ngôn ngữ: `app/sun-kudos/_components/sun-kudos-content.tsx`) | proxy (updateSession) |
+| POST | /sun-kudos [Next-Action: sendKudos] | ROUTE019 | F010 | `lib/kudos/send-kudos-action.ts:45` sendKudos (Server Action, gọi từ hộp thoại Viết Kudo: `app/_components/write-kudos-behaviour/write-kudos-modal.tsx:45`; kiểm hình dạng và luật đầu vào rồi gọi RPC `create_kudos` bằng client cookie của người dùng; trả `ok` / `invalid` / `unauthenticated` / `noSunner` / `error`, không ném lỗi ra client) | proxy (updateSession) |
+| POST | /sun-kudos [Next-Action: searchSunners] | ROUTE020 | F010 | `lib/kudos/send-kudos-action.ts:104` searchSunners (Server Action, gọi từ ô Người nhận và gợi ý `@tên`: `app/_components/write-kudos-behaviour/use-sunner-search.ts:34`; khách hoặc từ khoá rỗng/quá 100 ký tự → `[]`; tối đa 10 kết quả) | proxy (updateSession) |
 
 ### File: app/api/kudos/route.ts (route `/api/kudos`)
 
 | Method | Path | Code | Owner F### | Handler | Middleware |
 |--------|------|------|------------|---------|------------|
 | GET | /api/kudos | ROUTE015 | F006 | `app/api/kudos/route.ts:28` GET (Route Handler; trang kế của All Kudos theo `?cursor=<seq>` kèm `hashtag`, `department` tuỳ chọn; trả `{items, nextCursor}`; 400 `invalid_cursor` / `invalid_filter`, 500 `read_failed`; `Cache-Control: no-store`) | proxy (updateSession; khi site đã mở khách không bị chuyển hướng; khi khoá, người không phải admin → 307 `/countdown`) |
+
+### File: app/api/kudos/images/route.ts (route `/api/kudos/images`)
+
+| Method | Path | Code | Owner F### | Handler | Middleware |
+|--------|------|------|------------|---------|------------|
+| POST | /api/kudos/images | ROUTE016 | F010 | `app/api/kudos/images/route.ts:35` POST (Route Handler; một ảnh `multipart/form-data` trường `file`; cần phiên; loại tệp theo byte đầu tệp (JPEG, PNG), tối đa 5 MiB; 200 `{path: "/api/kudos/images/<uuid>.<jpg\|png>"}`, 401 `unauthenticated`, 413 `fileTooLarge`, 415 `invalidFileType`, 400 hoặc 500 `uploadFailed`; `Cache-Control: no-store`) | proxy (updateSession; đường không có dấu chấm nên khớp matcher; `POST` không bị cổng prelaunch và không bị chuyển hướng) |
+
+### File: app/api/kudos/images/[file]/route.ts (route `/api/kudos/images/<uuid>.<jpg|png>`)
+
+| Method | Path | Code | Owner F### | Handler | Middleware |
+|--------|------|------|------------|---------|------------|
+| GET | /api/kudos/images/[file] | ROUTE017 | F010 | `app/api/kudos/images/[file]/route.ts:53` GET (Route Handler; phục vụ ảnh đã gắn vào một kudos cho mọi người, đọc bằng client không cookie (vai `anon`); tên sai dạng, ảnh chưa gắn hoặc byte không khớp đuôi → 404, lỗi Storage khác → 502; `Cache-Control: public, max-age=31536000, immutable`) | không có: matcher của proxy bỏ đường có dấu chấm (`<uuid>.<jpg\|png>`), nên không làm mới phiên và không bị cổng prelaunch |
+| DELETE | /api/kudos/images/[file] | ROUTE018 | F010 | `app/api/kudos/images/[file]/route.ts:93` DELETE (Route Handler; chủ ảnh xoá ảnh nháp chưa gắn kudos; cần phiên; 204 đã xoá, 401 khách, 404 tên sai dạng hoặc không xoá được (không tồn tại, của người khác, đã gắn), 502 lỗi Storage; `Cache-Control: no-store`) | không có: như ROUTE017; route tự kiểm phiên bằng `getCurrentUser()` |
 
 ## Frontend Routes/Pages
 
@@ -99,8 +114,8 @@
 
 | Category | Count |
 |----------|-------|
-| Backend Routes | 15 |
+| Backend Routes | 20 |
 | Frontend Pages | 5 |
-| Total | 20 |
+| Total | 25 |
 
-> Ghi chú: Total = tổng hai danh mục theo mẫu; 4 trang frontend trùng với ROUTE001, ROUTE004, ROUTE008 và ROUTE010, nên số endpoint HTTP phân biệt (method + path) là 15.
+> Ghi chú: Total = tổng hai danh mục theo mẫu; 5 trang frontend trùng với ROUTE001, ROUTE004, ROUTE008, ROUTE010 và ROUTE011, nên số endpoint HTTP phân biệt (method + path) là 20.

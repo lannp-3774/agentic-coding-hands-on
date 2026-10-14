@@ -21,7 +21,7 @@
 
 **Cross-reference**: See ScreenList Regions subsection for region definitions and the `REG###_NameSlug` registry.
 
-> Ghi chú mã chuẩn: năm mã F001_LoginWithGoogle, F002_HomepageSaa, F003_AccountMenuAdminRole, F004_AwardsInformation (thêm 2026-10-09), F005_CountdownPrelaunch (thêm 2026-10-09), cùng F006_KudosBoardBrowse, F007_KudosHearts, F008_KudosSpotlight, F009_KudosPersonalSidebar (thêm 2026-10-12 khi promote bản nháp Sun* Kudos Live board) là mã chuẩn (canonical) đã khoá, không đánh số lại. Việc phân cụm bên dưới đối chiếu với `code-formats.md § Feature Clustering Rule` và cho kết quả trùng với các mã chuẩn (xem verdict từng tên ở `> Note:` trong mục Feature Details).
+> Ghi chú mã chuẩn: năm mã F001_LoginWithGoogle, F002_HomepageSaa, F003_AccountMenuAdminRole, F004_AwardsInformation (thêm 2026-10-09), F005_CountdownPrelaunch (thêm 2026-10-09), cùng F006_KudosBoardBrowse, F007_KudosHearts, F008_KudosSpotlight, F009_KudosPersonalSidebar (thêm 2026-10-12 khi promote bản nháp Sun* Kudos Live board), và F010_KudosWrite (thêm 2026-10-14, promote lúc giao) là mã chuẩn (canonical) đã khoá, không đánh số lại. Việc phân cụm bên dưới đối chiếu với `code-formats.md § Feature Clustering Rule` và cho kết quả trùng với các mã chuẩn (xem verdict từng tên ở `> Note:` trong mục Feature Details).
 
 ## Feature Hierarchy
 
@@ -44,6 +44,7 @@
 | F007_KudosHearts | Kudos Hearts | mixed | TypeScript, SQL | my-app | P1 |
 | F008_KudosSpotlight | Kudos Spotlight | ui | TypeScript | my-app | P2 |
 | F009_KudosPersonalSidebar | Kudos Personal Sidebar | ui | TypeScript, SQL | my-app | P2 |
+| F010_KudosWrite | Kudos Write | ui | TypeScript, SQL | my-app | P1 |
 
 ## Feature Details
 
@@ -264,9 +265,9 @@
 ### F006_KudosBoardBrowse: Kudos Board Browse
 
 **Type**: ui
-**Description**: Trang `/sun-kudos` cho khách và Sunner xem bảng kudos: banner, thanh gửi kudos (A.1), carousel Highlight top 5 theo số tim và dòng All Kudos mới nhất trước, cùng hai bộ lọc Hashtag/Department. Đầu vào: request GET `/sun-kudos` kèm searchParams `hashtag`, `department`, cookie ngôn ngữ, dữ liệu kudos/hashtag/phòng ban/Sunner được seed từ nội dung Figma; trang kế của All Kudos được lấy bằng GET `/api/kudos` (cursor + bộ lọc). Xử lý: Server Component đọc Highlight và trang đầu qua cùng một hàm áp bộ lọc; bộ lọc nằm trên URL, đổi bộ lọc thì carousel về thẻ 1 và danh sách cuộn vô hạn nạp lại; bấm hashtag trên thẻ thì đặt bộ lọc Hashtag; "Copy Link" chép URL tuyệt đối `/sun-kudos/[id]` rồi hiện toast; nhãn danh hiệu Hero và 0–3 sao theo số kudos nhận (0–9 New, 10–19 Rising, 20–49 Super, 50+ Legend); thời gian hiện `HH:mm - MM/DD/YYYY` theo Asia/Ho_Chi_Minh; header và footer đánh dấu "Sun* Kudos" là trang hiện tại. Đầu ra: bảng kudos đã lọc với trạng thái rỗng "Hiện tại chưa có Kudos nào."; liên kết tới `/sun-kudos/[id]` và `/profiles/[id]` (chưa xây, 404) — khách bấm vào avatar, tên hoặc chi tiết thì chuyển tới `/login`; thanh A.1 và nút "Mở Secret Box" hiển thị đúng Figma nhưng chưa làm gì.
+**Description**: Trang `/sun-kudos` cho khách và Sunner xem bảng kudos: banner, thanh gửi kudos (A.1), carousel Highlight top 5 theo số tim và dòng All Kudos mới nhất trước, cùng hai bộ lọc Hashtag/Department. Đầu vào: request GET `/sun-kudos` kèm searchParams `hashtag`, `department`, cookie ngôn ngữ, dữ liệu kudos/hashtag/phòng ban/Sunner được seed từ nội dung Figma; trang kế của All Kudos được lấy bằng GET `/api/kudos` (cursor + bộ lọc). Xử lý: Server Component đọc Highlight và trang đầu qua cùng một hàm áp bộ lọc; bộ lọc nằm trên URL, đổi bộ lọc thì carousel về thẻ 1 và danh sách cuộn vô hạn nạp lại; bấm hashtag trên thẻ thì đặt bộ lọc Hashtag; "Copy Link" chép URL tuyệt đối `/sun-kudos/[id]` rồi hiện toast; nhãn danh hiệu Hero và 0–3 sao theo số kudos nhận (0–9 New, 10–19 Rising, 20–49 Super, 50+ Legend); thời gian hiện `HH:mm - MM/DD/YYYY` theo Asia/Ho_Chi_Minh; header và footer đánh dấu "Sun* Kudos" là trang hiện tại. Đầu ra: bảng kudos đã lọc với trạng thái rỗng "Hiện tại chưa có Kudos nào."; liên kết tới `/sun-kudos/[id]` và `/profiles/[id]` (chưa xây, 404) — khách bấm vào avatar, tên hoặc chi tiết thì chuyển tới `/login`; thanh "Tìm kiếm profile Sunner" và nút "Mở Secret Box" hiển thị đúng Figma nhưng chưa làm gì; thanh A.1 mở hộp thoại Viết Kudo của F010 (người đã đăng nhập) hoặc đưa khách tới `/login`.
 
-Quyền sở hữu: F006 sở hữu vỏ màn hình và nền dữ liệu người/kudos dùng chung (bảng Sunner liên kết với tài khoản đăng nhập, kudos, hashtag, phòng ban, ảnh kudos). Ô nút tim trên thẻ do F007 sở hữu; F006 chỉ chừa chỗ (slot) và khung chờ. Vùng Spotlight và vùng sidebar do F008, F009 sở hữu.
+Quyền sở hữu: F006 sở hữu vỏ màn hình và nền dữ liệu người/kudos dùng chung (bảng Sunner liên kết với tài khoản đăng nhập, kudos, hashtag, phòng ban, ảnh kudos). Ô nút tim trên thẻ do F007 sở hữu; F006 chỉ chừa chỗ (slot) và khung chờ. Vùng Spotlight và vùng sidebar do F008, F009 sở hữu. Từ 2026-10-14 F010 sở hữu hộp thoại Viết Kudo mở từ A.1 và các thay đổi trên thẻ (nội dung Markdown, khối người gửi ẩn danh); F006 chỉ giữ thanh A.1 và thẻ.
 
 **Workspace**: my-app
 **Languages**: TypeScript, SQL (migration tạo bảng, trigger đếm kudos nhận và liên kết người dùng, seed local)
@@ -300,12 +301,13 @@ Quyền sở hữu: F006 sở hữu vỏ màn hình và nền dữ liệu ngư�
 
 **Related Permissions**:
 - PERM015_KudosBoardPublicReadServiceWrite: các bảng của bảng Kudos đọc công khai, ghi chỉ `service_role`
-- PERM016_SunnerPrivateColumnsOwnRowRpc: `sunners.email`, `sunners.user_id` không mở cho client; hàng của chính người xem qua `get_my_sunner()`; avatar chỉ đường dẫn cục bộ
+- PERM016_SunnerPrivateColumnsOwnRowRpc: `sunners.email`, `sunners.user_id`, `sunners.hearts_total` không mở cho client; hàng của chính người xem qua `get_my_sunner()`; avatar chỉ đường dẫn cục bộ
 - PERM014_PrelaunchGate: `GET /sun-kudos` và `GET /api/kudos` bị cổng như mọi `GET`
 - PERM008_LocaleAllowList: đổi ngôn ngữ chỉ nhận `vi`/`en` (dùng chung)
 
 > Note: Verdict tên "Kudos Board Browse" — một kết quả: người xem tìm và đọc kudos họ quan tâm. Carousel Highlight và All Kudos dùng chung bộ lọc, cùng nguồn dữ liệu và cùng thẻ kudos nên tách ra thì không kiểm thử riêng được (chọn gộp). Copy Link và nhãn Hero là thuộc tính của thẻ nên ở lại đây.
 > Note: Các mốc cần xác nhận khi viết spec đã chốt trong clarifications.md: bộ lọc Department theo phòng ban người nhận; một người nhận mỗi kudos; hashtag là danh sách cố định (nhãn tiêu đề là cột chữ tự do `title`); thẻ hai bên của carousel không bấm được; nhãn Hero chỉ trên thẻ và khối người gửi/người nhận, không ở sidebar F009.
+> Note: Từ 2026-10-14 (F010) `kudos.sender_id` không còn đọc được từ client: thẻ nhúng người gửi qua `public_sender_id` (`sender:sunners!public_sender_id`), kudos ẩn danh có `sender: null` và `senderAlias`; nội dung thẻ là tập Markdown con (`bodyBlocks`); thanh A.1 không còn inert (D013 của F006 chỉ còn đúng cho thanh "Tìm kiếm profile Sunner").
 > Note: Mã US034..US041 theo dãy toàn cục, tiếp sau US033 của F005; như F005, user-stories.md chưa có các mã này vì file đã vượt giới hạn kích thước (chạy `/tkm:rebuild-spec --artifact user-stories`); nội dung ở `docs/features/F006_KudosBoardBrowse/functional-spec.md` § 7.
 > Note: e2e `awards-information-page.spec.ts` đã đổi (không còn kỳ vọng `/sun-kudos` là 404) và các docs từng ghi "/sun-kudos chưa xây" (F002, F004, screen-flow, permissions-matrix, system/*) đã cập nhật ở bước giao (Stage 6, 2026-10-13).
 
@@ -340,7 +342,7 @@ Quyền sở hữu: F007 chỉ sở hữu vùng nút tim và hành vi thích; th
 **Related Data Models**:
 - MODEL011_KudosLike
 - MODEL012_SpecialDay
-- Cột đếm tim `kudos.like_count` (MODEL007_Kudos) và `sunners.hearts_total` (MODEL006_Sunner): F006 tạo, F007 bảo trì
+- Cột đếm tim `kudos.like_count` (MODEL007_Kudos) và `sunners.hearts_total` (MODEL006_Sunner): F006 tạo, F007 bảo trì; từ F010 (review C2) chỉ `like_count` còn công khai, `hearts_total` chỉ chủ đọc qua `get_my_sunner()`
 
 **Related Background Logic**:
 - Không có BL### (trigger DB không thuộc kho BL): `kudos_likes_before_insert` (chặn tự thích, gán trọng số; technical-spec A4), `kudos_likes_after_change` (cập nhật số tim kudos và tổng tim người gửi khi chèn/xoá lượt thích; A5) và `kudos_before_delete_release_like_hearts` (BEFORE DELETE trên `kudos`, hàm `release_kudos_like_hearts`: trả lại đúng trọng số đã lưu cho người gửi trước khi cascade xoá lượt thích; A5)
@@ -431,22 +433,79 @@ Quyền sở hữu: F009 chỉ sở hữu vùng sidebar. Số liệu cá nhân �
 **Related Permissions**:
 - PERM018_SecretBoxesOpenedPublicUnopenedOwner: hộp đã mở đọc công khai, hộp chưa mở chỉ chủ hộp; ghi chỉ `service_role`
 - PERM016_SunnerPrivateColumnsOwnRowRpc: hàng Sunner của chính người xem chỉ qua `get_my_sunner()`
+- PERM021_KudosSenderIdNotClientReadable: số "Kudos đã gửi" đọc qua hàm `get_my_sent_kudos_count()` vì `kudos.sender_id` không còn đọc được từ client (F010)
 
 > Note: Verdict tên "Kudos Personal Sidebar" — một kết quả: Sunner nắm được thành tích kudos của mình và ai vừa nhận quà. Hai khối cùng một vùng sidebar; khối D.3 công khai chỉ là phần phụ trợ, không đủ thành feature riêng (không kiểm thử độc lập có ý nghĩa).
 > Note: Đã chốt: hộp quà đã mở/chưa mở lấy từ `secret_boxes`; "tim nhận" trong khối D.1 là tổng tim người gửi đã kiếm (theo F007).
 > Note: Phụ thuộc F006 (vỏ trang, bảng Sunner) và F007 (tổng tim). Mã US054..US057 theo dãy toàn cục, tiếp sau F008.
+> Note: Từ 2026-10-14 số "Kudos đã gửi" lấy từ RPC `get_my_sent_kudos_count()` (đếm cả kudos ẩn danh của chính người xem), không còn đếm client theo `kudos.sender_id`.
+
+---
+
+### F010_KudosWrite: Kudos Write
+
+**Type**: ui
+**Description**: Hộp thoại "Viết Kudo" mở từ thanh gửi kudos (A.1) của `/sun-kudos`: Sunner đã đăng nhập chọn người nhận, đặt danh hiệu, viết nội dung bằng thanh công cụ Markdown, chọn 1–5 hashtag, đính kèm tối đa 5 ảnh jpg/png (≤ 5 MB), tuỳ chọn gửi ẩn danh kèm tên ẩn danh; khách bấm A.1 thì tới `/login`. Đầu vào: phiên đăng nhập, danh sách hashtag có sẵn, từ khoá tìm Sunner, tệp ảnh. Xử lý: Server Action `searchSunners` gợi ý người nhận và `@tên`; `POST /api/kudos/images` ghi ảnh nháp vào kho riêng (loại tệp xác định bằng byte đầu tệp), `DELETE` xoá nháp của chính chủ; Server Action `sendKudos` kiểm đầu vào rồi gọi hàm Postgres `create_kudos` (`security definer`, người gửi là Sunner của `auth.uid()`, ghi kudos, hashtag, ảnh cùng một giao dịch); `GET /api/kudos/images/[file]` phục vụ ảnh đã gắn kudos. Ẩn danh thật: cột `kudos.sender_id` không còn đọc được từ trình duyệt, người gửi công khai qua `public_sender_id` (rỗng khi ẩn danh). Đầu ra: hộp thoại đóng, thông báo "Gửi Kudos thành công!", kudos mới đứng đầu All Kudos; thẻ kudos hiện nội dung Markdown (đậm, nghiêng, gạch ngang, danh sách đánh số, trích dẫn, liên kết http/https) và khối người gửi ẩn danh.
+
+Quyền sở hữu: F010 sở hữu hộp thoại, hai route ảnh, hai Server Action, hàm `create_kudos`, hàm `get_my_sent_kudos_count`, bucket `images`, bốn policy Storage và hàm `kudos_image_is_attached`, hai cột ẩn danh cùng cột sinh `public_sender_id`, và các thay đổi trên thẻ (nội dung Markdown, khối người gửi ẩn danh). F006 vẫn sở hữu vỏ trang, thanh gửi kudos (nay mở hộp thoại thay vì inert) và thẻ; F009 đọc số "Kudos đã gửi" qua hàm mới.
+
+**Workspace**: my-app
+**Languages**: TypeScript, SQL (migration cột ẩn danh, `create_kudos`, `get_my_sent_kudos_count`, chỉ mục duy nhất ảnh, bucket và policy Storage)
+**Components**: `WriteKudosLauncherRegion` (Server Component), `WriteKudosLauncher`, `WriteKudosModal`, `WriteKudosModalView` cùng các trường (`WriteKudosRecipientField`, `WriteKudosTitleField`, `WriteKudosEditor`, `WriteKudosHashtagField`, `WriteKudosImageField`, `WriteKudosAnonymousField`, `WriteKudosFooter`), hook `useWriteKudosForm`, `useBodyEditor`, `useBodyMentions`, `useRecipientField`, `useSunnerSearch`, `useKudosImageUploads`, `useModalBehaviour`; `KudosSendButton` (mới), `KudosRichBody`, `KudosAnonymousSenderBlock`; Server Action `sendKudos`, `searchSunners`; Route Handler `POST /api/kudos/images`, `GET|DELETE /api/kudos/images/[file]`; hàm thuần `validateSendKudos`, `parseKudosMarkdown`, `parseKudosInline`, `applyMarkdownFormat`, `sniffKudosImageType`; hàm SQL `create_kudos`, `get_my_sent_kudos_count`
+
+**Related Screens**:
+- SCR006_SunKudosLiveBoard: hộp thoại "Viết Kudo" mở từ thanh gửi kudos (REG### chưa khai báo; vỏ màn hình do F006 sở hữu)
+
+**Related User Stories**:
+- US058: Mở hộp thoại Viết Kudo
+- US059: Soạn nội dung kudos
+- US060: Đính kèm ảnh
+- US061: Gửi kudos và thấy nó trên bảng
+- US062: Gửi kudos ẩn danh
+- US063: Đọc kudos có định dạng
+
+**Related APIs/Routes**:
+- (POST) /api/kudos/images — ROUTE016
+- (GET) /api/kudos/images/[file] — ROUTE017
+- (DELETE) /api/kudos/images/[file] — ROUTE018
+- (POST) /sun-kudos [Next-Action: sendKudos] — ROUTE019
+- (POST) /sun-kudos [Next-Action: searchSunners] — ROUTE020
+- Thanh gửi kudos nằm trên (GET) /sun-kudos — ROUTE011 (F006)
+
+**Related Data Models**:
+- MODEL007_Kudos (thêm `is_anonymous`, `anonymous_name`, `public_sender_id`; quyền cột không gồm `sender_id`)
+- MODEL010_KudosImage (thêm chỉ mục duy nhất `kudos_images_uploaded_path_key`; `image_path` là `/api/kudos/images/<uuid>.<jpg|png>`)
+- Đọc lại MODEL006_Sunner (gợi ý người nhận theo cột được cấp), MODEL008_Hashtag, MODEL009_KudosHashtag
+- Bucket `images` của Supabase Storage (không phải MODEL###)
+
+**Related Background Logic**:
+- Không có BL### (`create_kudos` là hàm RPC do người dùng gọi, không phải tác vụ nền)
+- BL001_SupabaseServerClient (client cookie cho Server Action và route ảnh), BL003_SessionRefreshProxy (khớp `POST /api/kudos/images`, bỏ qua `/api/kudos/images/<uuid>.<ext>` vì có dấu chấm)
+
+**Related Permissions**:
+- PERM020_KudosCreateRpcSenderIsCaller: `create_kudos` là đường ghi duy nhất, chỉ `authenticated`, người gửi là Sunner của người gọi
+- PERM021_KudosSenderIdNotClientReadable: `kudos.sender_id` không mở cho client; `public_sender_id` rỗng khi ẩn danh; số đã gửi qua `get_my_sent_kudos_count()`
+- PERM022_KudosImagesStoragePolicies: bucket `images` riêng tư với bốn policy trên `storage.objects`
+- PERM023_KudosImageRoutesSessionAndMagicBytes: `POST`/`DELETE` ảnh cần phiên, kiểm loại bằng byte đầu tệp; `GET` chỉ ảnh đã gắn
+- PERM024_KudosWriteActionsSessionCheck: `sendKudos` và `searchSunners` kiểm đầu vào, lấy người dùng từ phiên đã xác minh
+- PERM015_KudosBoardPublicReadServiceWrite, PERM016_SunnerPrivateColumnsOwnRowRpc (dùng chung; `kudos` nay đọc theo cột)
+
+> Note: Verdict tên "Kudos Write" — một kết quả: Sunner gửi được lời cảm ơn và thấy nó trên bảng. Hộp thoại, ảnh, ẩn danh và hiển thị Markdown cùng một luồng gửi, không kiểm thử độc lập có ý nghĩa nên không tách.
+> Note: Mã US058..US063 theo dãy toàn cục, tiếp sau US057 của F009; như F005..F009, user-stories.md chưa có các mã này (chạy `/tkm:rebuild-spec --artifact user-stories`); nội dung ở `docs/features/F010_KudosWrite/functional-spec.md` § 7.
+> Note: Spec F010 được promote lúc giao (Stage 6, 2026-10-14), không phải ở implement-start; chạy `/tkm:rebuild-spec --features F010` để có bản đầy đủ `path:line`.
+> Note: F010 thay quyết định D013 của F006 chỉ cho thanh A.1 (mở hộp thoại, khách tới `/login`); thanh "Tìm kiếm profile Sunner" vẫn chưa làm gì. Phụ thuộc F006 (vỏ trang, thẻ, bảng), F007 (trigger tim dùng `sender_id`), F009 (số đã gửi).
 
 ---
 
 ## Summary
 
-- **Total Features**: 9
-- **Total Screens**: 5 màn hình đang hoạt động (SCR001_Login, SCR003_Homepage, SCR004_AwardsInformation, SCR005_CountdownPrelaunch (F005), SCR006_SunKudosLiveBoard (F006 sở hữu vỏ; F007, F008, F009 sở hữu vùng, REG### chưa khai báo)) + 1 bản ghi đã gỡ (SCR002_Todo, tombstone, không tính) + 2 vùng (SCR003_Homepage/REG001_AccountRegion, SCR003_Homepage/REG002_AwardsGrid)
-- **Total User Stories**: 57 (F001: 6, F002: 8, F003: 7, F004: 6, F005: 6, F006: 8, F007: 6, F008: 6, F009: 4); US028..US057 (F005..F009) có trong functional-spec của feature nhưng chưa có trong user-stories.md (file đã vượt giới hạn kích thước; chạy `/tkm:rebuild-spec --artifact user-stories`)
-- **Total Routes**: 15 (ROUTE001..ROUTE015; ROUTE003, ROUTE006, ROUTE009 và ROUTE014 dùng chung giữa các feature theo route-list; ROUTE010 là F005; ROUTE011..ROUTE015 của Sun* Kudos: F006 giữ ROUTE011, ROUTE014, ROUTE015, F007 giữ ROUTE012, ROUTE013)
+- **Total Features**: 10
+- **Total Screens**: 5 màn hình đang hoạt động (SCR001_Login, SCR003_Homepage, SCR004_AwardsInformation, SCR005_CountdownPrelaunch (F005), SCR006_SunKudosLiveBoard (F006 sở hữu vỏ; F007, F008, F009 sở hữu vùng; F010 sở hữu hộp thoại Viết Kudo, REG### chưa khai báo)) + 1 bản ghi đã gỡ (SCR002_Todo, tombstone, không tính) + 2 vùng (SCR003_Homepage/REG001_AccountRegion, SCR003_Homepage/REG002_AwardsGrid)
+- **Total User Stories**: 63 (F001: 6, F002: 8, F003: 7, F004: 6, F005: 6, F006: 8, F007: 6, F008: 6, F009: 4, F010: 6); US028..US063 (F005..F010) có trong functional-spec của feature nhưng chưa có trong user-stories.md (file đã vượt giới hạn kích thước; chạy `/tkm:rebuild-spec --artifact user-stories`)
+- **Total Routes**: 20 (ROUTE001..ROUTE020; ROUTE003, ROUTE006, ROUTE009 và ROUTE014 dùng chung giữa các feature theo route-list; ROUTE010 là F005; ROUTE011..ROUTE015 của Sun* Kudos: F006 giữ ROUTE011, ROUTE014, ROUTE015, F007 giữ ROUTE012, ROUTE013, F010 giữ ROUTE016..ROUTE020)
 - **Total Data Models**: 13 (MODEL001..MODEL004 cũ, MODEL005..MODEL013 của Sun* Kudos)
 - **Total Background Logic**: 3 (BL001 dùng chung ba feature)
-- **Total Permissions**: 19 (PERM008 dùng chung F001, F002, F004 và F006; PERM013, PERM014 là F005; PERM015..PERM019 của Sun* Kudos)
+- **Total Permissions**: 24 (PERM008 dùng chung F001, F002, F004 và F006; PERM013, PERM014 là F005; PERM015..PERM019 của Sun* Kudos; PERM020..PERM024 của F010)
 - **Languages Detected**: TypeScript, SQL
 
 ## Cross-Reference Validation

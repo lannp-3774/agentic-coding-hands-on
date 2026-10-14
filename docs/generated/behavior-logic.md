@@ -210,6 +210,9 @@ Quy tắc chuyển hướng theo phiên: chỉ `GET`/`HEAD` và `pathname === "/
 - (POST) /sun-kudos [Next-Action: unlikeKudos] — ROUTE013
 - (POST) /sun-kudos [Next-Action: setLocale] — ROUTE014
 - (GET) /api/kudos — ROUTE015
+- (POST) /api/kudos/images — ROUTE016 (đường không có dấu chấm nên khớp matcher; `GET|DELETE /api/kudos/images/[file]`, ROUTE017 và ROUTE018, nằm ngoài matcher)
+- (POST) /sun-kudos [Next-Action: sendKudos] — ROUTE019
+- (POST) /sun-kudos [Next-Action: searchSunners] — ROUTE020
 
 ---
 

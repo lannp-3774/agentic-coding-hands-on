@@ -20,7 +20,7 @@ key entities, and DB writes for a Dev/QA/SA audience.
 ## 1. Overview
 
 **Problem:** Header, footer, trang chủ và trang Awards Information đều có liên kết "Sun* Kudos" nhưng trang đích chưa có. Sunner và khách chưa có nơi xem những lời cảm ơn, ghi nhận đang diễn ra trong SAA 2025: kudos nào được yêu thích nhất, kudos mới nhất, kudos của một phòng ban hay một chủ đề.
-**Solution:** Trang "Sun* Kudos - Live board" công khai: banner và thanh gửi kudos (hiện chưa làm gì), carousel Highlight gồm tối đa 5 kudos nhiều tim nhất, dòng All Kudos mới nhất trước cuộn vô hạn, hai bộ lọc Hashtag/Phòng ban dùng chung cho cả hai, thẻ kudos đủ người gửi, người nhận, danh hiệu Hero, giờ, nội dung, hashtag, ảnh, và nút "Copy Link". Dữ liệu lấy từ hệ thống, nạp sẵn theo nội dung Figma.
+**Solution:** Trang "Sun* Kudos - Live board" công khai: banner và thanh gửi kudos (người đã đăng nhập bấm thì mở hộp thoại Viết Kudo của F010, khách tới `/login`), carousel Highlight gồm tối đa 5 kudos nhiều tim nhất, dòng All Kudos mới nhất trước cuộn vô hạn, hai bộ lọc Hashtag/Phòng ban dùng chung cho cả hai, thẻ kudos đủ người gửi, người nhận, danh hiệu Hero, giờ, nội dung (tập Markdown con, F010), hashtag, ảnh, và nút "Copy Link". Dữ liệu lấy từ hệ thống, nạp sẵn theo nội dung Figma.
 **Scope:** Vỏ màn hình `/sun-kudos` và các vùng chừa chỗ cho tim, Spotlight, sidebar; banner và thanh gửi kudos (A.1); carousel Highlight; dòng All Kudos; hai bộ lọc; thẻ kudos (người gửi/nhận, sao và nhãn Hero, giờ, tiêu đề, nội dung, hashtag, ảnh đính kèm); Copy Link; liên kết tới chi tiết và hồ sơ (khách bị đưa tới đăng nhập); header/footer đánh dấu "Sun* Kudos"; VN/EN; nền dữ liệu người và kudos dùng chung cho các feature còn lại của bảng.
 **Non-Scope:** Nút thả/rút tim và điểm tim (F007; ở đây chỉ chừa chỗ); bảng Spotlight (F008); sidebar thống kê và danh sách quà (F009); hộp thoại gửi kudos; trang chi tiết kudos và trang hồ sơ (chỉ có liên kết, hiện 404 mặc định); hộp xem nhanh hồ sơ khi rê chuột; mở Secret Box; giao diện quản trị hashtag, phòng ban; sửa hoặc xoá kudos; vuốt/chụm tay trên carousel; dữ liệu môi trường thật (chỉ có dữ liệu seed local).
 
@@ -50,7 +50,7 @@ D001 đến D012 đã chốt trong clarifications.md ngày 2026-10-12 (hai lư�
 | D### | Decision | Default proposal | Rationale | Blocks work |
 |------|----------|-------------------|-----------|--------------|
 | D001 | Phạm vi lượt này? | **Đã chốt:** cả màn hình, dùng dữ liệu thật trong hệ thống nạp theo nội dung Figma; F006 làm vỏ trang, banner, Highlight, All Kudos, bộ lọc, Copy Link, nền dữ liệu | Chia 4 feature; F006 là nền của ba feature còn lại | no |
-| D002 | Điều khiển trỏ tới màn hình chưa có (gửi kudos A.1, chi tiết, hồ sơ, hộp thoại Secret Box)? | **Đã chốt:** liên kết tới địa chỉ dự kiến `/sun-kudos/[id]`, `/profiles/[id]` (404 mặc định cho tới khi xây); Copy Link chép địa chỉ tuyệt đối của chi tiết; A.1 và "Mở Secret Box" hiện đúng Figma nhưng chưa làm gì; hộp xem nhanh hồ sơ ngoài phạm vi | Không chặn việc xây bảng; cùng cách xử lý như F004 | no |
+| D002 | Điều khiển trỏ tới màn hình chưa có (gửi kudos A.1, chi tiết, hồ sơ, hộp thoại Secret Box)? | **Đã chốt:** liên kết tới địa chỉ dự kiến `/sun-kudos/[id]`, `/profiles/[id]` (404 mặc định cho tới khi xây); Copy Link chép địa chỉ tuyệt đối của chi tiết; A.1 và "Mở Secret Box" hiện đúng Figma nhưng chưa làm gì (A.1 đã được F010 thay: mở hộp thoại Viết Kudo, khách tới `/login`); hộp xem nhanh hồ sơ ngoài phạm vi | Không chặn việc xây bảng; cùng cách xử lý như F004 | no |
 | D003 | Ai xem và dùng được bảng? | **Đã chốt:** khách xem mọi thứ công khai; bấm hồ sơ hoặc chi tiết thì khách được đưa tới `/login` | Đọc kudos là công khai, hành động gắn với người dùng thì cần đăng nhập | no |
 | D004 | Nhãn danh hiệu Hero tính thế nào? | **Đã chốt:** theo số kudos NHẬN: 0–9 New Hero (0 sao), 10–19 Rising Hero (1), 20–49 Super Hero (2), 50+ Legend Hero (3); chỉ hiện ở nơi Figma có (thẻ, khối người gửi/người nhận) | Khớp ba mức tooltip sao trong thiết kế | no |
 | D005 | Bộ lọc Phòng ban khớp ai? | **Đã chốt:** phòng ban của người NHẬN | Phòng ban được ghi nhận là thứ người xem quan tâm | no |
@@ -61,7 +61,7 @@ D001 đến D012 đã chốt trong clarifications.md ngày 2026-10-12 (hai lư�
 | D010 | Trạng thái rỗng? | **Đã chốt:** Highlight và All Kudos rỗng đều hiện "Hiện tại chưa có Kudos nào." | Chữ nguyên văn từ thiết kế | no |
 | D011 | Nhãn "IDOL GIỚI TRẺ" (D.4) là gì? | **Đã chốt:** là nhãn tiêu đề của kudos, hiện phía trên nội dung kèm biểu tượng bút; bấm vào thì lọc như một hashtag (xem D014 về cách làm) | Theo spec D.4 | no |
 | D012 | Chính sách kiểm thử? | **Đã chốt:** `e2e-red-first`, dùng bộ Playwright đã có (lọc, carousel, cuộn vô hạn, Copy Link, chuyển tới đăng nhập là hành vi) | Quy tắc MoMorph cho tương tác có chuyển trạng thái | no |
-| D013 | Thanh "Tìm kiếm profile Sunner" ở cạnh A.1 (thấy trong khung Figma nhưng không có mục spec riêng) có làm không? | **Đã chốt:** hiện đúng Figma, chưa làm gì (như A.1) | Cùng cách xử lý với A.1, không thêm phạm vi | no |
+| D013 | Thanh "Tìm kiếm profile Sunner" ở cạnh A.1 (thấy trong khung Figma nhưng không có mục spec riêng) có làm không? | **Đã chốt:** hiện đúng Figma, chưa làm gì (A.1 ban đầu cùng cách này, nay đã được F010 thay) | Cùng cách xử lý với A.1, không thêm phạm vi | no |
 | D014 | Bấm nhãn tiêu đề lọc theo hashtag nào, khi bộ lọc chỉ nhận giá trị trong danh sách hashtag? | **Đã chốt:** tiêu đề là cột chữ tự do `title` riêng của kudos; bấm vào thì đặt bộ lọc Hashtag chỉ khi có hashtag trùng chữ, không trùng thì nhãn chỉ là chữ thường, không bấm được | Giữ danh sách hashtag cố định (D006) mà vẫn đúng spec D.4 | no |
 | D015 | Trước khi F007 xong, vùng nút tim trên thẻ hiện gì? | **Chờ xác nhận:** biểu tượng tim xám kèm số tim chỉ để xem, không bấm được; F007 thay bằng nút thật | Số tim là căn cứ sắp xếp Highlight nên người xem cần thấy; F007 vẫn là chủ của nút | no |
 | D016 | Khách bị đưa tới đăng nhập có quay lại trang vừa bấm sau khi đăng nhập không? | **Đã chốt:** không; chỉ chuyển tới `/login`, đăng nhập xong về trang chủ như hiện nay, F001 không đổi | Luồng đăng nhập hiện cố định đích về trang chủ; thêm đích quay lại là đổi F001 | no |
@@ -88,7 +88,7 @@ D001 đến D012 đã chốt trong clarifications.md ngày 2026-10-12 (hai lư�
 ### Sun* Kudos - Live board (2xx)
 
 - **FR-201** Banner đầu trang có ảnh nền, tiêu đề "Hệ thống ghi nhận và cảm ơn" và logo "SAA 2025 KUDOS", chỉ để xem, không bấm được.
-- **FR-202** Thanh gửi kudos hiện biểu tượng bút và chữ "Hôm nay, bạn muốn gửi lời cảm ơn và ghi nhận đến ai?"; bấm vào chưa làm gì; thanh "Tìm kiếm profile Sunner" cạnh nó cũng hiện đúng Figma và chưa làm gì (D013).
+- **FR-202** Thanh gửi kudos hiện biểu tượng bút và chữ "Hôm nay, bạn muốn gửi lời cảm ơn và ghi nhận đến ai?"; bấm vào: người đã đăng nhập mở hộp thoại Viết Kudo, khách tới `/login` (F010 thay D013 chỉ cho thanh này); thanh "Tìm kiếm profile Sunner" cạnh nó vẫn hiện đúng Figma và chưa làm gì (D013).
 - **FR-203** Mỗi thẻ kudos có chỗ cho nút tim, và trang có vùng giữ chỗ cho Spotlight và sidebar, để bố cục không nhảy khi ba feature kia được cắm vào. Trang gắn sẵn một kho trạng thái tim dùng chung theo từng kudos (logic do F007 cấp) để cùng một kudos ở Highlight và All Kudos luôn cùng trạng thái, và truyền cho mỗi thẻ hai giá trị: người xem đã thích kudos đó chưa (`likedByMe`) và có phải người gửi không (`isSender`). Dưới khổ máy tính trang xếp một cột, sidebar nằm dưới All Kudos, không phần nào bị ẩn (D022).
 - **FR-204** Khối Highlight có chữ nhỏ "Sun* Annual Awards 2025", tiêu đề "HIGHLIGHT KUDOS" và hai nút lọc ở đầu khối.
 - **FR-205** Carousel Highlight hiện tối đa 5 kudos nhiều tim nhất trong phạm vi bộ lọc hiện tại, mặc định ở thẻ 1; kudos 0 tim vẫn được lấy để đủ 5 thẻ khi có đủ kudos, cùng số tim thì mới hơn trước; sau khi thả hoặc rút tim thứ tự không đổi ngay, chỉ xếp lại khi tải lại trang hoặc đổi bộ lọc (D019).
@@ -97,8 +97,8 @@ D001 đến D012 đã chốt trong clarifications.md ngày 2026-10-12 (hai lư�
 - **FR-208** Highlight không có kudos hoặc không đọc được dữ liệu thì hiện "Hiện tại chưa có Kudos nào."; trong lúc tải hiện khung chờ không chữ cùng kích thước carousel.
 - **FR-209** Khối All Kudos có chữ nhỏ "Sun* Annual Awards 2025" và tiêu đề "ALL KUDOS", liệt kê kudos mới nhất trước.
 - **FR-210** Cuộn gần cuối danh sách thì tự nạp thêm kudos cũ hơn; hết kudos thì dừng; không thẻ nào xuất hiện hai lần.
-- **FR-211** Thẻ có khối người gửi, mũi tên, khối người nhận: ảnh đại diện, tên, phòng ban (chỉ hiện mã, ví dụ CEVC10; D018), 0 đến 3 sao và nhãn Hero; rê chuột hoặc lấy tiêu điểm vào sao thì hiện lời giải thích đúng mức sao (0 sao không có).
-- **FR-212** Thẻ hiện giờ gửi dạng `HH:mm - MM/DD/YYYY`, nhãn tiêu đề phía trên nội dung (chữ tự do của kudos; chỉ bấm được khi có hashtag trùng chữ, FR-304) và nội dung kudos, cắt ở 5 dòng rồi "..." ở All Kudos.
+- **FR-211** Thẻ có khối người gửi, mũi tên, khối người nhận: ảnh đại diện, tên, phòng ban (chỉ hiện mã, ví dụ CEVC10; D018), 0 đến 3 sao và nhãn Hero; rê chuột hoặc lấy tiêu điểm vào sao thì hiện lời giải thích đúng mức sao (0 sao không có). Kudos ẩn danh (F010) không có khối người gửi đầy đủ: chỉ hiện tên ẩn danh (hoặc "Người gửi ẩn danh"), không ảnh đại diện, liên kết hồ sơ, phòng ban, sao hay nhãn Hero.
+- **FR-212** Thẻ hiện giờ gửi dạng `HH:mm - MM/DD/YYYY`, nhãn tiêu đề phía trên nội dung (chữ tự do của kudos; chỉ bấm được khi có hashtag trùng chữ, FR-304) và nội dung kudos theo tập Markdown con (F010: đậm, nghiêng, gạch ngang, danh sách đánh số, trích dẫn, liên kết http/https; mọi thứ khác là chữ), cắt ở 5 dòng rồi "..." ở All Kudos.
 - **FR-213** Thẻ hiện tối đa 5 hashtag trên một dòng, dư thì "..."; bấm một hashtag đặt bộ lọc Hashtag (FR-304).
 - **FR-214** Thẻ All Kudos hiện tối đa 5 ảnh đính kèm hình vuông, căn trái; bấm một ảnh thì mở ảnh gốc ở tab mới (D017).
 - **FR-215** All Kudos không có kudos hoặc không đọc được dữ liệu thì hiện "Hiện tại chưa có Kudos nào."; lỗi khi nạp thêm giữ nguyên các thẻ đã có và cho thử lại; trong lúc tải hiện khung chờ.
@@ -120,7 +120,7 @@ D001 đến D012 đã chốt trong clarifications.md ngày 2026-10-12 (hai lư�
 
 ### Security (6xx)
 
-- **FR-601** Dữ liệu bảng kudos mở công khai cho khách lẫn Sunner, chỉ đọc; email và mã tài khoản (`user_id`) của Sunner không bao giờ đến trình duyệt; trình duyệt không ghi được vào bảng nào của feature, kể cả bộ đếm.
+- **FR-601** Dữ liệu bảng kudos mở công khai cho khách lẫn Sunner, chỉ đọc; email, mã tài khoản (`user_id`) và tổng tim (`hearts_total`, từ F010 review C2) của Sunner không bao giờ đến trình duyệt (chủ chỉ thấy tổng tim của mình ở sidebar); trình duyệt không ghi được vào bảng nào của feature, kể cả bộ đếm.
 
 ## 5. Business Rules
 
@@ -149,7 +149,7 @@ D001 đến D012 đã chốt trong clarifications.md ngày 2026-10-12 (hai lư�
 
 | Screen Name | SCR### | What User Sees | What User Can Do |
 |-------------|--------|-----------------|-------------------|
-| Sun* Kudos - Live board | SCR006_SunKudosLiveBoard | header cố định ("Sun* Kudos" đang chọn); banner "Hệ thống ghi nhận và cảm ơn"; thanh gửi kudos và thanh "Tìm kiếm profile Sunner"; khối Highlight với hai nút lọc và carousel; vùng giữ chỗ Spotlight; khối All Kudos với dòng thẻ kudos; vùng giữ chỗ sidebar bên phải; footer | lọc theo Hashtag và Phòng ban; chuyển thẻ Highlight bằng mũi tên; cuộn để nạp thêm kudos; bấm hashtag để lọc; Copy Link; mở chi tiết hoặc hồ sơ (khách tới đăng nhập); đổi VN/EN; dùng header và footer đi các trang khác |
+| Sun* Kudos - Live board | SCR006_SunKudosLiveBoard | header cố định ("Sun* Kudos" đang chọn); banner "Hệ thống ghi nhận và cảm ơn"; thanh gửi kudos và thanh "Tìm kiếm profile Sunner"; khối Highlight với hai nút lọc và carousel; vùng giữ chỗ Spotlight; khối All Kudos với dòng thẻ kudos; vùng giữ chỗ sidebar bên phải; footer | lọc theo Hashtag và Phòng ban; chuyển thẻ Highlight bằng mũi tên; cuộn để nạp thêm kudos; bấm hashtag để lọc; Copy Link; mở chi tiết hoặc hồ sơ (khách tới đăng nhập); bấm thanh gửi kudos để mở hộp thoại Viết Kudo (khách tới đăng nhập, F010); đổi VN/EN; dùng header và footer đi các trang khác |
 
 ### User Journey
 
@@ -175,7 +175,7 @@ Sunner đã đăng nhập cũng thấy cùng nội dung; chỉ vùng tài khoả
 **Acceptance Criteria:**
 - [ ] Khách mở trang thấy banner, thanh gửi kudos, khối Highlight, dòng All Kudos, không bị chuyển sang đăng nhập.
 - [ ] "Sun* Kudos" ở header và footer đang chọn; "About SAA 2025" và "Awards Information" không còn đang chọn.
-- [ ] Thanh gửi kudos có đúng chữ gợi ý của Figma và bấm vào chưa làm gì.
+- [ ] Thanh gửi kudos có đúng chữ gợi ý của Figma; bấm vào thì người đã đăng nhập mở hộp thoại Viết Kudo, khách tới `/login` (F010).
 - [ ] Chọn EN thì nhãn giao diện đổi sang tiếng Anh, nội dung kudos giữ nguyên.
 
 ### US035 — Xem kudos nổi bật bằng carousel
@@ -353,7 +353,7 @@ Sunner đã đăng nhập cũng thấy cùng nội dung; chỉ vùng tài khoả
 - **FR-101** → Khách và Sunner đã đăng nhập đều mở được trang, không bị chuyển sang đăng nhập
 - **FR-102** → "Sun* Kudos" ở header và footer đang chọn; "Awards Information" ở header chữ thường
 - **FR-201** → Banner có tiêu đề "Hệ thống ghi nhận và cảm ơn" và logo, bấm vào không có gì xảy ra
-- **FR-202** → Thanh gửi kudos có đúng chữ gợi ý, bấm vào không mở gì và không chuyển trang
+- **FR-202** → Thanh gửi kudos có đúng chữ gợi ý; người đã đăng nhập bấm thì thấy hộp thoại Viết Kudo (F010), khách tới `/login`; thanh tìm hồ sơ bấm không mở gì
 - **FR-205** → Carousel có tối đa 5 thẻ, thứ tự số tim giảm dần, cùng số tim thì mới hơn trước
 - **FR-206** → Mũi tên trước tắt ở thẻ 1, mũi tên sau tắt ở thẻ cuối, bộ đếm đúng, thẻ bên không bấm được
 - **FR-208** → Bộ lọc không khớp thì Highlight hiện "Hiện tại chưa có Kudos nào."

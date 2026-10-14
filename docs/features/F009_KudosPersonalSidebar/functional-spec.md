@@ -63,8 +63,8 @@ Cả ba mục dưới đây đã chốt ở clarifications.md (lượt "spec gap
 
 - **FR-201** Khối thống kê liệt kê theo thứ tự: Số Kudos bạn nhận được, Số Kudos bạn đã gửi, Số tim bạn nhận được, đường kẻ, Số Secret Box bạn đã mở, Số Secret Box chưa mở, rồi nút "Mở Secret Box".
 - **FR-202** "Số Kudos bạn nhận được" là số kudos mà người dùng là người nhận.
-- **FR-203** "Số Kudos bạn đã gửi" là số kudos mà người dùng là người gửi.
-- **FR-204** "Số tim bạn nhận được" là tổng tim người dùng đã kiếm với tư cách người gửi kudos (theo luật tim của Kudos Hearts), không phải tim trên các kudos họ nhận.
+- **FR-203** "Số Kudos bạn đã gửi" là số kudos mà người dùng là người gửi, kể cả kudos gửi ẩn danh; số này lấy từ hàm `get_my_sent_kudos_count()` (F010) vì trình duyệt không đọc được người gửi của kudos.
+- **FR-204** "Số tim bạn nhận được" là tổng tim người dùng đã kiếm với tư cách người gửi kudos (theo luật tim của Kudos Hearts), không phải tim trên các kudos họ nhận. Chỉ chính chủ thấy con số này; không ai đọc được tổng tim của người khác (F010 review C2).
 - **FR-205** "Số Secret Box bạn đã mở" và "chưa mở" là số hộp của chính người dùng có và không có thời điểm mở.
 - **FR-206** Nút "Mở Secret Box" hiển thị đúng thiết kế nhưng chưa làm gì: không hộp thoại, không đổi số liệu.
 - **FR-207** Khách thấy lời nhắc đăng nhập gồm một dòng chữ và nút "Đăng nhập" tới `/login` thay cho cả khối thống kê, kể cả nút "Mở Secret Box" (D001).
@@ -209,7 +209,7 @@ Cả ba mục dưới đây đã chốt ở clarifications.md (lượt "spec gap
 - **FR-102** → bấm hàng quà: đã đăng nhập tới `/profiles/[id]`, khách tới `/login`.
 - **FR-201** → năm giá trị và nút đúng thứ tự, có đường kẻ giữa tim và Secret Box.
 - **FR-202** → số kudos nhận khớp số kudos mà người dùng là người nhận.
-- **FR-203** → số kudos gửi khớp số kudos mà người dùng là người gửi.
+- **FR-203** → số kudos gửi khớp số kudos mà người dùng là người gửi, kể cả kudos ẩn danh; gửi thêm một kudos ẩn danh thì số này tăng 1.
 - **FR-204** → số tim bằng tổng tim người gửi, không đổi khi người dùng nhận thêm kudos.
 - **FR-205** → hai số Secret Box cộng lại bằng tổng số hộp của người dùng.
 - **FR-206** → bấm "Mở Secret Box": không hộp thoại, không đổi số, không điều hướng.
@@ -236,7 +236,8 @@ Cả ba mục dưới đây đã chốt ở clarifications.md (lượt "spec gap
 
 | Dependency | Type | Why this feature needs it | Evidence |
 |------------|------|-----------------------------|----------|
-| F006_KudosBoardBrowse | feature | vỏ trang và cột bên phải, bảng Sunner (tên, avatar, kudos nhận, tổng tim), hàm tra Sunner của người xem, bảng kudos để đếm kudos đã gửi, thành phần avatar dùng chung | FR-101, FR-202, FR-203, FR-210 |
+| F006_KudosBoardBrowse | feature | vỏ trang và cột bên phải, bảng Sunner (tên, avatar, kudos nhận, tổng tim), hàm tra Sunner của người xem, bảng kudos, thành phần avatar dùng chung | FR-101, FR-202, FR-210 |
+| F010_KudosWrite | feature | hàm `get_my_sent_kudos_count()` đếm kudos đã gửi của chính người xem (kể cả ẩn danh), thay cho việc đếm theo `kudos.sender_id` vốn không còn đọc được từ trình duyệt | FR-203 |
 | F007_KudosHearts | feature | tổng tim người gửi kiếm được cho "Số tim bạn nhận được" (cột do F006 tạo, F007 bảo trì) | FR-204, BR-002 |
 | F001_LoginWithGoogle | feature | màn hình `/login` là đích của khách | FR-102, FR-207 |
 | F003_AccountMenuAdminRole | feature | đọc người dùng hiện tại từ phiên để phân biệt khách và người đã đăng nhập | FR-207, FR-601 |

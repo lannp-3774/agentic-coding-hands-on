@@ -16,7 +16,7 @@ lang: vi
 
 ## 1. Overview
 
-**Purpose:** Khách và Sunner mở màn hình này để xem những lời cảm ơn và ghi nhận trong SAA 2025: kudos nổi bật theo số tim, dòng kudos mới nhất, lọc theo hashtag hoặc phòng ban, chép liên kết một kudos, và đi tiếp sang chi tiết hoặc hồ sơ.
+**Purpose:** Khách và Sunner mở màn hình này để xem những lời cảm ơn và ghi nhận trong SAA 2025: kudos nổi bật theo số tim, dòng kudos mới nhất, lọc theo hashtag hoặc phòng ban, chép liên kết một kudos, và đi tiếp sang chi tiết hoặc hồ sơ; Sunner đã đăng nhập còn gửi được kudos qua hộp thoại "Viết Kudo" (F010, mở từ thanh gửi kudos).
 **Actors:** Khách chưa đăng nhập, Sunner đã đăng nhập
 **Entry Conditions:** Không cần đăng nhập. Người xem bấm liên kết "Sun* Kudos" ở header hoặc footer, nút hoặc khối Kudos ở trang chủ hoặc Awards Information, hoặc gõ địa chỉ trực tiếp, kèm hoặc không kèm giá trị lọc trên địa chỉ.
 **Exit Conditions:** Người xem chuyển sang trang khác (trang chủ, Awards Information, chi tiết kudos, hồ sơ, đăng nhập), hoặc rời ứng dụng.
@@ -71,17 +71,17 @@ Trang cuộn dọc: header cố định ở đầu; banner key visual; thanh g�
 | E01 | Header và footer dùng lại (logo, ba liên kết, bộ chọn ngôn ngữ, vùng tài khoản) | region label | — | — | Always | Điều hướng — xem § 8 | static | theo ngôn ngữ đang chọn | — | N/A |
 | E02 | Liên kết "Sun* Kudos" ở header và footer, đang chọn (header: chữ vàng, gạch chân; footer: nền nhạt, không gạch chân) | link | — | Selected | Always | — | static | theo ngôn ngữ đang chọn | — | N/A |
 | E03 | Banner: ảnh nền, tiêu đề "Hệ thống ghi nhận và cảm ơn", logo "SAA 2025 KUDOS" | image | — | — | Always | — | static | chỉ để xem, không bấm được | — | N/A |
-| E04 | Thanh gửi kudos (biểu tượng bút bên trái, chữ gợi ý "Hôm nay, bạn muốn gửi lời cảm ơn và ghi nhận đến ai?") | button | — | Enabled | Always | Bấm chưa làm gì | static | viên thuốc (pill) | — | N/A |
+| E04 | Thanh gửi kudos (biểu tượng bút bên trái, chữ gợi ý "Hôm nay, bạn muốn gửi lời cảm ơn và ghi nhận đến ai?") | button | — | Enabled | Always | Người đã đăng nhập: mở hộp thoại "Viết Kudo" (E26); khách: chuyển tới `/login` | static | viên thuốc (pill) | — | N/A |
 | E05 | Thanh "Tìm kiếm profile Sunner" (biểu tượng kính lúp) cạnh E04 | button | — | Enabled | Always | Bấm chưa làm gì (vẽ đúng Figma, không handler; D013 đã chốt) | static | viên thuốc (pill) | — | N/A |
 | E06 | Tiêu đề khối Highlight: chữ nhỏ "Sun* Annual Awards 2025" và "HIGHLIGHT KUDOS" | display field | — | — | Always | — | static | theo ngôn ngữ đang chọn | — | N/A |
 | E07 | Nút lọc "Hashtag" (hiện giá trị đang chọn khi có; mở danh sách giá trị) | select | no | "Hashtag" (chưa lọc) | Always | Chọn hoặc bỏ giá trị lọc | API field | tên hashtag | danh sách chỉ có "Tất cả" | N/A |
 | E08 | Nút lọc "Phòng ban" (hiện giá trị đang chọn khi có; mở danh sách giá trị) | select | no | "Phòng ban" (chưa lọc) | Always | Chọn hoặc bỏ giá trị lọc | API field | mã phòng ban (ví dụ CEVC10) | danh sách chỉ có "Tất cả" | N/A |
 | E09 | Carousel Highlight: tối đa 5 thẻ, thẻ đang xem ở giữa to và rõ, thẻ liền kề mờ và không bấm được | list | — | Thẻ 1 | Conditional | — | API field | số tim giảm dần, cùng số tim thì mới hơn trước; kể cả kudos 0 tim để đủ 5 thẻ | thay bằng E24 | N/A |
 | E10 | Mũi tên trước, mũi tên sau và bộ đếm `n/tổng` | button | — | Trước tắt, bộ đếm 1/n | Conditional | Chuyển thẻ trước hoặc sau | computed | `n/tổng` | — | N/A |
-| E11 | Khối người gửi, mũi tên, khối người nhận trên thẻ (ảnh đại diện, tên, phòng ban, 0–3 sao, nhãn Hero) | display field | — | — | Conditional | Bấm ảnh hoặc tên → hồ sơ; rê hoặc lấy tiêu điểm vào sao → giải thích | API field | New, Rising, Super, Legend Hero theo số kudos nhận | không có phòng ban thì ẩn dòng; không có ảnh thì chữ cái đầu | N/A |
+| E11 | Khối người gửi, mũi tên, khối người nhận trên thẻ (ảnh đại diện, tên, phòng ban, 0–3 sao, nhãn Hero; kudos ẩn danh: chỉ tên ẩn danh hoặc "Người gửi ẩn danh", không ảnh đại diện, không liên kết hồ sơ) | display field | — | — | Conditional | Bấm ảnh hoặc tên → hồ sơ; rê hoặc lấy tiêu điểm vào sao → giải thích | API field | New, Rising, Super, Legend Hero theo số kudos nhận | không có phòng ban thì ẩn dòng; không có ảnh thì chữ cái đầu | N/A |
 | E12 | Giờ gửi của thẻ | display field | — | — | Conditional | — | API field | `HH:mm - MM/DD/YYYY`, giờ Việt Nam | — | N/A |
 | E13 | Nhãn tiêu đề kudos phía trên nội dung (kèm biểu tượng bút, ví dụ "IDOL GIỚI TRẺ"; chữ tự do của kudos, không phải hashtag) | link | — | — | Conditional | Bấm thì đặt bộ lọc Hashtag nếu có hashtag trùng chữ; không có thì chỉ là chữ, không bấm được (D014) | API field | chữ gốc | ẩn khi kudos không có tiêu đề | N/A |
-| E14 | Nội dung kudos | display field | — | — | Conditional | Bấm → chi tiết kudos | API field | cắt 3 dòng (Highlight), 5 dòng (All Kudos), rồi "..." | — | N/A |
+| E14 | Nội dung kudos | display field | — | — | Conditional | Bấm → chi tiết kudos; liên kết trong nội dung mở tab mới | API field | cắt 3 dòng (Highlight), 5 dòng (All Kudos), rồi "..."; hiện theo tập Markdown con (đậm, nghiêng, gạch ngang, danh sách đánh số, trích dẫn, liên kết http/https; mọi thứ khác là chữ) | — | N/A |
 | E15 | Hashtag của thẻ | link | — | — | Conditional | Bấm thì đặt bộ lọc Hashtag | API field | tối đa 5 trên một dòng, dư thì "..." | ẩn khi không có hashtag | N/A |
 | E16 | Ảnh đính kèm (chỉ All Kudos) | image | — | — | Conditional | Bấm → mở ảnh gốc ở tab mới (D017) | API field | tối đa 5 hình vuông, căn trái | ẩn khi không có ảnh | N/A |
 | E17 | Vùng nút tim của thẻ (nút của F007: tim xám khi chưa thích, đỏ khi đã thích, kèm số tim; vô hiệu cho người gửi; khách bấm thì tới `/login`) | region label | — | Tim xám | Conditional | — | API field | số tim | — | N/A |
@@ -93,6 +93,7 @@ Trang cuộn dọc: header cố định ở đầu; banner key visual; thanh g�
 | E23 | Vùng Spotlight (F008) và sidebar (F009): khung do F006 giữ, nội dung và hành vi do hai feature đó sở hữu (xem functional-spec của F008, F009) | region label | — | — | Always | — | static | — | — | N/A |
 | E24 | Thông báo rỗng "Hiện tại chưa có Kudos nào." (thay cho carousel hoặc cho danh sách) | message | — | Ẩn | Conditional | — | static | theo ngôn ngữ đang chọn | — | N/A |
 | E25 | Thông báo nhỏ khi chép liên kết ("Link copied — ready to share!" hoặc dòng lỗi), tự tắt sau 3 giây | message | — | Ẩn | Conditional | — | static | thành công giữ nguyên chữ Figma ở cả hai ngôn ngữ | hidden | N/A |
+| E26 | Hộp thoại "Viết Kudo" (F010; các trường và luật nằm ở functional-spec của F010) mở từ E04 | region label | — | Đóng | Conditional | Hủy hoặc Escape đóng và không lưu gì; Gửi tạo kudos | computed | — | — | N/A |
 
 ## 4. User Actions
 
@@ -111,7 +112,8 @@ Trang cuộn dọc: header cố định ở đầu; banner key visual; thanh g�
 | Thử lại nạp thêm | E22 | click "Thử lại" | lần nạp trước lỗi | nạp lại trang đang lỗi; các thẻ đã có giữ nguyên | TBD (draft) |
 | Chép liên kết | E18 | click | — | địa chỉ tuyệt đối của chi tiết kudos vào clipboard; hiện E25 | TBD (draft) |
 | Rê vào sao | E11 | hover hoặc focus | người có 1–3 sao | hiện lời giải thích đúng mức sao (xem § 6); 0 sao không có | TBD (draft) |
-| Bấm thanh gửi kudos hoặc thanh tìm hồ sơ | E04, E05 | click | — | chưa làm gì: không mở hộp thoại, không chuyển trang | TBD (draft) |
+| Bấm thanh gửi kudos | E04 | click | người đã đăng nhập | mở hộp thoại "Viết Kudo" (E26) trên cùng màn hình; URL không đổi | TBD (draft) |
+| Bấm thanh tìm hồ sơ | E05 | click | — | chưa làm gì: không mở hộp thoại, không chuyển trang | TBD (draft) |
 
 ### Happy Path
 
@@ -156,9 +158,10 @@ Trang cuộn dọc: header cố định ở đầu; banner key visual; thanh g�
 | empty (All Kudos) | không có kudos phù hợp | "Hiện tại chưa có Kudos nào." thay cho danh sách | đổi hoặc bỏ lọc | TBD (draft) |
 | error (đọc lần đầu) | không đọc được dữ liệu | như empty ở phần bị lỗi; phần khác vẫn hiện | tải lại trang | TBD (draft) |
 | error (nạp thêm) | nạp trang kế lỗi | thẻ đã có giữ nguyên; dòng lỗi kèm nút "Thử lại" dưới danh sách | "Thử lại" | TBD (draft) |
-| saving | N/A — màn hình không ghi dữ liệu | — | — | TBD (draft) |
+| saving | đang gửi kudos từ hộp thoại "Viết Kudo" (F010) | nút Gửi vô hiệu kèm vòng quay, không gửi lặp; phần còn lại của màn hình không đổi | none | TBD (draft) |
 | success (chép liên kết) | chép thành công | thông báo nhỏ "Link copied — ready to share!" ở R9, tự tắt sau 3 giây | tắt thông báo hoặc chờ | TBD (draft) |
 | error (chép liên kết) | cả hai cách chép đều thất bại | thông báo nhỏ lỗi ở R9, tự tắt sau 3 giây | — | TBD (draft) |
+| success (gửi kudos) | `sendKudos` thành công | hộp thoại đóng, thông báo "Gửi Kudos thành công!" ở R9, kudos mới đứng đầu All Kudos mà không tải lại | — | TBD (draft) |
 | end of list | hết kudos cũ hơn | danh sách dừng, không báo gì | — | TBD (draft) |
 
 ## 6. Validation & Feedback
@@ -214,6 +217,7 @@ Trang cuộn dọc: header cố định ở đầu; banner key visual; thanh g�
 | Bấm "Xem chi tiết" hoặc nội dung thẻ | E19, E14 | Sunner đã đăng nhập | chi tiết kudos (TBD (draft); trang chưa xây, hiện 404 mặc định) | redirect | TBD (draft) |
 | Bấm ảnh đại diện hoặc tên người gửi, người nhận | E11 | Sunner đã đăng nhập | hồ sơ Sunner (TBD (draft); trang chưa xây, hiện 404 mặc định) | redirect | TBD (draft) |
 | Bấm một trong các liên kết ở hai dòng trên | E19, E14, E11 | khách chưa đăng nhập (đăng nhập xong về SCR003_Homepage, không quay lại trang này; D016) | SCR001_Login | redirect | TBD (draft) |
+| Bấm thanh gửi kudos | E04 | khách chưa đăng nhập | SCR001_Login | redirect | TBD (draft) |
 | Bấm một ảnh đính kèm | E16 | — | ảnh gốc (tab mới) | new tab | TBD (draft) |
 | Bấm bộ lọc, mũi tên, Copy Link, Thử lại | E07, E08, E10, E18, E22 | — | (stays on screen) | địa chỉ trang đổi khi lọc | TBD (draft) |
 | Site bị khoá trước giờ mở (người không phải admin) | — | trước giờ mở | SCR005_CountdownPrelaunch | redirect | TBD (draft) |

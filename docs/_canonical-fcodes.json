@@ -147,6 +147,21 @@
         "bl": [],
         "perms": []
       }
+    },
+    {
+      "fcode": "F010",
+      "name": "Kudos Write",
+      "slug": "F010_KudosWrite",
+      "priority": "P1",
+      "type": "ui",
+      "related": {
+        "screens": [],
+        "user_stories": [],
+        "routes": [],
+        "models": [],
+        "bl": [],
+        "perms": []
+      }
     }
   ]
 }

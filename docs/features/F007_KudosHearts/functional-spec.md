@@ -69,7 +69,7 @@ Cả bốn điểm dưới đây đã chốt ở clarifications.md (lượt "spe
 - **FR-402** Bấm lại khi tim đang đỏ thì tim chuyển xám và số tim giảm 1 ngay.
 - **FR-403** Khi máy chủ từ chối hoặc có lỗi, nút tim và số tim trở về đúng trạng thái trước khi bấm và hiện một thông báo lỗi ngắn (D003).
 - **FR-404** Cùng một kudos hiện ở nhiều nơi trên trang thì mọi nút tim của kudos đó luôn cùng trạng thái và cùng số tim (kho trạng thái dùng chung do F007 cấp, F006 gắn vào trang; D004).
-- **FR-405** Sau mỗi lượt thích hoặc bỏ thích, tổng tim của người gửi kudos tăng hoặc giảm đúng số tim lượt thích đó mang lại (1, hoặc 2 nếu thả vào ngày đặc biệt).
+- **FR-405** Sau mỗi lượt thích hoặc bỏ thích, tổng tim của người gửi kudos tăng hoặc giảm đúng số tim lượt thích đó mang lại (1, hoặc 2 nếu thả vào ngày đặc biệt). Tổng này tính cả kudos ẩn danh và chỉ chính người gửi xem được (sidebar F009); không ai đọc được tổng tim của người khác, để lượt thích không làm lộ người gửi ẩn danh (F010 review C2). Số tim trên thẻ kudos vẫn công khai và tăng như thường.
 
 ### Security (6xx)
 
@@ -262,6 +262,7 @@ Cả bốn điểm dưới đây đã chốt ở clarifications.md (lượt "spe
 | RISK-01 | risk | Xoá một kudos (ví dụ bằng thao tác trực tiếp trên cơ sở dữ liệu) kéo theo xoá các lượt thích và làm giảm tổng tim của người gửi; hành vi này chưa được xác nhận | tổng tim của người gửi có thể giảm ngoài ý người vận hành | đã chốt (D001): xoá kudos làm tổng tim của người gửi giảm đúng trọng số đã lưu |
 | RISK-02 | risk | Số tim trên thẻ đếm lượt thích (mỗi lượt 1) còn tổng tim của người gửi có trọng số (1 hoặc 2), nên vào ngày đặc biệt hai con số có thể khác nhau; spec MoMorph thì ghi "người nhận" khi bỏ thích trong khi quyết định chốt là người gửi | người xem có thể nhầm số tim trên thẻ với "Số tim bạn nhận được" ở sidebar | confirmed (clarifications.md: người gửi nhận tim; số tim trên thẻ là số lượt thích) |
 | RISK-03 | risk | Trước khi F006 xác nhận cách hai nút của cùng một kudos dùng chung trạng thái, hai nút có thể lệch nhau trong lúc chờ phản hồi | số tim hiển thị tạm thời không nhất quán trong một thẻ | đã chốt (D004): một kho trạng thái dùng chung, F006 gắn vào trang |
+| RISK-04 | risk | Kudos ẩn danh (F010) có `sender: null` trên thẻ nên trình duyệt không biết ai là người gửi và `isSender` luôn là false; người gửi thật vẫn thấy nút tim bật trên kudos ẩn danh của chính mình | Bấm thì cơ sở dữ liệu từ chối (chặn tự thích) và giao diện hiện thông báo lỗi ngắn; không có dữ liệu sai | [EXPECTED] hoãn có chủ ý (clarifications 2026-10-14, F010) |
 
 ## 12. Dependencies
 

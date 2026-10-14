@@ -32,7 +32,7 @@
 | SCR003_Homepage | Homepage | composite | 14 | 5 |
 | SCR004_AwardsInformation | Awards Information | composite | 17 | 4 |
 | SCR005_CountdownPrelaunch | Countdown Prelaunch | atomic | 5 | 4 |
-| SCR006_SunKudosLiveBoard | Sun* Kudos - Live board | composite | 10 | 4 |
+| SCR006_SunKudosLiveBoard | Sun* Kudos - Live board | composite | 11 | 4 |
 
 ---
 
@@ -285,15 +285,16 @@ loading (`--` trước khi hydrate), running, empty (mốc thiếu, trống ho�
 
 ### Description
 
-Bảng kudos công khai `/sun-kudos` (MoMorph "Sun* Kudos - Live board", screenId MaZUn5xHXZ) của F006_KudosBoardBrowse: header cố định với "Sun* Kudos" đang chọn, banner "Hệ thống ghi nhận và cảm ơn", thanh gửi kudos và thanh "Tìm kiếm profile Sunner" (vẽ đúng Figma, chưa làm gì), khối Highlight (hai nút lọc Hashtag / Phòng ban, carousel tối đa 5 thẻ theo số tim, mũi tên và bộ đếm `n/tổng`), vùng Spotlight, cột All Kudos (mới nhất trước, tự nạp thêm 10 thẻ khi cuộn gần cuối) cạnh sidebar, footer, và thông báo nhỏ khi chép liên kết. Không cần đăng nhập; khách bấm avatar, tên hoặc chi tiết thì chuyển tới `/login`.
+Bảng kudos công khai `/sun-kudos` (MoMorph "Sun* Kudos - Live board", screenId MaZUn5xHXZ) của F006_KudosBoardBrowse: header cố định với "Sun* Kudos" đang chọn, banner "Hệ thống ghi nhận và cảm ơn", thanh gửi kudos (người đã đăng nhập bấm thì mở hộp thoại "Viết Kudo" của F010, khách tới `/login`) và thanh "Tìm kiếm profile Sunner" (vẽ đúng Figma, chưa làm gì), khối Highlight (hai nút lọc Hashtag / Phòng ban, carousel tối đa 5 thẻ theo số tim, mũi tên và bộ đếm `n/tổng`), vùng Spotlight, cột All Kudos (mới nhất trước, tự nạp thêm 10 thẻ khi cuộn gần cuối) cạnh sidebar, footer, và thông báo nhỏ khi chép liên kết. Không cần đăng nhập để xem; khách bấm thanh gửi kudos, avatar, tên hoặc chi tiết thì chuyển tới `/login`.
 
 Luồng dữ liệu và lời gọi dịch vụ (đối chiếu với mã đã giao, 2026-10-13):
 - Vỏ tĩnh bọc `<Suspense>`; nội dung đọc cookie ngôn ngữ, bộ lọc `hashtag` / `department` trên địa chỉ trang và người dùng hiện tại, rồi đọc Highlight (5 kudos nhiều tim nhất), trang đầu All Kudos, danh sách giá trị lọc, dữ liệu Spotlight và sidebar ngay trong Server Component (`app/sun-kudos/_components/`). Danh sách hashtag và hàng Sunner của người xem (`get_my_sunner()`) được đọc một lần mỗi lần render (`cache()` của React) rồi dùng chung giữa các vùng.
 - Trang kế của All Kudos: `GET /api/kudos` (`app/api/kudos/route.ts:28`; cursor + bộ lọc kiểm danh sách cho phép), dùng chung hàm áp bộ lọc với lần đọc đầu.
 - Thả tim / rút tim (vùng của F007_KudosHearts): Server Action `likeKudos` / `unlikeKudos` trên `/sun-kudos`.
+- Hộp thoại "Viết Kudo" (F010_KudosWrite; MoMorph `ihQ26W78P2`, Figma 520:11602; không có SCR### riêng): mở từ thanh gửi kudos bằng `WriteKudosLauncher` (khách → `/login`). Trong hộp thoại: Server Action `searchSunners` gợi ý người nhận và `@tên`; `POST /api/kudos/images` tải từng ảnh vào kho riêng (`DELETE /api/kudos/images/<file>` xoá ảnh nháp); Server Action `sendKudos` gọi hàm `create_kudos` rồi hộp thoại đóng, hiện thông báo và `router.refresh()` làm kudos mới đứng đầu All Kudos. Thẻ kudos dựng nội dung theo tập Markdown con và khối người gửi ẩn danh.
 - `proxy.ts` (BL003_SessionRefreshProxy) khớp `/sun-kudos` như mọi page route: làm mới cookie phiên; khi site khoá người không phải admin bị chuyển 307 về `/countdown` (SCR005_CountdownPrelaunch).
 
-> Note: Loại composite do bước promote của F006–F009 ghi: vỏ màn hình thuộc F006_KudosBoardBrowse; vùng nút tim trên thẻ thuộc F007_KudosHearts, vùng Spotlight thuộc F008_KudosSpotlight, vùng sidebar thuộc F009_KudosPersonalSidebar. Chưa khai báo REG### cho ba vùng này; muốn tách thì chạy `/tkm:rebuild-spec --artifact screen-list`. Route và dữ liệu của màn hình: ROUTE011..ROUTE015, MODEL005..MODEL013. Đặc tả chi tiết: `docs/screens/SCR006_SunKudosLiveBoard/spec.md`.
+> Note: Loại composite do bước promote của F006–F009 ghi: vỏ màn hình thuộc F006_KudosBoardBrowse; vùng nút tim trên thẻ thuộc F007_KudosHearts, vùng Spotlight thuộc F008_KudosSpotlight, vùng sidebar thuộc F009_KudosPersonalSidebar. Chưa khai báo REG### cho ba vùng này; muốn tách thì chạy `/tkm:rebuild-spec --artifact screen-list`. Route và dữ liệu của màn hình: ROUTE011..ROUTE020, MODEL005..MODEL013. Đặc tả chi tiết: `docs/screens/SCR006_SunKudosLiveBoard/spec.md`.
 
 ### Components
 
@@ -301,10 +302,12 @@ Luồng dữ liệu và lời gọi dịch vụ (đối chiếu với mã đã g
 |-----------|------|---------|
 | Header và footer dùng lại (`currentPage="kudos"`) | navigation | Logo, ba liên kết, bộ chọn ngôn ngữ, vùng tài khoản; "Sun* Kudos" đang chọn |
 | Banner key visual | image, heading | Ảnh nền, tiêu đề "Hệ thống ghi nhận và cảm ơn", logo "SAA 2025 KUDOS"; chỉ để xem |
-| Thanh gửi kudos và thanh tìm hồ sơ | button | Vẽ đúng Figma, bấm chưa làm gì |
+| Thanh gửi kudos | button | Mở hộp thoại "Viết Kudo" cho người đã đăng nhập; khách chuyển tới `/login` (F010; thay D013 của F006 chỉ cho thanh này) |
+| Thanh tìm hồ sơ "Tìm kiếm profile Sunner" | button | Vẽ đúng Figma, bấm chưa làm gì |
+| Hộp thoại "Viết Kudo" | dialog | Người nhận (tìm Sunner), Danh hiệu, thanh công cụ Markdown và nội dung (gợi ý `@tên`), Hashtag (1–5 từ danh sách), Image (0–5 ảnh jpg/png ≤ 5 MB), hộp gửi ẩn danh kèm tên ẩn danh, "Tiêu chuẩn cộng đồng", Hủy, Gửi; mở/đóng giữ tiêu điểm và khoá cuộn trang |
 | Nút lọc Hashtag và Phòng ban | select | Đặt / bỏ bộ lọc trên địa chỉ trang; đổi lọc thì Highlight về thẻ 1 và All Kudos nạp lại |
 | Carousel Highlight | list | Tối đa 5 thẻ, số tim giảm dần; thẻ hai bên mờ, không bấm được; mũi tên và bộ đếm `n/tổng` |
-| Thẻ kudos (Highlight và All Kudos) | card | Người gửi → người nhận (avatar, tên, phòng ban, 0–3 sao, nhãn Hero), giờ gửi `HH:mm - MM/DD/YYYY`, nhãn tiêu đề, nội dung, hashtag, ảnh (All Kudos), vùng nút tim, "Copy Link", "Xem chi tiết" (Highlight) |
+| Thẻ kudos (Highlight và All Kudos) | card | Người gửi → người nhận (avatar, tên, phòng ban, 0–3 sao, nhãn Hero; kudos ẩn danh chỉ hiện tên ẩn danh, không ảnh đại diện hay liên kết), giờ gửi `HH:mm - MM/DD/YYYY`, nhãn tiêu đề, nội dung (tập Markdown con), hashtag, ảnh (All Kudos), vùng nút tim, "Copy Link", "Xem chi tiết" (Highlight) |
 | Danh sách All Kudos | list | Mới nhất trước, nạp thêm 10 thẻ khi cuộn gần cuối; dòng lỗi kèm "Thử lại" |
 | Vùng Spotlight | region | Bảng tên người nhận (F008_KudosSpotlight) |
 | Sidebar | region | Thống kê cá nhân và 10 Sunner nhận quà mới nhất (F009_KudosPersonalSidebar) |
@@ -312,8 +315,8 @@ Luồng dữ liệu và lời gọi dịch vụ (đối chiếu với mã đã g
 
 ### Data Displayed
 
-- Data Entity 1: MODEL007_Kudos — nội dung, tiêu đề, giờ gửi, số tim `like_count`; MODEL011_KudosLike (lượt thích của chính người xem), MODEL012_SpecialDay
-- Data Entity 2: MODEL006_Sunner — người gửi, người nhận, phòng ban, số kudos nhận (hạng Hero), tổng tim; MODEL013_SecretBox (sidebar)
+- Data Entity 1: MODEL007_Kudos — nội dung, tiêu đề, giờ gửi, số tim `like_count`, cờ ẩn danh và tên ẩn danh (người gửi công khai qua `public_sender_id`); MODEL011_KudosLike (lượt thích của chính người xem), MODEL012_SpecialDay
+- Data Entity 2: MODEL006_Sunner — người gửi, người nhận, phòng ban, số kudos nhận (hạng Hero), tổng tim (chỉ chủ đọc, qua `get_my_sunner()`); MODEL013_SecretBox (sidebar)
 - Data Entity 3: MODEL008_Hashtag, MODEL009_KudosHashtag, MODEL005_Department, MODEL010_KudosImage
 - Data Entity 4: Cookie `NEXT_LOCALE` (ngôn ngữ hiện tại) và bộ lọc `hashtag` / `department` trên địa chỉ trang
 
@@ -322,18 +325,20 @@ Luồng dữ liệu và lời gọi dịch vụ (đối chiếu với mã đã g
 - `/sun-kudos` (GET; ROUTE011), kèm searchParams `hashtag`, `department`
 - `GET /api/kudos` (trang kế của All Kudos; ROUTE015)
 - Server Action `likeKudos` (ROUTE012) / `unlikeKudos` (ROUTE013) trên `/sun-kudos` (F007_KudosHearts); `setLocale` (ROUTE014)
+- Server Action `sendKudos` (ROUTE019) / `searchSunners` (ROUTE020) trên `/sun-kudos` (F010_KudosWrite)
+- `POST /api/kudos/images` (ROUTE016), `GET` (ROUTE017) và `DELETE` (ROUTE018) `/api/kudos/images/[file]` (F010_KudosWrite)
 - Chỉ liên kết, chưa xây: `/sun-kudos/[id]`, `/profiles/[id]`
 
 ### Related Screens
 
 - SCR003_Homepage: Homepage (navigation — liên kết "Sun* Kudos" ở header, footer và khối Kudos)
 - SCR004_AwardsInformation: Awards Information (navigation — liên kết "Sun* Kudos" ở header, footer và nút "Chi tiết" của khối Sun* Kudos)
-- SCR001_Login: Login (navigation — khách bấm avatar, tên hoặc chi tiết)
+- SCR001_Login: Login (navigation — khách bấm thanh gửi kudos, avatar, tên hoặc chi tiết)
 - SCR005_CountdownPrelaunch: Countdown Prelaunch (navigation — khi site khoá, người không phải admin bị chuyển về đây)
 
 ### States
 
-loading (Highlight, nút lọc, All Kudos lần đầu, nạp thêm), filtering, empty ("Hiện tại chưa có Kudos nào." cho Highlight và All Kudos), error (đọc lần đầu: như empty ở phần lỗi; nạp thêm: dòng lỗi kèm "Thử lại"; chép liên kết), success (chép liên kết), end of list
+loading (Highlight, nút lọc, All Kudos lần đầu, nạp thêm), filtering, empty ("Hiện tại chưa có Kudos nào." cho Highlight và All Kudos), error (đọc lần đầu: như empty ở phần lỗi; nạp thêm: dòng lỗi kèm "Thử lại"; chép liên kết), success (chép liên kết), end of list; hộp thoại Viết Kudo: đóng/mở, đang tải ảnh, đang gửi, lỗi theo trường, lỗi chung (thông báo), thành công (đóng và thông báo)
 
 ---
 
