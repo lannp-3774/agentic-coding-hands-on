@@ -56,7 +56,7 @@ authored_by: rebuild-spec
 ### Navigation (1xx)
 
 - **FR-101** Khách chưa đăng nhập mở màn hình Login thì thấy màn hình Login.
-- **FR-102** Người dùng đã đăng nhập mở màn hình Login thì được chuyển thẳng sang trang chủ (`/`).
+- **FR-102** Người dùng đã đăng nhập mở màn hình Login thì được chuyển thẳng sang trang chủ (`/`). Khách có phiên ẩn danh (guests act as Anonymous, từ 2026-10-14: bấm tim hoặc mở Viết Kudo mà không đăng nhập) chưa có tài khoản nên không bị chuyển: vẫn ở lại màn hình Login để đăng nhập. Đăng nhập Google khi đó thay phiên ẩn danh bằng phiên tài khoản; hoạt động của phiên khách vẫn là của khách, tài khoản Google bắt đầu mới (không liên kết).
 - **FR-103** *Đã gỡ (2026-10-08): trang chủ (`/`) là công khai nên khách chưa đăng nhập không bị chuyển về Login; trang /todo vốn bị chặn đã bị gỡ.*
 
 ### Login (2xx)
@@ -186,7 +186,7 @@ journey
 **Business value:** Tránh bước thừa và tránh nhầm rằng mình chưa đăng nhập.
 
 **Acceptance Criteria:**
-- [ ] Mở màn hình Login khi đã đăng nhập thì được chuyển thẳng sang trang chủ (`/`).
+- [ ] Mở màn hình Login khi đã đăng nhập thì được chuyển thẳng sang trang chủ (`/`); khách có phiên ẩn danh thì không bị chuyển.
 - [ ] Khách, hoặc phiên không kiểm tra được, mở màn hình Login thì thấy màn hình Login bình thường.
 - [ ] Trang chủ (`/`) không bao giờ chuyển khách về Login.
 

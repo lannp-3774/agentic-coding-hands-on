@@ -32,11 +32,11 @@ graph TD
     W -->|"Chi tiết (Kudos), header, footer"| K
     K -->|"logo, About SAA 2025"| H
     K -->|"Awards Information"| W
-    K -->|"khách bấm tim, thanh gửi kudos, avatar, tên, chi tiết, Login"| L
+    K -->|"người chưa có phiên bấm avatar, tên, chi tiết; Login"| L
     K -->|"proxy 307 khi site khoá, không phải admin"| CD
     H -.->|"liên kết, chưa có page"| U["/standards, /profile, /admin"]
     W -.->|"liên kết footer, chưa có page"| U
-    K -.->|"chi tiết, hồ sơ (đã đăng nhập), chưa có page"| U2["/sun-kudos/[id], /profiles/[id]"]
+    K -.->|"chi tiết, hồ sơ (có phiên kể cả ẩn danh), chưa có page"| U2["/sun-kudos/[id], /profiles/[id]"]
 ```
 
 > Ghi chú: các đích `/standards`, `/profile`, `/admin`, `/sun-kudos/[id]`, `/profiles/[id]` được liên kết trong giao diện nhưng không có page trong code, nên không phải SCR (`/sun-kudos` đã có page từ F006 và là SCR006_SunKudosLiveBoard). SCR002_Todo (đã gỡ) không xuất hiện trên bản đồ.
@@ -53,7 +53,7 @@ graph TD
 |-------------|-----------|----------------|------------|--------|
 | START (truy cập trực tiếp / liên kết ngoài) | SCR003_Homepage | Tải trang `GET /` (ROUTE001) | Không cần phiên; khi site đã mở khách không bị chuyển hướng (`lib/supabase/proxy-session.ts:129-135`); khi site khoá xem các dòng SCR005 bên dưới | |
 | START (truy cập trực tiếp / liên kết ngoài) | SCR001_Login | Tải trang `GET /login` (ROUTE004) | Khách: hiển thị màn hình đăng nhập | |
-| START (truy cập trực tiếp / liên kết ngoài) | SCR003_Homepage | `GET /login` bị `proxy` chuyển 307 về `/` | Phiên hợp lệ (`getClaims` có claims); chỉ GET/HEAD (`proxy-session.ts:129-132`); khi site khoá và không phải admin, `/` tiếp tục bị chuyển 307 `/countdown` | |
+| START (truy cập trực tiếp / liên kết ngoài) | SCR003_Homepage | `GET /login` bị `proxy` chuyển 307 về `/` | Phiên hợp lệ của tài khoản (`getClaims` có claims, claim `is_anonymous` khác `true`; phiên ẩn danh của khách ở lại `/login`); chỉ GET/HEAD (`proxy-session.ts`); khi site khoá và không phải admin, `/` tiếp tục bị chuyển 307 `/countdown` | |
 | SCR003_Homepage | SCR001_Login | Bấm nút "Login" (`GuestLoginLink`, `app/_components/site/account-slot-parts.tsx:14-22`) | Khách (không có người dùng, `account-region.tsx:53`) | SCR003_Homepage/REG001_AccountRegion |
 | SCR003_Homepage | SCR001_Login | Chọn "Đăng xuất" trong menu tài khoản → `signOut` (ROUTE002) rồi `redirect("/login")` (`lib/auth/actions.ts:19-33`) | Đã đăng nhập; luôn về `/login` kể cả khi revoke lỗi | SCR003_Homepage/REG001_AccountRegion |
 | SCR001_Login | Google OAuth (ngoài app) | Bấm nút Google → `signInWithGoogle` (ROUTE005) → `redirect(authorizeUrl)` (`app/login/actions.ts:60`) | Dựng được origin từ header và `signInWithOAuth` không lỗi; nếu không, ở lại SCR001 với lỗi inline | |
@@ -80,8 +80,8 @@ graph TD
 | START (truy cập trực tiếp / liên kết ngoài) | SCR006_SunKudosLiveBoard | Tải trang `GET /sun-kudos`, kèm hoặc không kèm `hashtag`, `department` (ROUTE011) | Không cần phiên; khi site đã mở khách không bị chuyển hướng; giá trị lọc sai định dạng bị bỏ qua | |
 | SCR006_SunKudosLiveBoard | SCR006_SunKudosLiveBoard | Chọn hoặc bỏ bộ lọc Hashtag/Phòng ban, hoặc bấm hashtag trên thẻ → `router.replace` URL mới; cuộn gần cuối All Kudos → `GET /api/kudos?cursor=…` (ROUTE015); bấm "Copy Link" → toast | Đổi lọc: carousel về thẻ 1, All Kudos nạp lại, Spotlight giữ trạng thái; hashtag trên thẻ chỉ đặt `hashtag`, giữ `department` | |
 | SCR006_SunKudosLiveBoard | SCR006_SunKudosLiveBoard | Thả/rút tim → Server Action `likeKudos` / `unlikeKudos` (ROUTE012, ROUTE013); chọn ngôn ngữ → `setLocale` (ROUTE014) | Đã đăng nhập và không phải người gửi (tim); giá trị ngôn ngữ thuộc danh sách cho phép | |
-| SCR006_SunKudosLiveBoard | SCR006_SunKudosLiveBoard | Bấm thanh gửi kudos (A.1) → hộp thoại "Viết Kudo" mở trên cùng màn hình, URL không đổi; gõ Người nhận hoặc `@` → `searchSunners` (ROUTE020); chọn ảnh → `POST /api/kudos/images` (ROUTE016), gỡ ảnh nháp → `DELETE /api/kudos/images/<file>` (ROUTE018); Gửi → `sendKudos` (ROUTE019), rồi đóng hộp thoại, toast thành công và `router.refresh()` | Đã đăng nhập; Gửi chỉ bật khi người nhận, Danh hiệu, nội dung và ≥ 1 hashtag hợp lệ và không còn ảnh đang tải; người gửi là Sunner của tài khoản (máy chủ quyết); Hủy hoặc Escape đóng và không lưu gì | |
-| SCR006_SunKudosLiveBoard | SCR001_Login | Khách bấm thanh gửi kudos, tim, avatar, tên, "Xem chi tiết" hoặc nút "Đăng nhập" ở sidebar / dòng quà; người đã đăng nhập mà `sendKudos` trả `unauthenticated` (phiên hết hạn) | Khách (không có phiên hoặc không xác định được phiên) | |
+| SCR006_SunKudosLiveBoard | SCR006_SunKudosLiveBoard | Bấm thanh gửi kudos (A.1) → hộp thoại "Viết Kudo" mở trên cùng màn hình, URL không đổi; gõ Người nhận hoặc `@` → `searchSunners` (ROUTE020); chọn ảnh → `POST /api/kudos/images` (ROUTE016), gỡ ảnh nháp → `DELETE /api/kudos/images/<file>` (ROUTE018); Gửi → `sendKudos` (ROUTE019), rồi đóng hộp thoại, toast thành công và `router.refresh()` | Có phiên (tài khoản, hoặc phiên ẩn danh do `ensureGuestSession` mở trước khi hộp thoại mở; khách có hộp ẩn danh tick sẵn và khoá); Gửi chỉ bật khi người nhận, Danh hiệu, nội dung và ≥ 1 hashtag hợp lệ và không còn ảnh đang tải; người gửi là Sunner của phiên (tài khoản hoặc Sunner khách; máy chủ quyết); Hủy hoặc Escape đóng và không lưu gì | |
+| SCR006_SunKudosLiveBoard | SCR001_Login | Người chưa có phiên bấm avatar, tên, "Xem chi tiết" hoặc nút "Đăng nhập" ở sidebar / dòng quà; `sendKudos` trả `unauthenticated` (phiên hết hạn lúc Gửi). Thanh gửi kudos và nút tim KHÔNG còn tới đây: guests act as Anonymous, `ensureGuestSession` (ROUTE021) mở phiên ẩn danh rồi hành động tiếp tục tại chỗ | Không có phiên hoặc không xác định được phiên (phiên ẩn danh được đi tới hồ sơ, chi tiết như Sunner) | |
 | SCR006_SunKudosLiveBoard | SCR003_Homepage | Bấm logo hoặc "About SAA 2025" ở header/footer | Liên kết `/` | |
 | SCR006_SunKudosLiveBoard | SCR004_AwardsInformation | Bấm "Awards Information" ở header/footer | Không cần phiên | |
 | SCR006_SunKudosLiveBoard | SCR005_CountdownPrelaunch | Mở `GET`/`HEAD /sun-kudos` khi site khoá → `proxy` chuyển 307 `/countdown` | Như dòng SCR003; `GET /api/kudos` cũng bị cổng | |
@@ -106,7 +106,7 @@ graph TD
 - Sang SCR003_Homepage: đăng nhập thành công (qua `/auth/callback`), hoặc `proxy` chuyển 307 khi đã có phiên
 
 **Decision Points**:
-- Mở `/login`: nếu phiên hợp lệ và method là GET/HEAD → 307 `/` (SCR003_Homepage), nếu không → hiển thị SCR001_Login
+- Mở `/login`: nếu phiên hợp lệ của tài khoản (không phải phiên ẩn danh) và method là GET/HEAD → 307 `/` (SCR003_Homepage), nếu không → hiển thị SCR001_Login
 - `?error`: nếu giá trị là `cancelled` hoặc `failed` → hiện thông báo lỗi inline, giá trị khác → bỏ qua (không phản chiếu nội dung query ra trang, `app/login/page.tsx:9-11,29-30`)
 - `signInWithGoogle`: nếu có origin hợp lệ và Supabase trả `data.url` → redirect sang Google, nếu không → `{ error: "failed" }`, nút bật lại và hiện lỗi
 
@@ -187,16 +187,16 @@ graph TD
 
 **Exit Points**:
 - Sang SCR003_Homepage: logo, "About SAA 2025"; sang SCR004_AwardsInformation: "Awards Information"
-- Sang SCR001_Login: khách bấm thanh gửi kudos, tim, avatar, tên, "Xem chi tiết" hoặc "Đăng nhập" (sidebar); phiên hết hạn lúc bấm Gửi
+- Sang SCR001_Login: người chưa có phiên bấm avatar, tên, "Xem chi tiết" hoặc "Đăng nhập" (sidebar); phiên hết hạn lúc bấm Gửi (thanh gửi kudos và tim không còn: khách tự có phiên ẩn danh)
 - Sang SCR005_CountdownPrelaunch: `proxy` chuyển 307 khi site khoá và người mở không phải admin
 - Sang các đích chưa có page: `/sun-kudos/[id]`, `/profiles/[id]` (người đã đăng nhập; 404 mặc định)
 
 **Decision Points**:
 - Bộ lọc trên URL: giá trị sai định dạng → bỏ qua như chưa lọc; đúng định dạng nhưng lạ → kết quả rỗng
 - Đọc dữ liệu từng khối (Highlight, All Kudos, nút lọc, Spotlight, sidebar): lỗi hoặc rỗng → thông báo rỗng của khối đó, khối khác vẫn hiện; All Kudos nạp thêm lỗi → giữ thẻ đã có và hiện "Thử lại"
-- Thả/rút tim: khách → `/login`; người gửi → nút vô hiệu; lỗi → hoàn lại tim và số, hiện thông báo lỗi ngắn
-- Sidebar D.1: khách → lời nhắc đăng nhập; đã đăng nhập → thống kê, hoặc "—" khi không đọc được
-- Thanh gửi kudos (A.1): khách → `/login`; đã đăng nhập → hộp thoại Viết Kudo; Gửi: lỗi theo trường → hiện ở trường, chưa có Sunner hoặc lỗi chung → thông báo lỗi và hộp thoại giữ nguyên, hết phiên → `/login`, thành công → đóng, thông báo, All Kudos có kudos mới đứng đầu
+- Thả/rút tim: khách chưa có phiên → `ensureGuestSession` rồi thả tim (không sang `/login`); người gửi → nút vô hiệu; lỗi → hoàn lại tim và số, hiện thông báo lỗi ngắn
+- Sidebar D.1: chưa có phiên → lời nhắc đăng nhập; có phiên (tài khoản hoặc ẩn danh) → thống kê của chính mình, hoặc "—" khi không đọc được
+- Thanh gửi kudos (A.1): khách chưa có phiên → `ensureGuestSession` rồi hộp thoại Viết Kudo (ẩn danh bị khoá; lỗi mở phiên → thông báo, không mở); có phiên → hộp thoại Viết Kudo; Gửi: lỗi theo trường → hiện ở trường, chưa có Sunner hoặc lỗi chung → thông báo lỗi và hộp thoại giữ nguyên, hết phiên → `/login`, thành công → đóng, thông báo, All Kudos có kudos mới đứng đầu
 
 ---
 
@@ -244,7 +244,7 @@ sequenceDiagram
 
 | Screen | Authentication Required | Authorization Level |
 |--------|------------------------|-------------------|
-| SCR001_Login | Không (người đã đăng nhập bị chuyển 307 về `/`) | Public (khách) |
+| SCR001_Login | Không (người đã đăng nhập bằng tài khoản bị chuyển 307 về `/`; phiên ẩn danh của khách không bị chuyển) | Public (khách) |
 | SCR003_Homepage | Không | Public; vùng REG001_AccountRegion đổi theo phiên: khách → "Login", user → menu Profile, admin → thêm mục Admin (chỉ là giao diện) |
 | SCR004_AwardsInformation | Không | Public; khách và người đã đăng nhập thấy cùng nội dung, chỉ vùng tài khoản dùng chung khác nhau |
 | SCR005_CountdownPrelaunch | Không | Public, mọi vai trò kể cả khách và admin; chỉ hiện khi site đang khoá |
@@ -301,7 +301,7 @@ Route guards intercept navigation to enforce conditions beyond authentication �
 ```pseudo
 refresh Supabase session cookies (getClaims)
 if (method is not GET and not HEAD) → continue
-if (hasVerifiedClaims and path == /login) → redirect 307 /
+if (hasVerifiedClaims and not claims.is_anonymous and path == /login) → redirect 307 /   # anonymous guest keeps /login
 else → continue (while the site is open a guest is never redirected by this rule)
 ```
 **failure path:** lỗi `getClaims` hoặc ném lỗi (kể cả thiếu biến môi trường) → coi là khách, request đi tiếp, không có 500; quy tắc này không chặn route nào đối với khách

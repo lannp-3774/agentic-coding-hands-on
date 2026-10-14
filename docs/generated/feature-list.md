@@ -142,7 +142,7 @@
 ### F003_AccountMenuAdminRole: Account Menu & Admin Role
 
 **Type**: ui
-**Description**: Cung cấp vùng tài khoản trên header trang chủ, đổi giao diện theo trạng thái đăng nhập và vai trò. Đầu vào: claims JWT của phiên hiện tại và `profiles.role` đọc dưới RLS. Xử lý: `getCurrentUser()` xác định khách / người dùng / admin (fail closed: lỗi bất kỳ coi là khách, vai trò không phải đúng `"admin"` coi là `user`); khách thấy liên kết "Đăng nhập" tới `/login`; người đã đăng nhập thấy chuông thông báo (chỉ giao diện) và nút tài khoản mở/đóng menu (Hồ sơ, Trang quản trị chỉ khi admin, Đăng xuất); Đăng xuất gọi `signOut` (kết thúc phiên cục bộ) rồi chuyển về `/login`. Đầu ra: header đúng theo vai trò, menu đóng/mở theo bàn phím và chuột, phiên kết thúc khi đăng xuất. Chỉ sở hữu vùng `SCR003_Homepage/REG001_AccountRegion`; vỏ SCR003_Homepage do F002 sở hữu. Việc ẩn mục Admin chỉ là UX — `/admin` và `/profile` chưa có page và chưa có guard phía server.
+**Description**: Cung cấp vùng tài khoản trên header trang chủ, đổi giao diện theo trạng thái đăng nhập và vai trò. Đầu vào: claims JWT của phiên hiện tại và `profiles.role` đọc dưới RLS. Xử lý: `getCurrentUser()` xác định khách / người dùng / admin (fail closed: lỗi bất kỳ coi là khách, vai trò không phải đúng `"admin"` coi là `user`; phiên ẩn danh của khách, `isAnonymous`, là `user` không tra hồ sơ và ở đây được coi là khách); khách thấy liên kết "Đăng nhập" tới `/login`; người đã đăng nhập thấy chuông thông báo (chỉ giao diện) và nút tài khoản mở/đóng menu (Hồ sơ, Trang quản trị chỉ khi admin, Đăng xuất); Đăng xuất gọi `signOut` (kết thúc phiên cục bộ) rồi chuyển về `/login`. Đầu ra: header đúng theo vai trò, menu đóng/mở theo bàn phím và chuột, phiên kết thúc khi đăng xuất. Chỉ sở hữu vùng `SCR003_Homepage/REG001_AccountRegion`; vỏ SCR003_Homepage do F002 sở hữu. Việc ẩn mục Admin chỉ là UX — `/admin` và `/profile` chưa có page và chưa có guard phía server.
 
 **Workspace**: my-app
 **Languages**: TypeScript, SQL (bảng `profiles` và trigger)
@@ -265,7 +265,7 @@
 ### F006_KudosBoardBrowse: Kudos Board Browse
 
 **Type**: ui
-**Description**: Trang `/sun-kudos` cho khách và Sunner xem bảng kudos: banner, thanh gửi kudos (A.1), carousel Highlight top 5 theo số tim và dòng All Kudos mới nhất trước, cùng hai bộ lọc Hashtag/Department. Đầu vào: request GET `/sun-kudos` kèm searchParams `hashtag`, `department`, cookie ngôn ngữ, dữ liệu kudos/hashtag/phòng ban/Sunner được seed từ nội dung Figma; trang kế của All Kudos được lấy bằng GET `/api/kudos` (cursor + bộ lọc). Xử lý: Server Component đọc Highlight và trang đầu qua cùng một hàm áp bộ lọc; bộ lọc nằm trên URL, đổi bộ lọc thì carousel về thẻ 1 và danh sách cuộn vô hạn nạp lại; bấm hashtag trên thẻ thì đặt bộ lọc Hashtag; "Copy Link" chép URL tuyệt đối `/sun-kudos/[id]` rồi hiện toast; nhãn danh hiệu Hero và 0–3 sao theo số kudos nhận (0–9 New, 10–19 Rising, 20–49 Super, 50+ Legend); thời gian hiện `HH:mm - MM/DD/YYYY` theo Asia/Ho_Chi_Minh; header và footer đánh dấu "Sun* Kudos" là trang hiện tại. Đầu ra: bảng kudos đã lọc với trạng thái rỗng "Hiện tại chưa có Kudos nào."; liên kết tới `/sun-kudos/[id]` và `/profiles/[id]` (chưa xây, 404) — khách bấm vào avatar, tên hoặc chi tiết thì chuyển tới `/login`; thanh "Tìm kiếm profile Sunner" và nút "Mở Secret Box" hiển thị đúng Figma nhưng chưa làm gì; thanh A.1 mở hộp thoại Viết Kudo của F010 (người đã đăng nhập) hoặc đưa khách tới `/login`.
+**Description**: Trang `/sun-kudos` cho khách và Sunner xem bảng kudos: banner, thanh gửi kudos (A.1), carousel Highlight top 5 theo số tim và dòng All Kudos mới nhất trước, cùng hai bộ lọc Hashtag/Department. Đầu vào: request GET `/sun-kudos` kèm searchParams `hashtag`, `department`, cookie ngôn ngữ, dữ liệu kudos/hashtag/phòng ban/Sunner được seed từ nội dung Figma; trang kế của All Kudos được lấy bằng GET `/api/kudos` (cursor + bộ lọc). Xử lý: Server Component đọc Highlight và trang đầu qua cùng một hàm áp bộ lọc; bộ lọc nằm trên URL, đổi bộ lọc thì carousel về thẻ 1 và danh sách cuộn vô hạn nạp lại; bấm hashtag trên thẻ thì đặt bộ lọc Hashtag; "Copy Link" chép URL tuyệt đối `/sun-kudos/[id]` rồi hiện toast; nhãn danh hiệu Hero và 0–3 sao theo số kudos nhận (0–9 New, 10–19 Rising, 20–49 Super, 50+ Legend); thời gian hiện `HH:mm - MM/DD/YYYY` theo Asia/Ho_Chi_Minh; header và footer đánh dấu "Sun* Kudos" là trang hiện tại. Đầu ra: bảng kudos đã lọc với trạng thái rỗng "Hiện tại chưa có Kudos nào."; liên kết tới `/sun-kudos/[id]` và `/profiles/[id]` (chưa xây, 404) — người chưa có phiên bấm vào avatar, tên hoặc chi tiết thì chuyển tới `/login` (khách có phiên ẩn danh tới đích như Sunner); thanh "Tìm kiếm profile Sunner" và nút "Mở Secret Box" hiển thị đúng Figma nhưng chưa làm gì; thanh A.1 mở hộp thoại Viết Kudo của F010 (khách chưa có phiên được mở phiên ẩn danh trước, không tới `/login`).
 
 Quyền sở hữu: F006 sở hữu vỏ màn hình và nền dữ liệu người/kudos dùng chung (bảng Sunner liên kết với tài khoản đăng nhập, kudos, hashtag, phòng ban, ảnh kudos). Ô nút tim trên thẻ do F007 sở hữu; F006 chỉ chừa chỗ (slot) và khung chờ. Vùng Spotlight và vùng sidebar do F008, F009 sở hữu. Từ 2026-10-14 F010 sở hữu hộp thoại Viết Kudo mở từ A.1 và các thay đổi trên thẻ (nội dung Markdown, khối người gửi ẩn danh); F006 chỉ giữ thanh A.1 và thẻ.
 
@@ -316,7 +316,7 @@ Quyền sở hữu: F006 sở hữu vỏ màn hình và nền dữ liệu ngư�
 ### F007_KudosHearts: Kudos Hearts
 
 **Type**: mixed
-**Description**: Cho Sunner đã đăng nhập thả tim hoặc rút tim ở kudos của người khác, và tính điểm tim cho NGƯỜI GỬI kudos. Đầu vào: thao tác bấm nút tim trên thẻ kudos (ở Highlight hoặc All Kudos), phiên đăng nhập, bảng `special_days` (seed, chưa có giao diện quản trị). Xử lý: Server Action `likeKudos(id)` / `unlikeKudos(id)` (biểu thị ý định, không phải nút bật/tắt) kiểm tra lại phiên phía máy chủ; khách bị đưa tới `/login`; DB giữ bất biến bằng khoá chính và trigger: một lượt thích mỗi người mỗi kudos, người gửi không tự thích kudos của mình, trọng số do DB quyết (+1, hoặc +2 vào ngày đặc biệt theo giờ Asia/Ho_Chi_Minh), số tim của kudos và tổng tim của người gửi cập nhật cùng giao dịch; bỏ thích thì thu hồi đúng trọng số đã lưu. Đầu ra: nút tim chuyển xám/đỏ và số tim ±1 theo lượt thích của người đang xem; nút của người gửi bị vô hiệu; điểm tim của người gửi đổi đúng trọng số.
+**Description**: Cho Sunner đã đăng nhập, hoặc khách (guests act as Anonymous, qua phiên ẩn danh), thả tim hoặc rút tim ở kudos của người khác, và tính điểm tim cho NGƯỜI GỬI kudos. Đầu vào: thao tác bấm nút tim trên thẻ kudos (ở Highlight hoặc All Kudos), phiên đăng nhập, bảng `special_days` (seed, chưa có giao diện quản trị). Xử lý: Server Action `likeKudos(id)` / `unlikeKudos(id)` (biểu thị ý định, không phải nút bật/tắt) kiểm tra lại phiên phía máy chủ; khách chưa có phiên bấm tim thì `ensureGuestSession` mở phiên ẩn danh trước rồi mới thả tim, không bị đưa tới `/login`; DB giữ bất biến bằng khoá chính và trigger: một lượt thích mỗi người mỗi kudos, người gửi không tự thích kudos của mình, trọng số do DB quyết (+1, hoặc +2 vào ngày đặc biệt theo giờ Asia/Ho_Chi_Minh), số tim của kudos và tổng tim của người gửi cập nhật cùng giao dịch; bỏ thích thì thu hồi đúng trọng số đã lưu. Đầu ra: nút tim chuyển xám/đỏ và số tim ±1 theo lượt thích của người đang xem; nút của người gửi bị vô hiệu; điểm tim của người gửi đổi đúng trọng số.
 
 Quyền sở hữu: F007 chỉ sở hữu vùng nút tim và hành vi thích; thẻ kudos và danh sách do F006 sở hữu. Cả hai cột đếm tim (`kudos.like_count` và `sunners.hearts_total`) thuộc migration nền của F006 (mặc định 0, Highlight cần `like_count` để sắp xếp); F007 chỉ thêm `kudos_likes`, `special_days` và trigger cập nhật các cột đó.
 
@@ -330,7 +330,7 @@ Quyền sở hữu: F007 chỉ sở hữu vùng nút tim và hành vi thích; th
 **Related User Stories**:
 - US042: Thả tim cho kudos của người khác
 - US043: Rút tim đã thả
-- US044: Khách bấm tim được đưa tới đăng nhập
+- US044: Khách bấm tim thì thả được tim, không cần đăng nhập
 - US045: Người gửi không thả tim cho kudos của chính mình
 - US046: Người gửi nhận tim theo lượt thích
 - US047: Vận hành khai báo ngày đặc biệt
@@ -338,6 +338,7 @@ Quyền sở hữu: F007 chỉ sở hữu vùng nút tim và hành vi thích; th
 **Related APIs/Routes**:
 - (POST) /sun-kudos [Next-Action: likeKudos] — ROUTE012
 - (POST) /sun-kudos [Next-Action: unlikeKudos] — ROUTE013
+- (POST) /sun-kudos [Next-Action: ensureGuestSession] — ROUTE021 (dùng chung với F010; mở phiên ẩn danh cho khách)
 
 **Related Data Models**:
 - MODEL011_KudosLike
@@ -350,6 +351,7 @@ Quyền sở hữu: F007 chỉ sở hữu vùng nút tim và hành vi thích; th
 **Related Permissions**:
 - PERM017_KudosLikesOwnerOnly: `kudos_likes` chỉ chủ lượt thích đọc/chèn/xoá; người gửi không tự thích; trọng số do trigger
 - PERM019_KudosHeartActionSessionCheck: `likeKudos`/`unlikeKudos` kiểm phiên phía máy chủ
+- PERM025_GuestAnonymousSessionStart, PERM026_GuestSunnerRules (dùng chung với F010): phiên ẩn danh và hồ sơ Sunner khách của người thả tim
 - PERM015_KudosBoardPublicReadServiceWrite: `special_days` đọc công khai, ghi chỉ `service_role`
 
 > Note: Verdict tên "Kudos Hearts" — một kết quả: tim của người gửi tăng/giảm đúng theo lượt thích. Tách khỏi F006 vì có bất biến DB riêng, kiểm thử được ở tầng DB và Server Action, và đổi ý định (ghi) khác đọc.
@@ -402,7 +404,7 @@ Quyền sở hữu: F008 chỉ sở hữu vùng Spotlight; chỉ đọc dữ li�
 ### F009_KudosPersonalSidebar: Kudos Personal Sidebar
 
 **Type**: ui
-**Description**: Cột bên (sidebar) của `/sun-kudos`: khối thống kê cá nhân (D.1) cho Sunner đã đăng nhập và danh sách 10 Sunner nhận quà mới nhất (D.3) cho mọi người. Đầu vào: phiên đăng nhập, thống kê của Sunner đang xem (kudos nhận/gửi, tim nhận, hộp quà đã mở/chưa mở) và bảng quà tặng seed. Xử lý: Server Component đọc `getCurrentUser()`; khách thấy lời nhắc đăng nhập thay cho thống kê; người đã đăng nhập thấy số liệu của chính mình và nút "Mở Secret Box" (chưa làm gì); danh sách quà đọc 10 dòng mới nhất. Đầu ra: khối thống kê hoặc lời nhắc đăng nhập, danh sách 10 người nhận quà, hoặc "Chưa có dữ liệu" khi rỗng. Danh sách khuyến mãi trong spec D không có thiết kế nên ngoài phạm vi.
+**Description**: Cột bên (sidebar) của `/sun-kudos`: khối thống kê cá nhân (D.1) cho Sunner đã đăng nhập (và khách có phiên ẩn danh, thấy số liệu của chính phiên khách) và danh sách 10 Sunner nhận quà mới nhất (D.3) cho mọi người. Đầu vào: phiên đăng nhập, thống kê của Sunner đang xem (kudos nhận/gửi, tim nhận, hộp quà đã mở/chưa mở) và bảng quà tặng seed. Xử lý: Server Component đọc `getCurrentUser()`; người chưa có phiên thấy lời nhắc đăng nhập thay cho thống kê; người có phiên (tài khoản hoặc ẩn danh) thấy số liệu của chính mình và nút "Mở Secret Box" (chưa làm gì); danh sách quà đọc 10 dòng mới nhất. Đầu ra: khối thống kê hoặc lời nhắc đăng nhập, danh sách 10 người nhận quà, hoặc "Chưa có dữ liệu" khi rỗng. Danh sách khuyến mãi trong spec D không có thiết kế nên ngoài phạm vi.
 
 Quyền sở hữu: F009 chỉ sở hữu vùng sidebar. Số liệu cá nhân đọc lại dữ liệu của F006 (kudos nhận/gửi) và F007 (tổng tim).
 
@@ -445,7 +447,7 @@ Quyền sở hữu: F009 chỉ sở hữu vùng sidebar. Số liệu cá nhân �
 ### F010_KudosWrite: Kudos Write
 
 **Type**: ui
-**Description**: Hộp thoại "Viết Kudo" mở từ thanh gửi kudos (A.1) của `/sun-kudos`: Sunner đã đăng nhập chọn người nhận, đặt danh hiệu, viết nội dung bằng thanh công cụ Markdown, chọn 1–5 hashtag, đính kèm tối đa 5 ảnh jpg/png (≤ 5 MB), tuỳ chọn gửi ẩn danh kèm tên ẩn danh; khách bấm A.1 thì tới `/login`. Đầu vào: phiên đăng nhập, danh sách hashtag có sẵn, từ khoá tìm Sunner, tệp ảnh. Xử lý: Server Action `searchSunners` gợi ý người nhận và `@tên`; `POST /api/kudos/images` ghi ảnh nháp vào kho riêng (loại tệp xác định bằng byte đầu tệp), `DELETE` xoá nháp của chính chủ; Server Action `sendKudos` kiểm đầu vào rồi gọi hàm Postgres `create_kudos` (`security definer`, người gửi là Sunner của `auth.uid()`, ghi kudos, hashtag, ảnh cùng một giao dịch); `GET /api/kudos/images/[file]` phục vụ ảnh đã gắn kudos. Ẩn danh thật: cột `kudos.sender_id` không còn đọc được từ trình duyệt, người gửi công khai qua `public_sender_id` (rỗng khi ẩn danh). Đầu ra: hộp thoại đóng, thông báo "Gửi Kudos thành công!", kudos mới đứng đầu All Kudos; thẻ kudos hiện nội dung Markdown (đậm, nghiêng, gạch ngang, danh sách đánh số, trích dẫn, liên kết http/https) và khối người gửi ẩn danh.
+**Description**: Hộp thoại "Viết Kudo" mở từ thanh gửi kudos (A.1) của `/sun-kudos`: Sunner đã đăng nhập, hoặc khách (guests act as Anonymous), chọn người nhận, đặt danh hiệu, viết nội dung bằng thanh công cụ Markdown, chọn 1–5 hashtag, đính kèm tối đa 5 ảnh jpg/png (≤ 5 MB), tuỳ chọn gửi ẩn danh kèm tên ẩn danh; khách chưa có phiên bấm A.1 thì `ensureGuestSession` mở phiên ẩn danh rồi hộp thoại mở (hộp ẩn danh tick sẵn và khoá với khách; không tới `/login`). Đầu vào: phiên (tài khoản hoặc ẩn danh), danh sách hashtag có sẵn, từ khoá tìm Sunner, tệp ảnh. Xử lý: Server Action `searchSunners` gợi ý người nhận và `@tên`; `POST /api/kudos/images` ghi ảnh nháp vào kho riêng (loại tệp xác định bằng byte đầu tệp), `DELETE` xoá nháp của chính chủ; Server Action `sendKudos` kiểm đầu vào rồi gọi hàm Postgres `create_kudos` (`security definer`, người gửi là Sunner của `auth.uid()`; Sunner khách `is_guest` luôn gửi ẩn danh và không bao giờ là người nhận; ghi kudos, hashtag, ảnh cùng một giao dịch); `GET /api/kudos/images/[file]` phục vụ ảnh đã gắn kudos. Ẩn danh thật: cột `kudos.sender_id` không còn đọc được từ trình duyệt, người gửi công khai qua `public_sender_id` (rỗng khi ẩn danh). Đầu ra: hộp thoại đóng, thông báo "Gửi Kudos thành công!", kudos mới đứng đầu All Kudos; thẻ kudos hiện nội dung Markdown (đậm, nghiêng, gạch ngang, danh sách đánh số, trích dẫn, liên kết http/https) và khối người gửi ẩn danh.
 
 Quyền sở hữu: F010 sở hữu hộp thoại, hai route ảnh, hai Server Action, hàm `create_kudos`, hàm `get_my_sent_kudos_count`, bucket `images`, bốn policy Storage và hàm `kudos_image_is_attached`, hai cột ẩn danh cùng cột sinh `public_sender_id`, và các thay đổi trên thẻ (nội dung Markdown, khối người gửi ẩn danh). F006 vẫn sở hữu vỏ trang, thanh gửi kudos (nay mở hộp thoại thay vì inert) và thẻ; F009 đọc số "Kudos đã gửi" qua hàm mới.
 
@@ -469,7 +471,8 @@ Quyền sở hữu: F010 sở hữu hộp thoại, hai route ảnh, hai Server A
 - (GET) /api/kudos/images/[file] — ROUTE017
 - (DELETE) /api/kudos/images/[file] — ROUTE018
 - (POST) /sun-kudos [Next-Action: sendKudos] — ROUTE019
-- (POST) /sun-kudos [Next-Action: searchSunners] — ROUTE020
+- (POST) /sun-kudos [Next-Action: searchSunners] — ROUTE020 (không bao giờ trả Sunner khách)
+- (POST) /sun-kudos [Next-Action: ensureGuestSession] — ROUTE021 (mở phiên ẩn danh cho khách ở hành động đầu tiên; dùng chung với F007)
 - Thanh gửi kudos nằm trên (GET) /sun-kudos — ROUTE011 (F006)
 
 **Related Data Models**:
@@ -488,12 +491,14 @@ Quyền sở hữu: F010 sở hữu hộp thoại, hai route ảnh, hai Server A
 - PERM022_KudosImagesStoragePolicies: bucket `images` riêng tư với bốn policy trên `storage.objects`
 - PERM023_KudosImageRoutesSessionAndMagicBytes: `POST`/`DELETE` ảnh cần phiên, kiểm loại bằng byte đầu tệp; `GET` chỉ ảnh đã gắn
 - PERM024_KudosWriteActionsSessionCheck: `sendKudos` và `searchSunners` kiểm đầu vào, lấy người dùng từ phiên đã xác minh
+- PERM025_GuestAnonymousSessionStart: `ensureGuestSession` mở phiên ẩn danh Supabase cho khách
+- PERM026_GuestSunnerRules: Sunner khách `is_guest`: kudos luôn ẩn danh, không là người nhận, không tìm thấy, phiên ẩn danh không bao giờ admin
 - PERM015_KudosBoardPublicReadServiceWrite, PERM016_SunnerPrivateColumnsOwnRowRpc (dùng chung; `kudos` nay đọc theo cột)
 
 > Note: Verdict tên "Kudos Write" — một kết quả: Sunner gửi được lời cảm ơn và thấy nó trên bảng. Hộp thoại, ảnh, ẩn danh và hiển thị Markdown cùng một luồng gửi, không kiểm thử độc lập có ý nghĩa nên không tách.
 > Note: Mã US058..US063 theo dãy toàn cục, tiếp sau US057 của F009; như F005..F009, user-stories.md chưa có các mã này (chạy `/tkm:rebuild-spec --artifact user-stories`); nội dung ở `docs/features/F010_KudosWrite/functional-spec.md` § 7.
 > Note: Spec F010 được promote lúc giao (Stage 6, 2026-10-14), không phải ở implement-start; chạy `/tkm:rebuild-spec --features F010` để có bản đầy đủ `path:line`.
-> Note: F010 thay quyết định D013 của F006 chỉ cho thanh A.1 (mở hộp thoại, khách tới `/login`); thanh "Tìm kiếm profile Sunner" vẫn chưa làm gì. Phụ thuộc F006 (vỏ trang, thẻ, bảng), F007 (trigger tim dùng `sender_id`), F009 (số đã gửi).
+> Note: F010 thay quyết định D013 của F006 chỉ cho thanh A.1 (mở hộp thoại; từ 2026-10-14 khách không còn tới `/login` mà được mở phiên ẩn danh); thanh "Tìm kiếm profile Sunner" vẫn chưa làm gì. Phụ thuộc F006 (vỏ trang, thẻ, bảng), F007 (trigger tim dùng `sender_id`), F009 (số đã gửi).
 
 ---
 
@@ -502,10 +507,10 @@ Quyền sở hữu: F010 sở hữu hộp thoại, hai route ảnh, hai Server A
 - **Total Features**: 10
 - **Total Screens**: 5 màn hình đang hoạt động (SCR001_Login, SCR003_Homepage, SCR004_AwardsInformation, SCR005_CountdownPrelaunch (F005), SCR006_SunKudosLiveBoard (F006 sở hữu vỏ; F007, F008, F009 sở hữu vùng; F010 sở hữu hộp thoại Viết Kudo, REG### chưa khai báo)) + 1 bản ghi đã gỡ (SCR002_Todo, tombstone, không tính) + 2 vùng (SCR003_Homepage/REG001_AccountRegion, SCR003_Homepage/REG002_AwardsGrid)
 - **Total User Stories**: 63 (F001: 6, F002: 8, F003: 7, F004: 6, F005: 6, F006: 8, F007: 6, F008: 6, F009: 4, F010: 6); US028..US063 (F005..F010) có trong functional-spec của feature nhưng chưa có trong user-stories.md (file đã vượt giới hạn kích thước; chạy `/tkm:rebuild-spec --artifact user-stories`)
-- **Total Routes**: 20 (ROUTE001..ROUTE020; ROUTE003, ROUTE006, ROUTE009 và ROUTE014 dùng chung giữa các feature theo route-list; ROUTE010 là F005; ROUTE011..ROUTE015 của Sun* Kudos: F006 giữ ROUTE011, ROUTE014, ROUTE015, F007 giữ ROUTE012, ROUTE013, F010 giữ ROUTE016..ROUTE020)
+- **Total Routes**: 21 (ROUTE001..ROUTE021; ROUTE003, ROUTE006, ROUTE009 và ROUTE014 dùng chung giữa các feature theo route-list; ROUTE010 là F005; ROUTE011..ROUTE015 của Sun* Kudos: F006 giữ ROUTE011, ROUTE014, ROUTE015, F007 giữ ROUTE012, ROUTE013, F010 giữ ROUTE016..ROUTE020, ROUTE021 dùng chung F007 và F010)
 - **Total Data Models**: 13 (MODEL001..MODEL004 cũ, MODEL005..MODEL013 của Sun* Kudos)
 - **Total Background Logic**: 3 (BL001 dùng chung ba feature)
-- **Total Permissions**: 24 (PERM008 dùng chung F001, F002, F004 và F006; PERM013, PERM014 là F005; PERM015..PERM019 của Sun* Kudos; PERM020..PERM024 của F010)
+- **Total Permissions**: 26 (PERM008 dùng chung F001, F002, F004 và F006; PERM013, PERM014 là F005; PERM015..PERM019 của Sun* Kudos; PERM020..PERM024 của F010; PERM025, PERM026 của guests act as Anonymous, dùng chung F007 và F010)
 - **Languages Detected**: TypeScript, SQL
 
 ## Cross-Reference Validation

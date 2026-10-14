@@ -206,7 +206,7 @@ flowchart LR
 **FE** · Mỗi nút là một thẻ `<a>` thật (Tab, Enter, trình đọc màn hình, `getByRole("link")` trong e2e) có `href` do máy chủ chọn sẵn; không dùng `onClick` điều hướng. Kéo bảng (A5) không được kích hoạt nhấp: nếu con trỏ dịch quá ngưỡng nhỏ giữa `pointerdown` và `pointerup` thì huỷ nhấp.
 **Request** · điều hướng `GET` tới `/sun-kudos/[id]` (id của kudos) hoặc `/login`
 **BE** · trang đích `/sun-kudos/[id]` do feature khác sở hữu và chưa xây (404 mặc định của Next); `/login` thuộc F001. F008 chỉ sinh `href`.
-**Rule** · **BR-008 — Đã đăng nhập thì nút dẫn tới kudos của nó; khách thì dẫn tới `/login`.** Máy chủ quyết định `href` theo phiên (ẩn/hiện liên kết chỉ là UX; việc chặn thật ở trang đích khi nó được xây). Quy ước khách → `/login` cùng loại với avatar/tên/chi tiết ở vùng F006 nhưng mỗi feature tự nêu quy tắc của mình.
+**Rule** · **BR-008 — Có phiên thì nút dẫn tới kudos của nó; chưa có phiên thì dẫn tới `/login`.** "Có phiên" gồm cả khách có phiên ẩn danh (`getCurrentUser() != null`, plan 261014-1505-guest-anonymous-access). Máy chủ quyết định `href` theo phiên (ẩn/hiện liên kết chỉ là UX; việc chặn thật ở trang đích khi nó được xây). Quy ước khách → `/login` cùng loại với avatar/tên/chi tiết ở vùng F006 nhưng mỗi feature tự nêu quy tắc của mình.
 **Result** · Điều hướng; **không ghi DB**. Chưa có trang chi tiết thì người đã đăng nhập thấy 404 mặc định (chấp nhận được giai đoạn này).
 **Source:** TBD (draft)
 
@@ -417,7 +417,7 @@ Chính sách kiểm thử `e2e-red-first` (hành vi: tìm kiếm, bật/tắt Pa
 - **SC-007** *(A4, A5)* Mặc định `aria-pressed="false"` và lăn chuột trên bảng cuộn trang; bật thì kéo đổi `transform` và lăn chuột đổi `k` trong `[0.5, 4]`; tắt thì bảng không đổi khi lăn (covers FR-204, FR-403, BR-007, SM-001, ALG-003)
 - **SC-008** *(A5)* Nút `Tab` tới được; nút nhận tiêu điểm nằm trong tầm nhìn sau khi dịch; mũi tên và `+`/`-` hoạt động khi Pan/Zoom bật (covers FR-407) *[EXPECTED]*
 - **SC-009** *(A6)* Rê chuột hoặc `focus` vào một nút hiện tooltip có tên và `HH:mm - MM/DD/YYYY` đúng múi giờ Asia/Ho_Chi_Minh; rời thì ẩn (covers FR-401, BR-005)
-- **SC-010** *(A7)* Đã đăng nhập: `href` của nút là `/sun-kudos/<id>` (404 mặc định khi bấm, chưa xây); khách: `href` là `/login` và bấm đến trang đăng nhập; kéo bảng rồi nhả trên nút không điều hướng (covers FR-402, BR-008)
+- **SC-010** *(A7)* Có phiên (đã đăng nhập, hoặc khách có phiên ẩn danh): `href` của nút là `/sun-kudos/<id>` (404 mặc định khi bấm, chưa xây); chưa có phiên: `href` là `/login` và bấm đến trang đăng nhập; kéo bảng rồi nhả trên nút không điều hướng (covers FR-402, BR-008)
 - **SC-011** *(A0)* Với vai trò `anon`, đọc kudos/sunners thành công và ghi bị từ chối (đã do e2e RLS của F006 bảo vệ, F008 không thêm bảng nên không có test riêng) (covers FR-601, BR-001)
 - **SC-012** *(A1)* Chọn EN thì nhãn và placeholder đổi sang tiếng Anh, tên người nhận giữ nguyên (covers FR-409)
 
@@ -444,7 +444,7 @@ Chính sách kiểm thử `e2e-red-first` (hành vi: tìm kiếm, bật/tắt Pa
 
 **Acceptance Scenarios:**
 
-1. **Given** khách, **When** bấm một nút, **Then** đến `/login`.
+1. **Given** người chưa có phiên, **When** bấm một nút, **Then** đến `/login`.
 2. **Given** Sunner đã đăng nhập, **When** bấm một nút, **Then** đến `/sun-kudos/<id>` của kudos đó.
 
 #### US051 *(A3)*

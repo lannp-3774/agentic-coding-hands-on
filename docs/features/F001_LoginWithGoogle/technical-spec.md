@@ -197,7 +197,7 @@ sequenceDiagram
 
 | DEC | subtype | Condition | What the user sees | Source |
 |---|---|---|---|---|
-| **DEC-001** | flow | method là `GET` hoặc `HEAD` VÀ `pathname === "/login"` VÀ có claims hợp lệ | chuyển 307 tới `/` | `lib/supabase/proxy-session.ts:129-135` |
+| **DEC-001** | flow | method là `GET` hoặc `HEAD` VÀ `pathname === "/login"` VÀ có claims hợp lệ của một tài khoản (không phải phiên ẩn danh: claim `is_anonymous !== true`) | chuyển 307 tới `/`; phiên ẩn danh của khách không bị chuyển (chưa có tài khoản, plan 261014-1505-guest-anonymous-access) | `lib/supabase/proxy-session.ts` (`loginRedirectTarget`) |
 | **DEC-002** | flow | *Đã gỡ (2026-10-08): từng là "chưa đăng nhập mà vào `/todo` thì về `/login`"; `/todo` bị gỡ và `/` là trang công khai* | không còn nhánh chặn khách: khách ở `/` luôn xem được trang chủ, không bị chuyển hướng (khi site đã mở; cổng F005 xem technical-spec F005) | `lib/supabase/proxy-session.ts:129-135` |
 
 **Result** · Không ghi DB. Cookie phiên được làm mới khi token sắp hết hạn; nếu không rơi vào DEC-001, request đi tiếp bình thường. Khi site đã mở, khách ở mọi page route luôn đi tiếp (cổng prelaunch của F005 chỉ chuyển khi site còn khoá).
@@ -381,7 +381,7 @@ Chính sách kiểm thử `e2e-red-first`: các file E2E Playwright cấp màn h
 - **SC-002** *(A1, A4)* Mặc định hiện "VN"; bấm bộ chọn mở menu; chọn EN đổi chữ và đặt cookie `NEXT_LOCALE=en`, tải lại vẫn giữ; cookie giá trị lạ cho kết quả `vi`; bàn phím `Esc`/`Tab`/mũi tên và bấm ra ngoài hoạt động như § 3.2 (covers FR-206, FR-207, FR-404, FR-407, BR-004)
 - **SC-003** *(A2)* Bấm nút thì nút `disabled` và `aria-busy="true"`; request tới authorize của Supabase có `provider=google` và `redirect_to=<origin>/auth/callback`; không có `Origin`/`host` hợp lệ thì `failed` (covers FR-401, FR-602, BR-006, BR-008)
 - **SC-004** *(A3)* `/auth/callback?code=bogus` về `/login?error=failed`; không có `code` và `?error=access_denied` về `/login?error=cancelled`; `next`/`redirect_to` không làm đổi đích (covers FR-403, FR-601, DEC-003, BR-002, BR-003)
-- **SC-005** *(A5)* Đã đăng nhập vào `/login` bị chuyển `/`; chưa đăng nhập vào `/` vẫn mở được, không bị chuyển hướng; cookie phiên vẫn được làm mới trên `/`; `POST` không bị chuyển hướng (covers FR-001, FR-102, DEC-001, BR-005, BR-009)
+- **SC-005** *(A5)* Đã đăng nhập (tài khoản) vào `/login` bị chuyển `/`; phiên ẩn danh ở lại `/login`; chưa đăng nhập vào `/` vẫn mở được, không bị chuyển hướng; cookie phiên vẫn được làm mới trên `/`; `POST` không bị chuyển hướng (covers FR-001, FR-102, DEC-001, BR-005, BR-009)
 - **SC-006** *(A6, A7 — đã gỡ 2026-10-08)* Ca `/todo` hiện email và đăng xuất không còn trong F001 (trước đây covers FR-405, FR-406, BR-007); `/todo` trả không tồn tại; đăng xuất do F003 kiểm thử.
 - **SC-007** *(A3)* code hợp lệ cùng cookie PKCE → 302 tới `/` và header hiện nút tài khoản của người đã đăng nhập (`e2e/auth-callback-success.spec.ts`, cần Supabase local và Mailpit) (covers FR-402, BR-001)
 
@@ -427,7 +427,7 @@ Chính sách kiểm thử `e2e-red-first`: các file E2E Playwright cấp màn h
 
 **Acceptance Scenarios:**
 
-1. **Given** có phiên hợp lệ, **When** `GET /login`, **Then** 307 tới `/`.
+1. **Given** có phiên hợp lệ của một tài khoản, **When** `GET /login`, **Then** 307 tới `/` (phiên ẩn danh: không chuyển).
 2. **Given** khách hoặc `getClaims` lỗi, **When** mở `/login` hoặc `/`, **Then** không chuyển hướng, trang hiện bình thường.
 
 #### US015 *(A5)*

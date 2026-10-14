@@ -32,6 +32,8 @@
 
 > Ghi chú phạm vi: chỉ ghi các kiểm soát **đã được thực thi trong code**. Hai mục UX-only (PERM003, PERM004) được đánh dấu rõ là chỉ ẩn/hiện giao diện, không phải rào chắn phía server. Dự án không có feature flag, experiment, locale-gate hay kiểm tra quyền sở hữu giữa người dùng. Các route `/profile`, `/admin`, `/standards`, `/sun-kudos/[id]`, `/profiles/[id]` có liên kết nhưng chưa có page trong code nên không có PERM (xem mục "Gaps" ở cuối). Từ 2026-10-13 `/sun-kudos` và `GET /api/kudos` đã có (PERM015..PERM019; cổng prelaunch PERM014 áp cho hai `GET` này như mọi page route); từ 2026-10-14 Viết Kudo (F010) thêm PERM020..PERM024. `/todo` (SCR002_Todo) đã gỡ ngày 2026-10-08, không còn kiểm soát nào.
 
+> Từ 2026-10-14 (guests act as Anonymous): **Anonymous visitor** = chưa có phiên; **Anonymous guest** = phiên ẩn danh Supabase (vai Postgres `authenticated`, claim `is_anonymous`, hồ sơ Sunner `is_guest`) mở lười ở hành động đầu tiên (PERM025, PERM026). Mục UI "tài khoản đăng nhập" coi phiên ẩn danh là khách; phiên ẩn danh không bao giờ là admin.
+
 ## Permissions Index
 
 | Code | Name | Type | Enforced At |
@@ -59,7 +61,9 @@
 | PERM021_KudosSenderIdNotClientReadable | `kudos.sender_id` không mở cho client; người gửi công khai qua `public_sender_id` (NULL khi ẩn danh); số đã gửi qua `get_my_sent_kudos_count()` | field-permission | `supabase/migrations/20261014004500_create_kudos_write.sql:34-66,183-200` |
 | PERM022_KudosImagesStoragePolicies | Bucket `images` riêng tư, bốn policy `storage.objects`: chủ (`owner_id`) chèn, đọc, xoá ảnh nháp; ảnh đã gắn kudos đọc công khai; hai policy cuối gọi hàm `kudos_image_is_attached` | resource-ownership | `supabase/migrations/20261014004600_create_kudos_images_storage.sql:25-86` |
 | PERM023_KudosImageRoutesSessionAndMagicBytes | `POST`/`DELETE` ảnh cần phiên; loại tệp theo byte đầu tệp, ≤ 5 MiB; `GET` chỉ ảnh đã gắn, bằng client không cookie | action-permission | `app/api/kudos/images/route.ts:35-84`, `app/api/kudos/images/[file]/route.ts:53-114` |
-| PERM024_KudosWriteActionsSessionCheck | `sendKudos`/`searchSunners`: kiểm hình dạng đầu vào, người dùng từ claims đã xác minh, khách bị từ chối phía máy chủ | action-permission | `lib/kudos/send-kudos-action.ts:45-151` |
+| PERM024_KudosWriteActionsSessionCheck | `sendKudos`/`searchSunners`: kiểm hình dạng đầu vào, người dùng từ claims đã xác minh, người chưa có phiên bị từ chối phía máy chủ | action-permission | `lib/kudos/send-kudos-action.ts:45-151` |
+| PERM025_GuestAnonymousSessionStart | `ensureGuestSession`: mở phiên ẩn danh Supabase cho khách ở hành động đầu tiên; không bao giờ đè phiên còn sống | action-permission | `lib/supabase/ensure-guest-session.ts`, `lib/supabase/start-guest-session-once.ts` |
+| PERM026_GuestSunnerRules | Sunner khách (`is_guest`): kudos luôn ẩn danh, không là người nhận, không tìm thấy, phiên ẩn danh không bao giờ admin | role-based | `supabase/migrations/20261014084206_guest_anonymous_sunners.sql`, `lib/supabase/current-user.ts`, `lib/prelaunch/read-gate-user-role.ts` |
 
 ---
 
@@ -72,13 +76,13 @@
 
 #### Description
 
-`proxy.ts` chạy `updateSession` cho mọi page route (`proxy.ts:10-24`; matcher literal `"/((?!_next/|__nextjs|.*\\..*).*)"` loại `/_next/*`, `__nextjs*` và đường có dấu chấm; F005 thay matcher cũ, `/awards-information` đã được F004 thêm ngày 2026-10-09 chỉ để làm mới phiên). `/auth/callback` khớp matcher nhưng `updateSession` trả tiếp ngay, không làm mới phiên (`proxy-session.ts:45`). `updateSession` làm mới phiên Supabase bằng `getClaims()` (xác thực chữ ký JWT, `proxy-session.ts:110`). Quy tắc chuyển hướng **theo phiên** duy nhất: request `GET` hoặc `HEAD` tới `/login` mà claims hợp lệ thì trả 307 về `/` (`proxy-session.ts:129-135`); cổng prelaunch là quy tắc chuyển hướng riêng, xem PERM014. Khi site đã mở không route nào bị chặn đối với khách; `/` luôn đi tiếp (`proxy-session.ts:13-16`). Request `POST` (Server Action) không bao giờ bị chuyển hướng để không làm hỏng lời gọi action (`proxy-session.ts:35-40,130,162-164`). Đích chuyển hướng là đường dẫn cố định trên cùng origin, không đọc từ query nên không có open redirect (`proxy-session.ts:41-42`). Thiếu/sai `SUPABASE_URL` hoặc `SUPABASE_PUBLISHABLE_KEY`, lỗi `getClaims` hay lỗi mạng đều coi là khách, ghi log, không trả 500 (`proxy-session.ts:81-127`). Đây là fail-safe vì khách không được cấp quyền nào. Proxy không phải rào chắn bảo vệ route: trang và action phải tự kiểm tra lại (`proxy-session.ts:35-37`).
+`proxy.ts` chạy `updateSession` cho mọi page route (`proxy.ts:10-24`; matcher literal `"/((?!_next/|__nextjs|.*\\..*).*)"` loại `/_next/*`, `__nextjs*` và đường có dấu chấm; F005 thay matcher cũ, `/awards-information` đã được F004 thêm ngày 2026-10-09 chỉ để làm mới phiên). `/auth/callback` khớp matcher nhưng `updateSession` trả tiếp ngay, không làm mới phiên (`proxy-session.ts:45`). `updateSession` làm mới phiên Supabase bằng `getClaims()` (xác thực chữ ký JWT, `proxy-session.ts:110`). Quy tắc chuyển hướng **theo phiên** duy nhất: request `GET` hoặc `HEAD` tới `/login` mà claims hợp lệ của một tài khoản (claim `is_anonymous` khác `true`; phiên ẩn danh của khách không bị chuyển, vì chưa có tài khoản) thì trả 307 về `/` (`proxy-session.ts:129-135`); cổng prelaunch là quy tắc chuyển hướng riêng, xem PERM014. Khi site đã mở không route nào bị chặn đối với khách; `/` luôn đi tiếp (`proxy-session.ts:13-16`). Request `POST` (Server Action) không bao giờ bị chuyển hướng để không làm hỏng lời gọi action (`proxy-session.ts:35-40,130,162-164`). Đích chuyển hướng là đường dẫn cố định trên cùng origin, không đọc từ query nên không có open redirect (`proxy-session.ts:41-42`). Thiếu/sai `SUPABASE_URL` hoặc `SUPABASE_PUBLISHABLE_KEY`, lỗi `getClaims` hay lỗi mạng đều coi là khách, ghi log, không trả 500 (`proxy-session.ts:81-127`). Đây là fail-safe vì khách không được cấp quyền nào. Proxy không phải rào chắn bảo vệ route: trang và action phải tự kiểm tra lại (`proxy-session.ts:35-37`).
 
 #### Related Routes
 
 - ROUTE001 (GET) `/` — đi tiếp với khách và người đã đăng nhập, chỉ làm mới cookie
 - ROUTE008 (GET) `/awards-information` — như ROUTE001: đi tiếp với mọi người, chỉ làm mới cookie
-- ROUTE004 (GET) `/login` — người đã đăng nhập bị 307 về `/`
+- ROUTE004 (GET) `/login` — người đã đăng nhập (tài khoản) bị 307 về `/`; phiên ẩn danh không bị chuyển
 - ROUTE005, ROUTE006 (POST) `/login` — không bị chuyển hướng
 - ROUTE002, ROUTE003 (POST) `/` — không bị chuyển hướng
 - ROUTE009 (POST) `/awards-information` — không bị chuyển hướng
@@ -95,6 +99,7 @@
 | Role | Allow | Conditions |
 |------|-------|------------|
 | Anonymous visitor | ✓ | `/login`: vào được, không chuyển hướng. `/` và `/awards-information`: vào được. Lỗi `getClaims`/thiếu env → vẫn coi là khách. |
+| Anonymous guest (phiên ẩn danh) | ✓ | `/login` vào được, không chuyển hướng (chưa có tài khoản). `/` và `/awards-information` vào được. |
 | Authenticated user | ✗ (chỉ `/login`) | `GET|HEAD /login` → 307 `/`. `/` và `/awards-information` vào được. `POST` không bị chuyển hướng. |
 | Authenticated admin | ✗ (chỉ `/login`) | Giống Authenticated user; vai trò không ảnh hưởng quy tắc này. |
 
@@ -147,7 +152,7 @@
 
 #### Description
 
-Phía server quyết định phần giao diện bên phải header theo `getCurrentUser()`. Khách thấy liên kết "Login" tới `/login` (`account-region.tsx:53`). Người đã đăng nhập thấy chuông thông báo (`account-region.tsx:44-48`) và nút tài khoản kèm menu (`account-region.tsx:55-61`). Chuông chỉ là giao diện, chưa có handler. Danh sách mục menu được lọc ở server nên vai trò không xuống trình duyệt (`account-menu.tsx:11-14`). Mỗi phần có `Suspense` riêng (`account-region.tsx:28,38`). Đây chỉ là hiển thị, không phải kiểm soát truy cập.
+Phía server quyết định phần giao diện bên phải header theo `getCurrentUser()`. Khách thấy liên kết "Login" tới `/login` (`account-region.tsx:53`); phiên ẩn danh (`user.isAnonymous`) cũng thấy liên kết này, không chuông, không menu. Người đã đăng nhập thấy chuông thông báo (`account-region.tsx:44-48`) và nút tài khoản kèm menu (`account-region.tsx:55-61`). Chuông chỉ là giao diện, chưa có handler. Danh sách mục menu được lọc ở server nên vai trò không xuống trình duyệt (`account-menu.tsx:11-14`). Mỗi phần có `Suspense` riêng (`account-region.tsx:28,38`). Đây chỉ là hiển thị, không phải kiểm soát truy cập.
 
 #### Related Routes
 
@@ -163,6 +168,7 @@ Phía server quyết định phần giao diện bên phải header theo `getCurr
 | Role | Allow | Conditions |
 |------|-------|------------|
 | Anonymous visitor | ✓ (liên kết Login) | Không thấy chuông và menu. |
+| Anonymous guest (phiên ẩn danh) | ✓ (liên kết Login) | Như khách: không thấy chuông và menu. |
 | Authenticated user | ✓ (chuông + menu) | Menu có Profile và Đăng xuất. |
 | Authenticated admin | ✓ (chuông + menu) | Như user, thêm mục Admin (PERM004). |
 
@@ -216,7 +222,7 @@ Mục "Admin" trỏ `/admin` chỉ được thêm vào menu khi `role === "admin
 
 #### Description
 
-Nguồn sự thật duy nhất của danh tính và vai trò phía server. Danh tính chỉ lấy từ JWT claims đã xác thực (`getClaims()`, không dùng `getSession()`; `current-user.ts:21-22,39`). Vai trò chỉ lấy từ `public.profiles.role` đọc bằng phiên của chính người dùng dưới RLS, không bao giờ từ `user_metadata` (`current-user.ts:22-24,65-69`). Chỉ giá trị chữ `"admin"` mới thành `admin`: hàm thuần `toUserRole` (`user-role.ts:13-15`) được gọi ở `current-user.ts:78`. Fail closed: không có claims, lỗi auth hay exception → `null` (khách) (`current-user.ts:40-58`); không có dòng profile, lỗi tra cứu hay giá trị lạ → `"user"`, không bao giờ `"admin"` (`current-user.ts:70-83`). Kết quả được `cache()` theo request. Đọc trực tiếp bảng nên đổi vai trò có hiệu lực ở request kế tiếp. Chỉ `AccountRegion` đang dùng hàm này (`account-region.tsx:45,51`); chưa có trang hay action nào ra quyết định chặn dựa trên nó.
+Nguồn sự thật duy nhất của danh tính và vai trò phía server. Danh tính chỉ lấy từ JWT claims đã xác thực (`getClaims()`, không dùng `getSession()`; `current-user.ts:21-22,39`). Vai trò chỉ lấy từ `public.profiles.role` đọc bằng phiên của chính người dùng dưới RLS, không bao giờ từ `user_metadata` (`current-user.ts:22-24,65-69`). Chỉ giá trị chữ `"admin"` mới thành `admin`: hàm thuần `toUserRole` (`user-role.ts:13-15`) được gọi ở `current-user.ts:78`. Từ 2026-10-14 `CurrentUser` có `isAnonymous` (claim `is_anonymous === true`); phiên ẩn danh có `role = "user"` mà không tra `profiles`, không bao giờ `admin`. Fail closed: không có claims, lỗi auth hay exception → `null` (khách) (`current-user.ts:40-58`); không có dòng profile, lỗi tra cứu hay giá trị lạ → `"user"`, không bao giờ `"admin"` (`current-user.ts:70-83`). Kết quả được `cache()` theo request. Đọc trực tiếp bảng nên đổi vai trò có hiệu lực ở request kế tiếp. Chỉ `AccountRegion` đang dùng hàm này (`account-region.tsx:45,51`); chưa có trang hay action nào ra quyết định chặn dựa trên nó.
 
 #### Related Routes
 
@@ -231,6 +237,7 @@ Nguồn sự thật duy nhất của danh tính và vai trò phía server. Danh 
 | Role | Allow | Conditions |
 |------|-------|------------|
 | Anonymous visitor | ✓ (kết quả `null`) | Không có claims hợp lệ, `getClaims` lỗi, hoặc exception. |
+| Anonymous guest (phiên ẩn danh) | ✓ (kết quả `user`, `isAnonymous = true`) | Claim `is_anonymous = true`; không tra `profiles`, không bao giờ `admin`. |
 | Authenticated user | ✓ (kết quả `user`) | Claims hợp lệ và `profiles.role = 'user'`; cũng là kết quả khi thiếu dòng profile, lỗi đọc, hay giá trị khác `"admin"`. |
 | Authenticated admin | ✓ (kết quả `admin`) | Claims hợp lệ và `profiles.role = 'admin'` đọc được dưới RLS. |
 
@@ -506,7 +513,7 @@ Cùng mẫu với PERM009. RLS bật trên `public.site_settings` (`:31`); polic
 
 #### Description
 
-Cổng ra mắt (F005), không phải kiểm soát an ninh (FR-602). Chỉ `GET`/`HEAD` được xét (`lib/supabase/proxy-session.ts:54,162-164`); `/login` và `/auth/callback` luôn được miễn (`lib/prelaunch/prelaunch-gate-decision.ts:14`; `/auth/callback` còn trả tiếp ngay ở `lib/supabase/proxy-session.ts:45`). Mốc đọc từ `site_settings.prelaunch_ends_at` song song với `getClaims()` (`lib/supabase/proxy-session.ts:55-58`). Khoá khi `momentMs !== null && nowMs < momentMs` (bằng nhau là mở, `lib/prelaunch/prelaunch-gate-decision.ts:49`). Khi khoá: `/countdown` hiện cho mọi vai trò (`:51-52`); mọi page route khác chuyển 307 `/countdown` trừ khi phiên đã xác minh có `profiles.role` đúng chữ `admin` (`lib/supabase/proxy-session.ts:157-159`). Khi mở hoặc mốc không dùng được: `/countdown` chuyển 307 `/` (`lib/prelaunch/prelaunch-gate-decision.ts:52`), mọi trang khác đi tiếp. Mốc **fail open** (thiếu dòng, `NULL`, sai, quá 2 giây hay lỗi mạng đều là site mở, không retry, `lib/prelaunch/read-prelaunch-ends-at.ts:9,32-66`); vai trò **fail closed**: lỗi, quá 2 giây, không có hồ sơ hay giá trị khác `admin` đều là `user` (`lib/prelaunch/read-gate-user-role.ts:11,24-49`). Đích chuyển hướng là hằng `/countdown` hoặc `/`, không đọc từ request (`lib/prelaunch/prelaunch-gate-decision.ts:7,9`), nên không có open redirect. Vì `POST` không qua cổng nên mọi trang và Server Action vẫn phải tự kiểm tra quyền.
+Cổng ra mắt (F005), không phải kiểm soát an ninh (FR-602). Chỉ `GET`/`HEAD` được xét (`lib/supabase/proxy-session.ts:54,162-164`); `/login` và `/auth/callback` luôn được miễn (`lib/prelaunch/prelaunch-gate-decision.ts:14`; `/auth/callback` còn trả tiếp ngay ở `lib/supabase/proxy-session.ts:45`). Mốc đọc từ `site_settings.prelaunch_ends_at` song song với `getClaims()` (`lib/supabase/proxy-session.ts:55-58`). Khoá khi `momentMs !== null && nowMs < momentMs` (bằng nhau là mở, `lib/prelaunch/prelaunch-gate-decision.ts:49`). Khi khoá: `/countdown` hiện cho mọi vai trò (`:51-52`); mọi page route khác chuyển 307 `/countdown` trừ khi phiên đã xác minh có `profiles.role` đúng chữ `admin` (phiên ẩn danh, claim `is_anonymous`, không bao giờ qua: `readGateUserRole` trả `user` trước khi tra `profiles`) (`lib/supabase/proxy-session.ts:157-159`). Khi mở hoặc mốc không dùng được: `/countdown` chuyển 307 `/` (`lib/prelaunch/prelaunch-gate-decision.ts:52`), mọi trang khác đi tiếp. Mốc **fail open** (thiếu dòng, `NULL`, sai, quá 2 giây hay lỗi mạng đều là site mở, không retry, `lib/prelaunch/read-prelaunch-ends-at.ts:9,32-66`); vai trò **fail closed**: lỗi, quá 2 giây, không có hồ sơ hay giá trị khác `admin` đều là `user` (`lib/prelaunch/read-gate-user-role.ts:11,24-49`). Đích chuyển hướng là hằng `/countdown` hoặc `/`, không đọc từ request (`lib/prelaunch/prelaunch-gate-decision.ts:7,9`), nên không có open redirect. Vì `POST` không qua cổng nên mọi trang và Server Action vẫn phải tự kiểm tra quyền.
 
 #### Related Routes
 
@@ -526,6 +533,7 @@ Cổng ra mắt (F005), không phải kiểm soát an ninh (FR-602). Chỉ `GET`
 | Role | Allow | Conditions |
 |------|-------|------------|
 | Anonymous visitor | ✗ (khi khoá, chỉ `/countdown`, `/login`, `/auth/callback`) | Mọi page route khác → 307 `/countdown`, không tra `profiles`. Khi mở hoặc mốc không dùng được: vào được mọi trang. |
+| Anonymous guest (phiên ẩn danh) | ✗ (khi khoá, như khách) | Luôn 307 `/countdown`, không tra `profiles`, kể cả khi `profiles.role = 'admin'`. |
 | Authenticated user | ✗ (khi khoá, như khách) | Vai trò `user`, tra vai trò lỗi, quá 2 giây hoặc không có hồ sơ → 307 `/countdown`. |
 | Authenticated admin | ✓ | `profiles.role = 'admin'` đọc được bằng phiên của chính người dùng; duyệt toàn site khi khoá, `/countdown` cũng hiện cho admin. |
 
@@ -578,7 +586,7 @@ Cùng mẫu với PERM009. RLS bật trên `departments`, `sunners`, `kudos`, `h
 
 #### Description
 
-`email` (khoá gắn tài khoản), `user_id` (tài khoản đã liên kết) và, từ F010 (review round 2, C2), `hearts_total` không nằm trong column grant của `anon`/`authenticated` (migration `20261014004700_hide_sunner_hearts_total.sql` thu `select` theo bảng rồi chỉ cấp lại `id, full_name, department_code, avatar_url, kudos_received_count, created_at`), nên `select=*` trên `sunners` bị từ chối (42501), và chọn, lọc hay nhúng `hearts_total` cũng vậy. Lý do: trigger tim cộng cho người gửi cả khi kudos ẩn danh; nếu tổng tim của mọi Sunner đọc được thì so sánh trước và sau một lượt thích sẽ chỉ ra người gửi. Tim vẫn cộng như cũ và `kudos.like_count` vẫn công khai. Hàng Sunner của chính người xem lấy bằng `public.get_my_sunner()` (`security definer`, `set search_path = ''`, `where user_id = auth.uid()`, tối đa một hàng, không có `email`/`user_id`, có `hearts_total` của chính người gọi làm nguồn tổng tim của sidebar F009): `execute` thu của `public`, `anon`, `authenticated` rồi chỉ cấp `authenticated`; khách không gọi RPC (`getMySunnerPerRequest` trả `guest` không truy vấn). Hàm gắn tài khoản (`link_or_create_sunner`, `link_or_create_sunner_for_user`) cùng các hàm trigger bị thu `execute` khỏi mọi role client, chạy từ trigger `auth.users` và chỉ với tài khoản đã xác nhận email. `sunners.avatar_url` chỉ là đường dẫn cục bộ dưới `/public` (CHECK; không sao chép từ `user_metadata`), nên trình duyệt không bao giờ bị trỏ tới máy chủ ngoài (review M1, 2026-10-13).
+`email` (khoá gắn tài khoản), `user_id` (tài khoản đã liên kết) và, từ F010 (review round 2, C2), `hearts_total` không nằm trong column grant của `anon`/`authenticated` (migration `20261014004700_hide_sunner_hearts_total.sql` thu `select` theo bảng rồi chỉ cấp lại `id, full_name, department_code, avatar_url, kudos_received_count, created_at`; migration `20261014084206_guest_anonymous_sunners.sql` thêm cột `is_guest` vào đúng danh sách này để `searchSunners` lọc hồ sơ khách, PERM026), nên `select=*` trên `sunners` bị từ chối (42501), và chọn, lọc hay nhúng `hearts_total` cũng vậy. Lý do: trigger tim cộng cho người gửi cả khi kudos ẩn danh; nếu tổng tim của mọi Sunner đọc được thì so sánh trước và sau một lượt thích sẽ chỉ ra người gửi. Tim vẫn cộng như cũ và `kudos.like_count` vẫn công khai. Hàng Sunner của chính người xem lấy bằng `public.get_my_sunner()` (`security definer`, `set search_path = ''`, `where user_id = auth.uid()`, tối đa một hàng, không có `email`/`user_id`, có `hearts_total` của chính người gọi làm nguồn tổng tim của sidebar F009): `execute` thu của `public`, `anon`, `authenticated` rồi chỉ cấp `authenticated`; khách không gọi RPC (`getMySunnerPerRequest` trả `guest` không truy vấn). Hàm gắn tài khoản (`link_or_create_sunner`, `link_or_create_sunner_for_user`) cùng các hàm trigger bị thu `execute` khỏi mọi role client, chạy từ trigger `auth.users` và chỉ với tài khoản đã xác nhận email. `sunners.avatar_url` chỉ là đường dẫn cục bộ dưới `/public` (CHECK; không sao chép từ `user_metadata`), nên trình duyệt không bao giờ bị trỏ tới máy chủ ngoài (review M1, 2026-10-13).
 
 #### Related Routes
 
@@ -675,7 +683,7 @@ Policy `secret_boxes_select_opened_public` (`anon`, `authenticated`, `opened_at 
 
 #### Description
 
-Hai Server Action là endpoint `POST` công khai nên không tin dữ liệu từ client: `kudosId` phải khớp mẫu UUID, nếu không trả `error` và log; người dùng lấy từ claims đã xác minh (`getCurrentUser()`, fail closed thành khách), khách nhận `unauthenticated` (giao diện chuyển tới `/login`); ghi bằng client cookie của chính người dùng nên RLS (PERM017) và trigger quyết định phần còn lại. Mã lỗi Postgres 23505 (đã thích) là `ok` idempotent, 23514 là `forbidden`; mọi lỗi khác chỉ log mã, không lộ chi tiết. Server Action không qua cổng prelaunch (`POST`, PERM014) nên tự kiểm phiên.
+Hai Server Action là endpoint `POST` công khai nên không tin dữ liệu từ client: `kudosId` phải khớp mẫu UUID, nếu không trả `error` và log; người dùng lấy từ claims đã xác minh (`getCurrentUser()`, fail closed thành khách), người chưa có phiên nhận `unauthenticated` (client đã mở phiên ẩn danh bằng PERM025 trước khi gọi nên chỉ gặp khi phiên vừa mất; giao diện tải lại như khách và hiện lỗi ngắn, không còn chuyển `/login`); khách có phiên ẩn danh thích qua Sunner khách của mình; ghi bằng client cookie của chính người dùng nên RLS (PERM017) và trigger quyết định phần còn lại. Mã lỗi Postgres 23505 (đã thích) là `ok` idempotent, 23514 là `forbidden`; mọi lỗi khác chỉ log mã, không lộ chi tiết. Server Action không qua cổng prelaunch (`POST`, PERM014) nên tự kiểm phiên.
 
 #### Related Routes
 
@@ -689,7 +697,8 @@ Hai Server Action là endpoint `POST` công khai nên không tin dữ liệu t�
 
 | Role | Allow | Conditions |
 |------|-------|------------|
-| Anonymous visitor | ✗ | `unauthenticated`, không ghi DB. |
+| Anonymous visitor (chưa có phiên) | ✗ | `unauthenticated`, không ghi DB (client mở phiên ẩn danh trước, PERM025). |
+| Anonymous guest (phiên ẩn danh) | ✓ | Thích qua Sunner khách; một lượt mỗi phiên khách mỗi kudos. Rủi ro chấp nhận: phiên khách mới tự thích kudos của chính mình. |
 | Authenticated user | ✓ | Không phải người gửi kudos và có Sunner (do trigger DB kiểm). |
 | Authenticated admin | ✓ | Như người dùng thường; vai trò không ảnh hưởng. |
 
@@ -707,7 +716,7 @@ Hai Server Action là endpoint `POST` công khai nên không tin dữ liệu t�
 
 #### Description
 
-Hàm `security definer`, `search_path = ''`: người gửi là Sunner có `user_id = auth.uid()` (không phải tham số; không có Sunner → `P0002`). Hàm kiểm lại mọi luật trước khi ghi: người nhận có thật và khác người gửi, danh hiệu 1–50 và nội dung 1–2000 ký tự (khoảng trắng cắt đúng như JS `trim()`), hashtag 1–5 thuộc `hashtags`, tối đa 5 ảnh mà mỗi ảnh là đối tượng `storage.objects` của chính người gọi (`owner_id`) và chưa gắn kudos nào, tên ẩn danh tối đa 50; sai → `22023` thông điệp `<trường>: <mã>`. Ba bảng `kudos`, `kudos_hashtags`, `kudos_images` ghi cùng một giao dịch. `anon` không có `EXECUTE`; bảng `kudos` vẫn không có `insert/update/delete` cho client.
+Hàm `security definer`, `search_path = ''`: người gửi là Sunner có `user_id = auth.uid()` (không phải tham số; không có Sunner → `P0002`). Hàm kiểm lại mọi luật trước khi ghi: người nhận có thật và khác người gửi, danh hiệu 1–50 và nội dung 1–2000 ký tự (khoảng trắng cắt đúng như JS `trim()`), hashtag 1–5 thuộc `hashtags`, tối đa 5 ảnh mà mỗi ảnh là đối tượng `storage.objects` của chính người gọi (`owner_id`) và chưa gắn kudos nào, tên ẩn danh tối đa 50; sai → `22023` thông điệp `<trường>: <mã>`. Luật khách (migration `20261014084206_guest_anonymous_sunners.sql`, `CREATE OR REPLACE` giữ owner và grant): Sunner của người gọi có `is_guest` thì `is_anonymous` bị ép `true`; người nhận có `is_guest` bị từ chối như không tồn tại (`recipient: required`). Ba bảng `kudos`, `kudos_hashtags`, `kudos_images` ghi cùng một giao dịch. `anon` không có `EXECUTE`; bảng `kudos` vẫn không có `insert/update/delete` cho client.
 
 #### Related Routes
 
@@ -721,7 +730,8 @@ Hàm `security definer`, `search_path = ''`: người gửi là Sunner có `user
 
 | Role | Allow | Conditions |
 |------|-------|------------|
-| Anonymous visitor | ✗ | Không có `EXECUTE`; `sendKudos` cũng trả `unauthenticated` trước. |
+| Anonymous visitor (chưa có phiên) | ✗ | Không có `EXECUTE`; `sendKudos` cũng trả `unauthenticated` trước. |
+| Anonymous guest (phiên ẩn danh) | ✓ | Có Sunner khách; kudos luôn ẩn danh (ép ở DB); người nhận không được là Sunner khách; các luật nội dung như user. |
 | Authenticated user / admin | ✓ | Có hồ sơ Sunner; người nhận khác mình; luật nội dung đạt; ảnh là của mình và chưa gắn. Vai trò không ảnh hưởng. |
 
 ---
@@ -811,7 +821,7 @@ Bucket `images`: `public = false`, 5 MiB, chỉ `image/jpeg`, `image/png`. Tên 
 
 #### Description
 
-Hai Server Action là endpoint `POST` công khai nên không tin dữ liệu từ client. `sendKudos`: `isSendKudosInput` kiểm hình dạng (kiểu, danh sách ≤ 50 phần tử, trần độ dài chữ), sai → `error`; người dùng từ claims đã xác minh (`getCurrentUser()`, fail closed thành khách), khách nhận `unauthenticated`; rồi `validateSendKudos` và RPC `create_kudos` bằng client cookie (PERM020 là chốt cuối); `22023` ánh xạ về trường, `P0002` về `noSunner`, lỗi khác chỉ log mã. `searchSunners`: khách, từ khoá rỗng hoặc quá 100 ký tự nhận `[]`; `ilike` thoát `\ % _ *`, tối đa 10, chỉ đọc cột `sunners` đã cấp. Không action nào ném lỗi ra client (trừ lỗi điều hướng của Next); `POST` không qua cổng prelaunch nên tự kiểm phiên.
+Hai Server Action là endpoint `POST` công khai nên không tin dữ liệu từ client. `sendKudos`: `isSendKudosInput` kiểm hình dạng (kiểu, danh sách ≤ 50 phần tử, trần độ dài chữ), sai → `error`; người dùng từ claims đã xác minh (`getCurrentUser()`, fail closed thành khách), người chưa có phiên nhận `unauthenticated` (phiên ẩn danh được gửi, kudos luôn ẩn danh, PERM026); rồi `validateSendKudos` và RPC `create_kudos` bằng client cookie (PERM020 là chốt cuối); `22023` ánh xạ về trường, `P0002` về `noSunner`, lỗi khác chỉ log mã. `searchSunners`: người chưa có phiên, từ khoá rỗng hoặc quá 100 ký tự nhận `[]`; `ilike` thoát `\ % _ *`, `.eq("is_guest", false)` (không bao giờ trả Sunner khách), tối đa 10, chỉ đọc cột `sunners` đã cấp. Không action nào ném lỗi ra client (trừ lỗi điều hướng của Next); `POST` không qua cổng prelaunch nên tự kiểm phiên.
 
 #### Related Routes
 
@@ -825,23 +835,83 @@ Hai Server Action là endpoint `POST` công khai nên không tin dữ liệu t�
 
 | Role | Allow | Conditions |
 |------|-------|------------|
-| Anonymous visitor | ✗ | `sendKudos` trả `unauthenticated`, `searchSunners` trả `[]`; không ghi, không đọc. |
+| Anonymous visitor (chưa có phiên) | ✗ | `sendKudos` trả `unauthenticated`, `searchSunners` trả `[]`; không ghi, không đọc. |
+| Anonymous guest (phiên ẩn danh) | ✓ | Gửi như Sunner khách (luôn ẩn danh); tìm người nhận được, kết quả không có Sunner khách. |
 | Authenticated user / admin | ✓ | Có Sunner để gửi (`noSunner` nếu không); luật nội dung do `create_kudos` quyết. Vai trò không ảnh hưởng. |
+
+---
+
+### PERM025_GuestAnonymousSessionStart: `ensureGuestSession` mở phiên ẩn danh cho khách ở hành động đầu tiên
+
+**Type**: action-permission
+**Enforced At**: `lib/supabase/ensure-guest-session.ts` (`ensureGuestSession`), `lib/supabase/start-guest-session-once.ts` (`startGuestSessionOnce`, phía trình duyệt), `supabase/config.toml` (`[auth] enable_anonymous_sign_ins = true`, `anonymous_users = 1000` chỉ local), `supabase/migrations/20261014084206_guest_anonymous_sunners.sql` (trigger `on_auth_user_created_guest_sunner`)
+
+#### Description
+
+Guests act as Anonymous (plan 261014-1505-guest-anonymous-access): khách không cần đăng nhập để viết kudos hay thả tim. Server Action `ensureGuestSession()` là endpoint `POST` công khai không có đầu vào. `getClaims()` có claims (tài khoản hoặc phiên ẩn danh) → `ok`, không đổi gì; không có phiên → `signInAnonymously()` trên client cookie của request (response đặt cookie phiên mới, JWT vai `authenticated` với claim `is_anonymous = true`); mọi lỗi khi kiểm tra (mạng, JWT sai, khoá xoay, giới hạn) → `error`, không bao giờ đăng nhập ẩn danh đè lên một phiên tài khoản còn sống. Gọi lười, chỉ ở hành động đầu tiên (mở Viết Kudo, bấm tim); đọc bảng không tạo người dùng nên bot và người ghé xem không sinh `auth.users`. Phía trình duyệt `startGuestSessionOnce()` gộp các lần gọi đồng thời thành một yêu cầu. Trigger `AFTER INSERT` trên `auth.users` (chỉ khi `is_anonymous`) tạo hồ sơ Sunner khách (PERM026). Rủi ro chấp nhận (clarifications 2026-10-14): chưa có giới hạn tốc độ hay captcha riêng; chỉ có trần Supabase mặc định 30 lượt đăng nhập ẩn danh mỗi giờ mỗi IP (local nâng lên 1000 để chạy hết bộ E2E). Triển khai thật: bật anonymous sign-ins trên dự án Supabase và chọn mức giới hạn.
+
+#### Related Routes
+
+- ROUTE021 (POST) `/sun-kudos [Next-Action: ensureGuestSession]`
+
+#### Related Screens
+
+- SCR006_SunKudosLiveBoard - Sun* Kudos - Live board (thanh gửi kudos A.1, nút tim)
+
+#### Permission Rules
+
+| Role | Allow | Conditions |
+|------|-------|------------|
+| Anonymous visitor (chưa có phiên) | ✓ | Mở một phiên ẩn danh mới; chịu trần Supabase theo IP. |
+| Anonymous guest (phiên ẩn danh) | ✓ (no-op) | Có claims → `ok`, không tạo phiên thứ hai. |
+| Authenticated user / admin | ✓ (no-op) | Có claims → `ok`; một phiên tài khoản không bao giờ bị thay bằng phiên khách. |
+
+#### Related Modules
+
+- `lib/supabase/server.ts` (BL001_SupabaseServerClient), `lib/supabase/current-user.ts` (PERM005)
+
+---
+
+### PERM026_GuestSunnerRules: Hồ sơ Sunner khách (`is_guest`): luôn ẩn danh, không là người nhận, không tìm thấy, không là admin
+
+**Type**: role-based
+**Enforced At**: `supabase/migrations/20261014084206_guest_anonymous_sunners.sql` (cột `sunners.is_guest` + column grant, hàm `create_guest_sunner`, `create_kudos` thay thế), `lib/kudos/send-kudos-action.ts` (`searchSunners`: `.eq("is_guest", false)`), `lib/supabase/current-user.ts` (`isAnonymous`), `lib/prelaunch/read-gate-user-role.ts` (`readGateUserRole(client, userId, isAnonymous)`)
+
+#### Description
+
+Mỗi phiên ẩn danh có đúng một Sunner khách: `sunners.is_guest = true`, `full_name` "Ẩn danh", `user_id` là người dùng ẩn danh, không email, không avatar (`create_guest_sunner`, `security definer`, `search_path = ''`, `EXECUTE` thu khỏi mọi vai client; lỗi hạ xuống `WARNING` để đăng nhập ẩn danh không bao giờ hỏng). Các luật: (1) `create_kudos` ép `is_anonymous = true` khi Sunner của người gọi là khách (tên ẩn danh vẫn tuỳ chọn); (2) Sunner khách không bao giờ là người nhận: `create_kudos` từ chối như người nhận không tồn tại (`recipient: required`); (3) `searchSunners` loại `is_guest` nên khách không xuất hiện trong ô Người nhận hay `@tên` (Spotlight và danh sách quà chỉ có người nhận thật nên cũng không có khách); (4) cột `is_guest` được thêm vào column grant của `anon`/`authenticated` (danh sách thành `id, full_name, department_code, avatar_url, kudos_received_count, created_at, is_guest`) để lọc; `email`, `user_id`, `hearts_total` vẫn không mở; (5) phiên ẩn danh không bao giờ là admin: `getCurrentUser()` đặt `role = "user"` không tra `profiles`, và cổng prelaunch (`readGateUserRole`) trả `"user"` ngay, dù `profiles.role` có là `admin`; (6) UI "tài khoản đăng nhập" (menu tài khoản, chuông) coi phiên ẩn danh là khách (PERM003). Hoạt động của khách giữ riêng: đăng nhập Google sau đó là tài khoản mới, không liên kết. Rủi ro chấp nhận: khách tự thả tim cho kudos của chính mình bằng phiên khách mới (kudos của khách luôn ẩn danh và mỗi phiên là một Sunner khác nên luật chặn tự thích không bắt được).
+
+#### Related Routes
+
+- ROUTE019 (POST) `/sun-kudos [Next-Action: sendKudos]`; ROUTE020 (POST) `/sun-kudos [Next-Action: searchSunners]`; ROUTE012, ROUTE013 (POST) `/sun-kudos [Next-Action: likeKudos | unlikeKudos]`
+
+#### Related Screens
+
+- SCR006_SunKudosLiveBoard - Sun* Kudos - Live board (hộp thoại Viết Kudo khoá ẩn danh, nút tim, sidebar)
+
+#### Permission Rules
+
+| Role | Allow | Conditions |
+|------|-------|------------|
+| Anonymous guest (phiên ẩn danh) | ✓ (viết kudos ẩn danh, thả/rút tim, xem thống kê của chính mình) ✗ (làm người nhận, được tìm thấy, vượt cổng prelaunch, vai trò admin) | Hồ sơ Sunner khách `is_guest`; kudos luôn ẩn danh; không bao giờ admin. |
+| Authenticated user / admin | ✓ | Không bị ảnh hưởng; vẫn chọn được ẩn danh hay không. |
+| Anonymous visitor (chưa có phiên) | ✗ | Chưa có Sunner; `sendKudos` → `unauthenticated` cho tới khi PERM025 mở phiên. |
 
 ---
 
 ## Summary
 
-- **Total Permission Items**: 24
-- **By Type**: route-guard: 3, screen-permission: 2, action-permission: 7, data-permission: 5, role-based: 1, resource-ownership: 3, field-permission: 2, api-scope: 0, feature-flag: 0, experiment: 0, env-gate: 1, locale-gate: 0
+- **Total Permission Items**: 26
+- **By Type**: route-guard: 3, screen-permission: 2, action-permission: 8, data-permission: 5, role-based: 2, resource-ownership: 3, field-permission: 2, api-scope: 0, feature-flag: 0, experiment: 0, env-gate: 1, locale-gate: 0
 - **UX-only (không phải rào chắn server)**: PERM003, PERM004
 - **Authorization model**: RBAC đơn giản (`profiles.role` ∈ {`user`, `admin`}) cộng RLS theo vai trò Postgres; không có phân quyền theo sở hữu giữa người dùng.
 
 ### Gaps (ghi nhận, không phải PERM)
 
 - `/admin` chưa có page và chưa có kiểm tra vai trò phía server; hiện chỉ có việc ẩn mục menu (PERM004). Khi xây phải gọi `getCurrentUser()` và từ chối nếu không phải `admin` (yêu cầu từ code: `current-user.ts:27-28`).
-- `/profile`, `/standards`, `/sun-kudos/[id]`, `/profiles/[id]` có liên kết nhưng chưa có page, truy cập hiện trả 404; chưa có quy tắc quyền để ghi. Khi xây `/sun-kudos/[id]` và `/profiles/[id]` phải tự kiểm quyền ở server (khách bấm từ bảng kudos đã được đưa tới `/login` ở phía giao diện).
+- `/profile`, `/standards`, `/sun-kudos/[id]`, `/profiles/[id]` có liên kết nhưng chưa có page, truy cập hiện trả 404; chưa có quy tắc quyền để ghi. Khi xây `/sun-kudos/[id]` và `/profiles/[id]` phải tự kiểm quyền ở server (người chưa có phiên bấm từ bảng kudos được đưa tới `/login` ở phía giao diện; khách có phiên ẩn danh được tới đích như Sunner).
 - Việc đăng ký hiện không giới hạn tên miền email ở dự án hosted: tài khoản đã xác nhận email nào cũng được tạo Sunner (review M2, hoãn); `/api/kudos` và các điểm ghi của F010 (`sendKudos`, `POST /api/kudos/images`) chưa giới hạn tốc độ; chưa có tác vụ dọn ảnh tải lên mà không gửi.
+- Guests act as Anonymous (2026-10-14): chưa có giới hạn tốc độ hay captcha cho phiên ẩn danh (chỉ trần Supabase mặc định 30 lượt/giờ/IP; local 1000) và khách tự thả tim cho kudos của chính mình bằng phiên khách mới là rủi ro đã chấp nhận (PERM025, PERM026). Triển khai thật phải bật anonymous sign-ins trên dự án Supabase và chọn mức giới hạn.
 - `getCurrentUser()` mới chỉ phục vụ vùng tài khoản; chưa trang hay action nào chặn truy cập dựa trên vai trò. Cổng prelaunch (PERM014) có dùng vai trò `admin` nhưng chỉ để quyết định ai vượt cổng ra mắt, nó fail open ở phía mốc và không thấy `POST`, nên không thay việc tự kiểm tra quyền.
 
 ---

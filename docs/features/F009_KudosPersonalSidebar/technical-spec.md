@@ -22,7 +22,7 @@ appendix — jump in only when a § 3 block points you there.
 
 ## 1. Technical Overview
 
-Sidebar bên phải của `/sun-kudos` gồm hai vùng Server Component, mỗi vùng bọc `<Suspense>` riêng: vùng thống kê cá nhân (D.1) và danh sách 10 hộp quà đã mở gần nhất (D.3). D.1 gọi `getCurrentUser()` (đã có, dùng lại nguyên): khách thấy lời nhắc đăng nhập; người đã đăng nhập thì gọi hàm `get_my_sunner()` (do F006 tạo, `security definer`, chỉ trả hàng của chính người gọi) để lấy `id`, số kudos nhận và tổng tim, rồi lấy số kudos đã gửi qua hàm `get_my_sent_kudos_count()` (F010) và đếm Secret Box đã mở/chưa mở. D.3 đọc 10 hàng `secret_boxes` đã mở kèm tên và avatar của chủ hộp, cho cả khách. Feature thêm bảng `secret_boxes` (migration cộng thêm + seed), chỉ đọc `sunners` và `kudos` của Kudos Board Browse (kể cả cột tổng tim `hearts_total`, do F006 tạo và F007 bảo trì; trình duyệt không `select` trực tiếp được cột này, từ F010 review C2 chỉ hàm `get_my_sunner()` trả tổng tim của chính người xem); không ghi gì vào dữ liệu nào lúc chạy. Phụ thuộc kiến trúc: vỏ trang, bảng `sunners`/`kudos`, cột tổng tim và hàm `get_my_sunner()` thuộc F006 (provisional); trigger giữ tổng tim thuộc F007 (provisional).
+Sidebar bên phải của `/sun-kudos` gồm hai vùng Server Component, mỗi vùng bọc `<Suspense>` riêng: vùng thống kê cá nhân (D.1) và danh sách 10 hộp quà đã mở gần nhất (D.3). D.1 gọi `getCurrentUser()` (đã có; từ plan 261014-1505 thêm `isAnonymous`, D.1 không phân biệt): người chưa có phiên thấy lời nhắc đăng nhập; người có phiên (tài khoản, hoặc khách có phiên ẩn danh với hồ sơ Sunner khách) thì gọi hàm `get_my_sunner()` (do F006 tạo, `security definer`, chỉ trả hàng của chính người gọi) để lấy `id`, số kudos nhận và tổng tim, rồi lấy số kudos đã gửi qua hàm `get_my_sent_kudos_count()` (F010) và đếm Secret Box đã mở/chưa mở. D.3 đọc 10 hàng `secret_boxes` đã mở kèm tên và avatar của chủ hộp, cho cả khách. Feature thêm bảng `secret_boxes` (migration cộng thêm + seed), chỉ đọc `sunners` và `kudos` của Kudos Board Browse (kể cả cột tổng tim `hearts_total`, do F006 tạo và F007 bảo trì; trình duyệt không `select` trực tiếp được cột này, từ F010 review C2 chỉ hàm `get_my_sunner()` trả tổng tim của chính người xem); không ghi gì vào dữ liệu nào lúc chạy. Phụ thuộc kiến trúc: vỏ trang, bảng `sunners`/`kudos`, cột tổng tim và hàm `get_my_sunner()` thuộc F006 (provisional); trigger giữ tổng tim thuộc F007 (provisional).
 
 ```mermaid
 flowchart LR
@@ -60,10 +60,10 @@ flowchart LR
 `GET /sun-kudos` *(vùng D.1 của trang)* → `` `KudosPersonalStats#PersonalStatsRegion` `` (planned)
 `FR-201` `FR-202` `FR-203` `FR-204` `FR-205` `FR-206` `FR-207` `FR-208` `FR-209` `FR-214` `BR-001` `BR-002` `DEC-001` `US054` `US055` · `TBD (draft)`
 
-**Who** · Khách và người dùng đã đăng nhập *(gate A0 — § 4.4: BR-004 — thống kê chỉ của chính người đăng nhập, FR-601)*
-**FE** · Vùng D.1 nằm ở đầu cột sidebar, bọc `<Suspense>` riêng với khung giữ chỗ cố định, không chữ — cùng cách `AccountSlotSkeleton` (`app/_components/site/account-slot-parts.tsx:9-11`) — nên người đã đăng nhập không thấy lời nhắc đăng nhập nhấp nháy (FR-208). Khách: lời nhắc đăng nhập thay cho cả khối, gồm nút "Mở Secret Box" (FR-207): một dòng chữ và nút "Đăng nhập" (`next/link` tạo kiểu như nút "Đăng nhập" của header) tới `/login` (D001); chữ tạm, chờ người sở hữu nội dung: VN "Đăng nhập để xem thống kê Kudos của bạn" + "Đăng nhập", EN "Log in to see your Kudos stats" + "Login". Đã đăng nhập: bảng nhãn–giá trị theo thứ tự FR-201 (Số Kudos bạn nhận được, Số Kudos bạn đã gửi, Số tim bạn nhận được, đường kẻ, Số Secret Box bạn đã mở, Số Secret Box chưa mở) rồi nút "Mở Secret Box" là `<button>` không handler, không hộp thoại, không đổi số (FR-206). Nhãn lấy từ từ điển VN/EN (FR-214). Design basis: Study report (view stateless nhận chuỗi qua props, đặt dưới `app/_components/sun-kudos/`).
+**Who** · Người chưa có phiên và người có phiên (tài khoản hoặc ẩn danh) *(gate A0 — § 4.4: BR-004 — thống kê chỉ của chính người có phiên, FR-601)*
+**FE** · Vùng D.1 nằm ở đầu cột sidebar, bọc `<Suspense>` riêng với khung giữ chỗ cố định, không chữ — cùng cách `AccountSlotSkeleton` (`app/_components/site/account-slot-parts.tsx:9-11`) — nên người đã đăng nhập không thấy lời nhắc đăng nhập nhấp nháy (FR-208). Người chưa có phiên: lời nhắc đăng nhập thay cho cả khối, gồm nút "Mở Secret Box" (FR-207): một dòng chữ và nút "Đăng nhập" (`next/link` tạo kiểu như nút "Đăng nhập" của header) tới `/login` (D001); chữ tạm, chờ người sở hữu nội dung: VN "Đăng nhập để xem thống kê Kudos của bạn" + "Đăng nhập", EN "Log in to see your Kudos stats" + "Login". Có phiên (kể cả ẩn danh): bảng nhãn–giá trị theo thứ tự FR-201 (Số Kudos bạn nhận được, Số Kudos bạn đã gửi, Số tim bạn nhận được, đường kẻ, Số Secret Box bạn đã mở, Số Secret Box chưa mở) rồi nút "Mở Secret Box" là `<button>` không handler, không hộp thoại, không đổi số (FR-206). Nhãn lấy từ từ điển VN/EN (FR-214). Design basis: Study report (view stateless nhận chuỗi qua props, đặt dưới `app/_components/sun-kudos/`).
 **Request** · cookie phiên Supabase và cookie `NEXT_LOCALE`; không có tham số nào từ URL hay trình duyệt chỉ ra "ai" (FR-601)
-**BE** · `getCurrentUser()` (dùng lại, không đổi — `lib/supabase/current-user.ts:33-59`) trả `null` thì rẽ nhánh khách. Có người dùng thì `getKudosPersonalStats()` (`lib/kudos/get-kudos-personal-stats.ts`): (1) lấy hàng Sunner qua `getMySunnerPerRequest()` (`lib/kudos/get-my-sunner-per-request.ts`: bọc `cache()` của React nên RPC `get_my_sunner()` của F006 chỉ chạy một lần mỗi lần render trang, dùng chung với `getViewerSunnerId` của F006; không dùng cho Server Action hay Route Handler; khách nhận `guest` không gọi RPC; RPC chỉ trả hàng của `auth.uid()`, không có `email` hay `user_id`) lấy `id`, `kudos_received_count` (FR-202) và `hearts_total` (FR-204, BR-002; đường duy nhất đọc cột này, vì `sunners.hearts_total` đã bị thu `select` của client ở F010 review C2); (2) `Promise.all` ba lệnh: RPC `get_my_sent_kudos_count()` (F010: `security definer`, đếm kudos của `auth.uid()` kể cả ẩn danh vì `kudos.sender_id` không còn đọc được từ client; FR-203) và hai lệnh đếm `head: true, count: "exact"` trên `secret_boxes` của chủ hộp ấy: có `opened_at` khác rỗng (đã mở) và có `opened_at` rỗng (chưa mở) (FR-205). Theo mẫu getter hiện có: `await connection()` ngoài `try`, lỗi (kể cả không đọc được hàng Sunner) thì `console.error("[kudos-sidebar] ...")` và trả `{status: "unavailable"}` (mọi giá trị hiện "—"), `unstable_rethrow` đầu `catch`, không bao giờ ném ra; khách trả `{status: "guest"}` không truy vấn. Design basis: Study report + scout-report.
+**BE** · `getCurrentUser()` (dùng lại; `lib/supabase/current-user.ts` nay có thêm `isAnonymous`, không ảnh hưởng nhánh này) trả `null` thì rẽ nhánh người chưa có phiên. Có người dùng thì `getKudosPersonalStats()` (`lib/kudos/get-kudos-personal-stats.ts`): (1) lấy hàng Sunner qua `getMySunnerPerRequest()` (`lib/kudos/get-my-sunner-per-request.ts`: bọc `cache()` của React nên RPC `get_my_sunner()` của F006 chỉ chạy một lần mỗi lần render trang, dùng chung với `getViewerSunnerId` của F006; không dùng cho Server Action hay Route Handler; khách nhận `guest` không gọi RPC; RPC chỉ trả hàng của `auth.uid()`, không có `email` hay `user_id`) lấy `id`, `kudos_received_count` (FR-202) và `hearts_total` (FR-204, BR-002; đường duy nhất đọc cột này, vì `sunners.hearts_total` đã bị thu `select` của client ở F010 review C2); (2) `Promise.all` ba lệnh: RPC `get_my_sent_kudos_count()` (F010: `security definer`, đếm kudos của `auth.uid()` kể cả ẩn danh vì `kudos.sender_id` không còn đọc được từ client; FR-203) và hai lệnh đếm `head: true, count: "exact"` trên `secret_boxes` của chủ hộp ấy: có `opened_at` khác rỗng (đã mở) và có `opened_at` rỗng (chưa mở) (FR-205). Theo mẫu getter hiện có: `await connection()` ngoài `try`, lỗi (kể cả không đọc được hàng Sunner) thì `console.error("[kudos-sidebar] ...")` và trả `{status: "unavailable"}` (mọi giá trị hiện "—"), `unstable_rethrow` đầu `catch`, không bao giờ ném ra; khách trả `{status: "guest"}` không truy vấn. Design basis: Study report + scout-report.
 **Rule** · quyết định khối D.1 hiện gì, và hai quy tắc về nội dung số liệu:
 - **BR-001 — Hộp "đã mở" khi có thời điểm mở, "chưa mở" khi thời điểm mở trống.** Hai số Secret Box ở FR-205 chỉ là hai phép đếm của cột này; không có cột đếm lưu riêng *(§ 4.4)*.
 - **BR-002 — "Số tim bạn nhận được" lấy thẳng từ tổng tim của người gửi do Kudos Hearts giữ.** Sidebar không tự cộng lại từ lượt thích; giá trị này là tim người dùng kiếm được khi là người gửi, không phải tim trên kudos họ nhận (FR-204).
@@ -71,7 +71,7 @@ flowchart LR
 | DEC | subtype | Condition | What the user sees | Source |
 |---|---|---|---|---|
 | **DEC-001** | render | phiên/số liệu chưa đọc xong (đang trong `Suspense`) | khung giữ chỗ cố định, không chữ; chưa có lời nhắc đăng nhập, chưa có số (FR-208) | `TBD (draft)` |
-| **DEC-001** | render | `getCurrentUser()` trả `null` | lời nhắc đăng nhập (dòng chữ + nút "Đăng nhập" tới `/login`); không số liệu, không nút "Mở Secret Box" (FR-207) | `TBD (draft)` |
+| **DEC-001** | render | `getCurrentUser()` trả `null` (chưa có phiên) | lời nhắc đăng nhập (dòng chữ + nút "Đăng nhập" tới `/login`); không số liệu, không nút "Mở Secret Box" (FR-207) | `TBD (draft)` |
 | **DEC-001** | render | có người dùng và `getKudosPersonalStats` trả đủ số liệu | năm giá trị (0 hiện "0") và nút "Mở Secret Box" (FR-201, FR-206) | `TBD (draft)` |
 | **DEC-001** | render | có người dùng nhưng `getKudosPersonalStats` trả `null` (lỗi đọc hoặc chưa có hàng Sunner) | năm giá trị hiện "—", nút "Mở Secret Box" vẫn có (FR-209) | `TBD (draft)` |
 
@@ -100,8 +100,8 @@ flowchart LR
 |---|---|---|---|---|
 | **DEC-002** | render | dữ liệu chưa đọc xong | khung giữ chỗ không chữ (FR-213) | `TBD (draft)` |
 | **DEC-002** | render | danh sách rỗng (kể cả khi lỗi đọc) | tiêu đề và dòng "Chưa có dữ liệu" (FR-212) | `TBD (draft)` |
-| **DEC-002** | render, flow | có hàng, viewer đã đăng nhập | các hàng liên kết `/profiles/[id]` (FR-102, FR-210) | `TBD (draft)` |
-| **DEC-002** | render, flow | có hàng, viewer là khách | các hàng liên kết `/login` (FR-102) | `TBD (draft)` |
+| **DEC-002** | render, flow | có hàng, viewer có phiên (tài khoản hoặc ẩn danh) | các hàng liên kết `/profiles/[id]` (FR-102, FR-210) | `TBD (draft)` |
+| **DEC-002** | render, flow | có hàng, viewer chưa có phiên | các hàng liên kết `/login` (FR-102) | `TBD (draft)` |
 
 **Result** · read-only — **no DB write**. Hiện tối đa 10 hàng, ít hơn thì hiện bấy nhiêu. Bấm hàng là điều hướng thường của `next/link`; đích `/profiles/[id]` chưa có page nên 404 tới khi được xây, phiên giữ nguyên.
 **Source:** `TBD (draft)`
@@ -186,7 +186,7 @@ None.
 #### Bin 3 — cross-cutting, belongs to no single action
 
 **A0 · FR-601 / BR-004 — Thống kê cá nhân chỉ của chính người đang đăng nhập, do máy chủ quyết.**
-Mã người dùng lấy từ `getCurrentUser()` (claims JWT đã xác minh), không bao giờ từ tham số URL, cookie tự khai hay dữ liệu trình duyệt gửi. Khách không có truy vấn thống kê nào được chạy. Ẩn D.1 với khách chỉ là giao diện; ranh giới thật là RLS `secret_boxes_select_own` và việc getter chỉ truy vấn theo mã của phiên. Áp cho cả A1 (chỗ duy nhất đọc dữ liệu riêng).
+Mã người dùng lấy từ `getCurrentUser()` (claims JWT đã xác minh), không bao giờ từ tham số URL, cookie tự khai hay dữ liệu trình duyệt gửi. Người chưa có phiên không có truy vấn thống kê nào được chạy; khách có phiên ẩn danh chỉ đọc hàng Sunner khách của chính mình (`get_my_sunner()` theo `auth.uid()`). Ẩn D.1 với khách chỉ là giao diện; ranh giới thật là RLS `secret_boxes_select_own` và việc getter chỉ truy vấn theo mã của phiên. Áp cho cả A1 (chỗ duy nhất đọc dữ liệu riêng).
 **Source:** `TBD (draft)`
 
 **A0 · FR-602 — Trình duyệt không ghi được dữ liệu Secret Box; hộp chưa mở của người khác không đọc được.**
@@ -230,13 +230,13 @@ Không có biến môi trường hay cờ tính năng mới; hạ tầng Supabas
 
 Chính sách kiểm thử: `e2e-red-first` (clarifications). Các ca sau viết RED trước khi có mã, dùng `@playwright/test` hiện có; ca quyền DB đi theo kiểu `supabase-schema-rls-*.spec.ts` (client `anon` và client người dùng, khẳng định `/permission|denied|rls/`). Tên tệp dự kiến theo vùng: `e2e/sun-kudos-sidebar-*.spec.ts`.
 
-- **SC-001** *(A1)* khách mở `/sun-kudos` thấy lời nhắc đăng nhập (dòng chữ và nút "Đăng nhập" có `href` `/login`, bấm tới màn hình đăng nhập) và không thấy nhãn thống kê, số, nút "Mở Secret Box" (covers FR-207, DEC-001, D001)
+- **SC-001** *(A1)* người chưa có phiên mở `/sun-kudos` thấy lời nhắc đăng nhập (dòng chữ và nút "Đăng nhập" có `href` `/login`, bấm tới màn hình đăng nhập) và không thấy nhãn thống kê, số, nút "Mở Secret Box" (covers FR-207, DEC-001, D001)
 - **SC-002** *(A1)* người dùng seed đã đăng nhập thấy năm giá trị khớp DB và nút "Mở Secret Box" bấm không đổi gì (covers FR-201, FR-202, FR-203, FR-204, FR-205, FR-206, BR-001, BR-002)
 - **SC-003** *(A1)* người dùng đã đăng nhập chưa có hàng Sunner (hoặc truy vấn lỗi) thấy năm dấu "—", người dùng có dữ liệu bằng 0 thấy "0" (covers FR-209, DEC-001)
 - **SC-004** *(A1)* trong lúc đọc phiên không có chữ "Đăng nhập" nhấp nháy với người đã đăng nhập (covers FR-208)
 - **SC-005** *(A2)* danh sách có đúng 10 hàng khi seed ≥ 10 hộp đã mở, mới nhất trên cùng, không có hộp chưa mở (covers FR-210, FR-211, BR-003)
 - **SC-006** *(A2)* không có hộp đã mở thì hiện "Chưa có dữ liệu" (covers FR-212, DEC-002)
-- **SC-007** *(A2)* bấm hàng: đã đăng nhập tới `/profiles/[id]`, khách tới `/login` (covers FR-102)
+- **SC-007** *(A2)* bấm hàng: có phiên (kể cả ẩn danh) tới `/profiles/[id]`, chưa có phiên tới `/login` (covers FR-102)
 - **SC-008** *(A0)* RLS: `anon` không đọc được hộp chưa mở, người dùng chỉ đọc hộp chưa mở của chính mình, không ai ghi được từ client; `anon` gọi `rpc('get_my_sunner')` bị từ chối và người dùng đã đăng nhập chỉ nhận hàng của chính mình (covers FR-602, BR-004, FR-601)
 - **SC-009** *(A1, A2)* nhãn đổi VN/EN, tên Sunner và tên quà không đổi (covers FR-214, FR-215)
 
@@ -255,7 +255,7 @@ Chính sách kiểm thử: `e2e-red-first` (clarifications). Các ca sau viết 
 
 **Acceptance Scenarios:**
 
-1. **Given** chưa đăng nhập, **When** mở `/sun-kudos`, **Then** D.1 là lời nhắc đăng nhập có nút "Đăng nhập" tới `/login`, không có số hay nút "Mở Secret Box".
+1. **Given** chưa có phiên, **When** mở `/sun-kudos`, **Then** D.1 là lời nhắc đăng nhập có nút "Đăng nhập" tới `/login`, không có số hay nút "Mở Secret Box".
 
 #### US056 *(A2)*
 
@@ -273,12 +273,12 @@ Chính sách kiểm thử: `e2e-red-first` (clarifications). Các ca sau viết 
 **Acceptance Scenarios:**
 
 1. **Given** đã đăng nhập, **When** bấm một hàng, **Then** trình duyệt tới `/profiles/[id]` của Sunner đó (404 tới khi trang được xây).
-2. **Given** khách, **When** bấm một hàng, **Then** trình duyệt tới `/login`.
+2. **Given** người chưa có phiên, **When** bấm một hàng, **Then** trình duyệt tới `/login` (có phiên ẩn danh thì tới `/profiles/[id]`).
 
 ### 5.2 Assumptions
 
 - *(A1, A2)* tên bảng và cột (`sunners`, `kudos`, `kudos_received_count`, `hearts_total`, `sender_id`) và tên hàm `get_my_sunner()` là tên tạm; sẽ đổi theo migration thật của F006, F007 lúc promote. `hearts_total` do F006 tạo (mặc định 0); F007 chỉ bảo trì. Từ F010 (review C2) cột này không còn trong column grant của `anon`/`authenticated`: sidebar chỉ đọc qua `get_my_sunner()`, không bao giờ `select` thẳng từ `sunners`.
-- *(A1)* mỗi tài khoản đăng nhập có đúng một hàng `sunners` nhờ trigger liên kết/tạo của F006, nên "chưa có hàng Sunner" hiếm; bản nháp vẫn xử lý bằng "—" để không vỡ trang.
+- *(A1)* mỗi tài khoản đăng nhập có đúng một hàng `sunners` nhờ trigger liên kết/tạo của F006 (và mỗi phiên ẩn danh một hồ sơ Sunner khách nhờ trigger `create_guest_sunner`, F010), nên "chưa có hàng Sunner" hiếm; bản nháp vẫn xử lý bằng "—" để không vỡ trang.
 - *(A2)* feature-list nháp nhắc bảng `gifts`; quyết định ở clarifications (một bảng `secret_boxes` có `gift_name`) thay thế, nên spec này không có bảng `gifts`.
 - *(A1, A2)* hero badge và sao không xuất hiện ở sidebar (clarifications: chỉ hiện ở thẻ và khối người gửi/người nhận).
 - *(A1, A2)* không có cập nhật trực tiếp: số liệu là ảnh chụp lúc tải trang (YAGNI, không dùng Realtime).
@@ -298,7 +298,7 @@ Mã đã giao: `lib/kudos/get-kudos-personal-stats.ts`, `lib/kudos/get-my-sunner
 #### Data Flow
 
 ```text
-A1: cookie phiên -> getMySunnerPerRequest (cache() của React: một RPC mỗi lần render, chung với F006) -> (guest: lời nhắc đăng nhập | có người dùng)
+A1: cookie phiên -> getMySunnerPerRequest (cache() của React: một RPC mỗi lần render, chung với F006) -> (guest = chưa có phiên: lời nhắc đăng nhập | có phiên, kể cả ẩn danh: số liệu)
     -> get_my_sunner() (chỉ hàng của auth.uid()) -> {id, kudos_received_count, hearts_total}
     -> RPC get_my_sent_kudos_count() + 2 lệnh đếm (secret_boxes mở / chưa mở) -> 5 giá trị hoặc "—"
 A2: secret_boxes WHERE opened_at IS NOT NULL ORDER BY opened_at DESC, id DESC LIMIT 10

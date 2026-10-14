@@ -78,6 +78,7 @@ flowchart LR
 |---|---|---|---|---|
 | **DEC-001** | render | phiên chưa đọc xong (đang trong `Suspense`) | khối giữ chỗ 96x40 không chữ; chưa có "Đăng nhập", chưa có chuông | `account-region.tsx:36-41` |
 | **DEC-001** | render | `getCurrentUser()` trả `null` (không claims, lỗi auth, ngoại lệ) | liên kết "Đăng nhập"/"Login" tới `/login`; không chuông, không nút tài khoản | `account-region.tsx:46-53` |
+| **DEC-001** | render | `user != null` và `user.isAnonymous` (phiên ẩn danh của khách, plan 261014-1505-guest-anonymous-access) | như trên: liên kết "Đăng nhập"/"Login", không chuông, không nút tài khoản (`SignedInBell` trả `null`, `AccountControl` dựng `GuestLoginLink`) | `account-region.tsx` |
 | **DEC-001** | render | `user != null` và `role == "user"` | chuông + nút tài khoản; menu có Hồ sơ/Profile và Đăng xuất/Sign out | `account-region.tsx:47-60` |
 | **DEC-001** | render | `user != null` và `role == "admin"` (DISC-001 giá trị `admin`) | như trên, menu thêm Trang quản trị/Admin Dashboard giữa Hồ sơ và Đăng xuất | `account-region.tsx:71` |
 
@@ -136,7 +137,7 @@ flowchart LR
 `FR-601` `FR-602` `BR-001` `BR-002` `BR-005` `INT-001` `INT-002` `US007`
 
 **Who** · Mã phía server của hệ thống *(gate A0 — § 4.4: BR-004)*
-**BE** · `getCurrentUser` bọc `cache()` của React; `await connection()` đặt ngoài `try` vì `getClaims()` đọc đồng hồ, cacheComponents không cho phép khi prerender. Gọi `supabase.auth.getClaims()` (INT-001: xác minh JWT của phiên); lỗi, không có `sub` hợp lệ hoặc ngoại lệ → `null` (khách). Có claims thì `from("profiles").select("role").eq("id", sub).maybeSingle()` bằng phiên của chính người dùng (INT-002: đọc hồ sơ của mình dưới RLS) và trả `{ id, email, role }` — `lib/supabase/current-user.ts:33-59,63-84`.
+**BE** · `getCurrentUser` bọc `cache()` của React; `await connection()` đặt ngoài `try` vì `getClaims()` đọc đồng hồ, cacheComponents không cho phép khi prerender. Gọi `supabase.auth.getClaims()` (INT-001: xác minh JWT của phiên); lỗi, không có `sub` hợp lệ hoặc ngoại lệ → `null` (khách). Có claims thì `from("profiles").select("role").eq("id", sub).maybeSingle()` bằng phiên của chính người dùng (INT-002: đọc hồ sơ của mình dưới RLS) và trả `{ id, email, role, isAnonymous }` — `lib/supabase/current-user.ts`. `isAnonymous` = claim `is_anonymous === true` (chỉ giá trị `true`); với phiên ẩn danh `role` luôn là `"user"` và không đọc `profiles` (không bao giờ là admin, dù `profiles.role` ghi gì).
 **Rule**
 - **BR-002 — Không đọc được vai trò thì coi là `user`, không bao giờ `admin`.** Lỗi truy vấn, không có hàng hồ sơ hoặc ngoại lệ đều ra `"user"` và chỉ ghi log; header vẫn dựng bình thường (FR-602) — `current-user.ts:70-77,79-83`.
 - **BR-001 — Vai trò chỉ là `user` hoặc `admin`, mặc định `user`.** Ở đây chuẩn hóa lúc đọc: chỉ giá trị đúng bằng chuỗi `"admin"` mới thành `admin`, mọi giá trị khác thành `user` (DISC-001 `role`) *(§ 4.4)* — `current-user.ts:78` gọi hàm thuần `toUserRole` (`lib/supabase/user-role.ts:13-15`), dùng chung với cổng prelaunch của F005 để chỉ có một bản quy tắc.
@@ -274,7 +275,7 @@ stateDiagram-v2
 #### Bin 3 — cross-cutting, belongs to no single action
 
 **A0 · BR-004 — Ẩn mục menu chỉ là giao diện, không phải phân quyền (cross-cutting: áp cho mọi route/action quản trị, không thuộc một action nào của feature).**
-Mọi route hoặc action quản trị (như `/admin` khi được xây) phải tự gọi `getCurrentUser()` ở server và từ chối khi `role !== "admin"`; việc A1 không liệt kê mục Trang quản trị không được coi là kiểm soát truy cập. Hiện `/admin` chưa có page. Proxy không chặn route nào theo vai trò như kiểm soát truy cập (PERM004: UX-only); cổng prelaunch của F005 có đọc vai trò (`lib/prelaunch/read-gate-user-role.ts:24-49`) nhưng chỉ để quyết định ai được vượt cổng ra mắt, và fail open ở phía mốc, nên không thay việc tự kiểm tra ở server. Không phải rule của riêng feature này mà là ràng buộc cho trang đích sau này.
+Mọi route hoặc action quản trị (như `/admin` khi được xây) phải tự gọi `getCurrentUser()` ở server và từ chối khi `role !== "admin"`; việc A1 không liệt kê mục Trang quản trị không được coi là kiểm soát truy cập. Hiện `/admin` chưa có page. Proxy không chặn route nào theo vai trò như kiểm soát truy cập (PERM004: UX-only); cổng prelaunch của F005 có đọc vai trò (`lib/prelaunch/read-gate-user-role.ts:24-49`) nhưng chỉ để quyết định ai được vượt cổng ra mắt (phiên ẩn danh luôn là `user`, không đọc `profiles`), và fail open ở phía mốc, nên không thay việc tự kiểm tra ở server. Không phải rule của riêng feature này mà là ràng buộc cho trang đích sau này.
 **Source:** `lib/supabase/current-user.ts:27-28` · `app/_components/header-behaviour/account-region.tsx:64-68`
 ```text
 adminRoute(request):
@@ -441,7 +442,7 @@ Bằng chứng tự động đã có trong repo: `e2e/homepage-account-menu.spec
 #### Data Flow
 
 ```text
-A1: cookie -> getClaims() -> sub -> select role from profiles where id = sub (RLS) -> guest | user | admin -> login link, or bell + AccountMenu
+A1: cookie -> getClaims() -> sub (+ is_anonymous) -> anonymous: role = user, bo qua profiles | select role from profiles where id = sub (RLS) -> guest | anonymous guest | user | admin -> login link (guest, anonymous guest), or bell + AccountMenu
 A2: click / pointerdown outside / focusin outside / Esc -> setOpen -> menu shown or hidden (Esc also focuses trigger)
 A3: form submit -> signOut({ scope: "local" }) -> session cookies cleared -> redirect /login
 A5: insert auth.users -> trigger handle_new_user -> insert profiles(id) -> role = 'user'

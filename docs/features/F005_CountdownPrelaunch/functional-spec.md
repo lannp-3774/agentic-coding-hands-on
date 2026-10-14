@@ -26,7 +26,7 @@ key entities, and DB writes for a Dev/QA/SA audience.
 | Actor | Description | Primary goal |
 |-------|--------------|---------------|
 | Khách | người chưa đăng nhập | biết còn bao lâu nữa site mở và vào site khi tới giờ |
-| Người dùng thường | đã đăng nhập, vai trò người dùng | giống khách: chờ tới giờ mở rồi vào site |
+| Người dùng thường | đã đăng nhập, vai trò người dùng; hoặc khách có phiên ẩn danh (không bao giờ là admin) | giống khách: chờ tới giờ mở rồi vào site |
 | Admin | đã đăng nhập, vai trò admin | duyệt toàn site trước giờ mở để kiểm tra nội dung |
 | Người vận hành | người có khoá ghi cơ sở dữ liệu, không phải người dùng cuối | đặt và đổi mốc mở site mà không phải triển khai lại |
 
@@ -92,7 +92,7 @@ Cả chín quyết định đã chốt ngày 2026-10-09 (clarifications.md; D008
 
 - Site chỉ khoá khi mốc đọc được và còn ở tương lai; tới mốc hoặc qua mốc là mở, tính theo giờ máy chủ (BR-001)
 - Mốc thiếu dòng, sai hay không đọc được thì site mở và lỗi ghi ở máy chủ; mốc để trống có chủ ý thì site mở im lặng; vì đây là cổng ra mắt chứ không phải kiểm soát an ninh (BR-002)
-- Khi đang khoá chỉ admin được xem site; không xác định được vai trò thì coi là người thường và bị đưa về trang đếm ngược (BR-003)
+- Khi đang khoá chỉ admin được xem site; không xác định được vai trò thì coi là người thường và bị đưa về trang đếm ngược; phiên ẩn danh của khách (guests act as Anonymous) không bao giờ là admin, dù hồ sơ ghi vai trò gì (BR-003)
 - Việc đưa người dùng đi chỉ là tạm thời, tới đích cố định, và chỉ khi họ mở trang; thao tác gửi form không bị cổng chặn (BR-004)
 - Đồng hồ tính theo phút làm tròn lên, ô nào cũng ít nhất hai chữ số, 00 từ mốc trở đi, giống hệt đồng hồ trang chủ (BR-005)
 - Mốc mở site (cài đặt trong hệ thống) và mốc sự kiện của trang chủ (cấu hình triển khai) độc lập; đổi hay hỏng một mốc không ảnh hưởng mốc kia (BR-006)
@@ -239,6 +239,7 @@ Cả chín quyết định đã chốt ngày 2026-10-09 (clarifications.md; D008
 |----------|--------------|----------------------|
 | Mốc thiếu dòng, hỏng hoặc cơ sở dữ liệu không trả lời | Site mở; trang đếm ngược đưa về trang chủ; lỗi ghi ở máy chủ (mốc để trống có chủ ý thì mở im lặng, không ghi lỗi) | None — silent handling |
 | Người đã đăng nhập mở trang đăng nhập khi site đang khoá | Được đưa về trang chủ như trước; nếu không phải admin thì tiếp tục tới trang đếm ngược | None — silent handling |
+| Khách có phiên ẩn danh mở trang đăng nhập (khoá hoặc không) | Ở lại trang đăng nhập để đăng nhập (không bị đưa về trang chủ); khi đang khoá, mở trang khác thì tới trang đếm ngược dù hồ sơ có vai trò admin | None — silent handling |
 | Người dùng thường mở trang chưa xây (ví dụ Profile) khi đang khoá | Được đưa tới trang đếm ngược thay vì trang không tìm thấy | None — silent handling |
 | Admin chưa đăng nhập mở một trang khi đang khoá | Bị coi là khách, được đưa tới trang đếm ngược; phải mở thẳng trang đăng nhập (D009) | None — silent handling |
 | Còn trên 99 ngày | Khối ngày hiện đủ số, nhiều chữ số hơn | None — silent handling |
@@ -266,7 +267,7 @@ Cả chín quyết định đã chốt ngày 2026-10-09 (clarifications.md; D008
 - **FR-206** → Trang không có header, footer hay bộ chọn ngôn ngữ
 - **FR-207** → Với đồng hồ trình duyệt đặt lệch hàng giờ, số hiển thị vẫn theo giờ máy chủ và trình duyệt không sang trang chủ trước giờ mở
 - **FR-401** → Mốc cách vài giây: tới 0 trình duyệt tự vào trang chủ, nút Back không quay lại trang đếm ngược, không chuyển trước mốc
-- **FR-601** → Người dùng đã đăng nhập mà vai trò không tra được hoặc không phải admin bị đưa tới trang đếm ngược khi đang khoá
+- **FR-601** → Người dùng đã đăng nhập mà vai trò không tra được hoặc không phải admin bị đưa tới trang đếm ngược khi đang khoá; phiên ẩn danh luôn bị đưa tới trang đếm ngược, kể cả khi `profiles.role` là admin
 - **FR-602** → Thao tác gửi form tới một trang khi đang khoá không bị chuyển hướng; nội dung trang đã mở vẫn công khai
 
 ## 11. Risks & Known Issues

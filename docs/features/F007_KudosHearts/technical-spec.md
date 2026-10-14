@@ -22,7 +22,7 @@ appendix — jump in only when a § 3 block points you there. Bản soạn trư�
 
 ## 1. Technical Overview
 
-Feature thêm hai bảng (`kudos_likes`, `special_days`), hai trigger trên `kudos_likes` và hai Server Action (`likeKudos`, `unlikeKudos`) để Sunner đã đăng nhập thả hoặc rút tim ở kudos của người khác; vùng nút tim trên thẻ kudos của `/sun-kudos` là một Client Component thả tim lạc quan (optimistic), do F007 sở hữu, còn thẻ, danh sách và vỏ trang thuộc F006. Mọi bất biến nằm ở DB, không ở giao diện: khoá chính `(kudos_id, user_id)` giữ "một lượt thích mỗi người mỗi kudos"; trigger trước khi chèn chặn người gửi tự thích và tự gán trọng số (+1, hoặc +2 vào ngày đặc biệt theo giờ Asia/Ho_Chi_Minh); trigger sau khi chèn hoặc xoá cập nhật `kudos.like_count` và tổng tim của NGƯỜI GỬI cùng giao dịch, bỏ thích thì trừ đúng trọng số đã lưu. Khách bấm tim được đưa tới `/login`; Server Action kiểm lại phiên ở máy chủ rồi ghi bằng client gắn cookie của chính người dùng để RLS có hiệu lực. *Design basis: clarifications.md + Study report (researcher-01 § 1).*
+Feature thêm hai bảng (`kudos_likes`, `special_days`), hai trigger trên `kudos_likes` và hai Server Action (`likeKudos`, `unlikeKudos`) để Sunner đã đăng nhập, hoặc khách có phiên ẩn danh, thả hoặc rút tim ở kudos của người khác; vùng nút tim trên thẻ kudos của `/sun-kudos` là một Client Component thả tim lạc quan (optimistic), do F007 sở hữu, còn thẻ, danh sách và vỏ trang thuộc F006. Mọi bất biến nằm ở DB, không ở giao diện: khoá chính `(kudos_id, user_id)` giữ "một lượt thích mỗi người mỗi kudos"; trigger trước khi chèn chặn người gửi tự thích và tự gán trọng số (+1, hoặc +2 vào ngày đặc biệt theo giờ Asia/Ho_Chi_Minh); trigger sau khi chèn hoặc xoá cập nhật `kudos.like_count` và tổng tim của NGƯỜI GỬI cùng giao dịch, bỏ thích thì trừ đúng trọng số đã lưu. Khách (chưa có phiên) bấm tim thì A3 gọi trước Server Action `ensureGuestSession` (mở phiên ẩn danh Supabase, trigger `create_guest_sunner` tạo hồ sơ Sunner khách) rồi mới thả tim; không còn đưa tới `/login` (plan 261014-1505-guest-anonymous-access, thay quyết định cũ); Server Action kiểm lại phiên ở máy chủ rồi ghi bằng client gắn cookie của chính người dùng để RLS có hiệu lực. *Design basis: clarifications.md + Study report (researcher-01 § 1).*
 
 ```mermaid
 flowchart LR
@@ -74,7 +74,7 @@ flowchart LR
 `POST /sun-kudos` *(Next-Action: `likeKudos`)* → `` `likeKudos` ``
 `FR-001` `FR-401` `FR-601` `FR-602` `BR-001` `BR-006` `DEC-001` `SM-001` `INT-001` `US042` `US044` · `TBD (draft)` *(vùng nút tim của màn hình `/sun-kudos`; vỏ màn hình do kudos-board-browse sở hữu)*
 
-**Who** · Sunner đã đăng nhập, không phải người gửi kudos (US042: thả tim cho kudos của người khác). Khách cũng thấy nút nhưng A3 đưa họ tới `/login` trước khi gọi action (US044); action vẫn kiểm lại phiên nên người gọi thẳng cũng không ghi được *(gate A0 — § 4.4)*
+**Who** · Sunner đã đăng nhập, không phải người gửi kudos (US042: thả tim cho kudos của người khác). Khách cũng thấy nút: A3 mở phiên ẩn danh trước khi gọi action (US044), từ đó khách thả tim qua hồ sơ Sunner khách như một Sunner; action vẫn kiểm lại phiên nên người gọi thẳng khi không có phiên không ghi được *(gate A0 — § 4.4)*
 **FE** · không có giao diện riêng — A3 gọi action trong một transition và dựng lại nút từ giá trị trả về (FR-401: thả tim thấy ngay, số tim +1).
 **Request** · tham số `kudosId` *(mã kudos, `uuid` theo `kudos.id` của F006)*; cookie phiên Supabase đi kèm. Không có trường `weight` hay `userId` trong yêu cầu: người thích lấy từ phiên, trọng số do DB quyết (A4).
 **BE** · `` `likeKudos` `` — (1) kiểm `kudosId` có đúng hình dạng; (2) `getCurrentUser()` (`lib/supabase/current-user.ts:33-59`, có sẵn, fail closed): `null` thì trả `{ status: "unauthenticated" }` *(FR-602: máy chủ kiểm lại phiên, giao diện chỉ là tiện ích)*; (3) `createClient()` gắn cookie (`lib/supabase/server.ts:19-50`, có sẵn) rồi chèn `{ kudos_id, user_id }` vào `kudos_likes` với `on conflict do nothing` *(INT-001 — ghi lượt thích bằng phiên của chính người dùng để RLS áp dụng, § 4.5)*; (4) đọc lại `kudos.like_count` để trả số chuẩn; (5) lỗi `check_violation` từ A4 → `{ status: "forbidden" }`, lỗi khoá ngoại → `{ status: "not_found" }`, lỗi khác → `{ status: "error" }` và log `[kudos-likes]`. Server Action là mutation (client gửi tuần tự, không dùng cho đọc). *Design basis: Study report (researcher-01 § 1–2).*
@@ -84,7 +84,7 @@ flowchart LR
 
 | DEC | subtype | Condition | What the user sees | Source |
 |---|---|---|---|---|
-| **DEC-001** | flow | không có phiên hợp lệ | action trả `unauthenticated`, giao diện chuyển tới `/login`; không ghi gì | `TBD (draft)` |
+| **DEC-001** | flow | không có phiên hợp lệ | action trả `unauthenticated`; không ghi gì; giao diện tải lại như khách và hiện thông báo lỗi (A3 đã mở phiên ẩn danh trước nên chỉ gặp khi phiên vừa mất) | `TBD (draft)` |
 | **DEC-001** | flow | người đang đăng nhập là người gửi kudos | DB từ chối (A4), action trả `forbidden`, nút hoàn về trạng thái cũ | `TBD (draft)` |
 | **DEC-001** | flow | đã thích sẵn | không đổi gì, trả trạng thái hiện hành (BR-006) | `TBD (draft)` |
 | **DEC-001** | flow | kudos không còn tồn tại | khoá ngoại lỗi, action trả `not_found`, nút hoàn về trạng thái cũ | `TBD (draft)` |
@@ -101,7 +101,7 @@ flowchart LR
 `POST /sun-kudos` *(Next-Action: `unlikeKudos`)* → `` `unlikeKudos` ``
 `FR-402` `FR-601` `FR-602` `BR-004` `BR-006` `SM-001` `INT-001` `US043` · `TBD (draft)` *(vùng nút tim của màn hình `/sun-kudos`)*
 
-**Who** · Sunner đã đăng nhập đã thả tim trước đó (US043: rút tim đã thả); khách bị A3 đưa tới `/login`, nhưng action vẫn tự kiểm lại phiên *(gate A0 — § 4.4)*
+**Who** · Sunner đã đăng nhập đã thả tim trước đó (US043: rút tim đã thả); khách chưa có phiên thì A3 mở phiên ẩn danh trước (nhưng khách mới chưa có lượt thích nào để rút); action vẫn tự kiểm lại phiên *(gate A0 — § 4.4)*
 **FE** · không có giao diện riêng — A3 gọi action khi nút đang đỏ và dựng lại từ giá trị trả về (FR-402: rút tim thấy ngay, số tim −1).
 **Request** · tham số `kudosId`; cookie phiên. Action biểu thị ý định "rút", không phải nút bật/tắt: hai lần bấm nhanh không thể đảo nhau ngoài ý muốn.
 **BE** · `` `unlikeKudos` `` — (1) kiểm `kudosId`; (2) `getCurrentUser()` như A1, `null` thì `{ status: "unauthenticated" }` (FR-602); (3) `createClient()` rồi xoá dòng `kudos_likes` có `kudos_id` này và `user_id` là chính người dùng (RLS chỉ cho xoá dòng của mình; INT-001, § 4.5); (4) đọc lại `kudos.like_count`; (5) lỗi → `{ status: "error" }` và log `[kudos-likes]`. Không tìm thấy dòng nào để xoá không phải lỗi.
@@ -116,24 +116,24 @@ flowchart LR
 
 ---
 
-#### A3 · Nút tim trên thẻ kudos: thả/rút lạc quan, vô hiệu cho người gửi, khách tới đăng nhập
+#### A3 · Nút tim trên thẻ kudos: thả/rút lạc quan, vô hiệu cho người gửi, khách tự có phiên ẩn danh
 `—` *(client behaviour, no HTTP)* → `` `KudosHeartButton` ``
 `FR-201` `FR-202` `FR-203` `FR-403` `FR-404` `FR-601` `DEC-002` `SM-001` `US042` `US043` `US044` `US045` · `TBD (draft)` *(vùng nút tim của màn hình `/sun-kudos`)*
 
-**Who** · Mọi người xem: khách, Sunner đã đăng nhập, người gửi kudos (US042: thả tim; US043: rút tim; US044: khách bấm thì tới đăng nhập; US045: người gửi thấy nút vô hiệu) *(gate A0 — § 4.4)*
-**FE** · Client Component trong vùng nút tim của thẻ, dùng ở cả carousel Highlight và All Kudos: biểu tượng tim + số tim (FR-201: số tim hiện cho mọi người kể cả khách; FR-202: xám khi người xem chưa thích, đỏ khi đã thích). Nhận từ thẻ (F006) mã kudos, `likeCount`, `likedByMe`, loại người xem (`guest` hoặc `member`) và `isSender` (hợp đồng prop đã chốt: trang F006 truyền hai giá trị `likedByMe`, `isSender` cho từng thẻ, § 5.2). Lỗi thả/rút hiện một thông báo nhỏ `role="status"` (cùng cơ chế thông báo nhỏ của trang, tự tắt sau vài giây); chữ tạm, chờ người sở hữu nội dung, thêm vào `lib/i18n/sun-kudos-copy.ts` của F006: VN "Không cập nhật được tim. Vui lòng thử lại." / EN "Could not update the heart. Please try again." (D003). Nút của người gửi dùng `disabled` thật và không bao giờ đỏ (FR-203). Bấm tạo một transition gọi A1 (đang xám) hoặc A2 (đang đỏ); trong lúc chờ nút giữ trạng thái lạc quan và bỏ qua bấm tiếp (`aria-busy`), nên hai lần bấm nhanh chỉ tạo một yêu cầu tại một thời điểm.
-**Request** · gọi A1 hoặc A2 với `kudosId`; không gửi giá trị `liked` hay `weight`. Khách không gọi action mà điều hướng thẳng tới `/login` (FR-601).
+**Who** · Mọi người xem: khách, Sunner đã đăng nhập, người gửi kudos (US042: thả tim; US043: rút tim; US044: khách bấm thì có phiên ẩn danh rồi thả tim; US045: người gửi thấy nút vô hiệu) *(gate A0 — § 4.4)*
+**FE** · Client Component trong vùng nút tim của thẻ, dùng ở cả carousel Highlight và All Kudos: biểu tượng tim + số tim (FR-201: số tim hiện cho mọi người kể cả khách; FR-202: xám khi người xem chưa thích, đỏ khi đã thích). Nhận từ thẻ (F006) mã kudos, `likeCount`, `likedByMe`, cờ `signedIn` (có phiên: tài khoản hoặc phiên ẩn danh) và `isSender` (hợp đồng prop đã chốt: trang F006 truyền hai giá trị `likedByMe`, `isSender` cho từng thẻ, § 5.2). Lỗi thả/rút hiện một thông báo nhỏ `role="status"` (cùng cơ chế thông báo nhỏ của trang, tự tắt sau vài giây); chữ tạm, chờ người sở hữu nội dung, thêm vào `lib/i18n/sun-kudos-copy.ts` của F006: VN "Không cập nhật được tim. Vui lòng thử lại." / EN "Could not update the heart. Please try again." (D003). Nút của người gửi dùng `disabled` thật và không bao giờ đỏ (FR-203). Bấm tạo một transition gọi A1 (đang xám) hoặc A2 (đang đỏ); trong lúc chờ nút giữ trạng thái lạc quan và bỏ qua bấm tiếp (`aria-busy`), nên hai lần bấm nhanh chỉ tạo một yêu cầu tại một thời điểm.
+**Request** · gọi A1 hoặc A2 với `kudosId`; không gửi giá trị `liked` hay `weight`. Khách chưa có phiên (`signedIn` sai) trước hết gọi `startGuestSessionOnce()` (`lib/supabase/start-guest-session-once.ts`, bọc Server Action `ensureGuestSession`; các lần bấm đồng thời dùng chung một yêu cầu); khi trả `ok` mới gọi A1, khi lỗi thì hiện thông báo lỗi ngắn và không gọi action (FR-601). Khi A1/A2 trả `unauthenticated` thì `router.refresh()` (trang tải lại như khách) kèm thông báo lỗi.
 **Rule** · quyết định hiển thị và hành vi của nút (DEC-002), cùng hai cách xử lý lỗi và đồng bộ:
 
 | DEC | subtype | Condition | What the user sees | Source |
 |---|---|---|---|---|
-| **DEC-002** | render, interaction | người xem là khách | tim xám, số tim hiện; bấm chuyển tới `/login`, không gọi action | `TBD (draft)` |
+| **DEC-002** | render, interaction | người xem là khách (chưa có phiên) | tim xám, số tim hiện; bấm mở phiên ẩn danh (`ensureGuestSession`) rồi gọi A1; mở phiên lỗi thì thông báo lỗi ngắn, không gọi A1 | `TBD (draft)` |
 | **DEC-002** | render, interaction | đã đăng nhập, không phải người gửi, `likedByMe` sai | tim xám; bấm gọi A1, tim đỏ và số +1 ngay | `TBD (draft)` |
 | **DEC-002** | render, interaction | đã đăng nhập, không phải người gửi, `likedByMe` đúng | tim đỏ; bấm gọi A2, tim xám và số −1 ngay | `TBD (draft)` |
 | **DEC-002** | render | đã đăng nhập, là người gửi (`isSender`) | tim xám, nút vô hiệu, số tim vẫn hiện; không bấm được | `TBD (draft)` |
 | **DEC-002** | interaction | action đang chạy (`pending`) | giữ trạng thái lạc quan, bấm tiếp bị bỏ qua | `TBD (draft)` |
 | **DEC-002** | interaction | action trả `forbidden`, `not_found`, `error` hoặc ném lỗi | nút và số hoàn về giá trị trước khi bấm (hoặc về giá trị máy chủ mới hơn mà đợt đồng bộ bộ lọc nhận trong lúc chờ; chỉ hoàn giá trị lạc quan do chính lần bấm này ghi) và hiện thông báo lỗi ngắn (FR-403, D003) | `TBD (draft)` |
-| **DEC-002** | interaction | action trả `unauthenticated` (phiên hết hạn giữa chừng) | chuyển tới `/login`; nút hoàn về giá trị trước khi bấm (không có thông báo lỗi vì đã chuyển trang) | `TBD (draft)` |
+| **DEC-002** | interaction | action trả `unauthenticated` (phiên hết hạn giữa chừng) | `router.refresh()` (trang tải lại như khách), nút hoàn về giá trị trước khi bấm, hiện thông báo lỗi ngắn | `TBD (draft)` |
 
 - FR-404 (cùng một kudos hiện ở Highlight và All Kudos thì hai nút luôn cùng trạng thái): trạng thái lạc quan giữ trong một kho client chung theo mã kudos thay vì mỗi nút tự giữ; F007 cấp kho (provider + hook), F006 gắn provider vào vỏ trang bao quanh cả Highlight lẫn All Kudos (đã chốt, clarifications.md) và mỗi thẻ đăng ký `{likeCount, likedByMe}` ban đầu vào kho. *Design basis: clarifications.md ("one like per user per kudos") + Study report.*
 **Result** · Không ghi DB (chỉ A1, A2 ghi). Số tim đổi tại chỗ nhưng thứ tự carousel Highlight không xếp lại (D002, đã chốt: chỉ đổi khi tải lại hoặc đổi bộ lọc). Số tim và màu nút luôn khớp với giá trị máy chủ trả về gần nhất; SM-001 (vòng đời lượt thích) quyết định nút đang ở "chưa thích" hay "đã thích" (FR-202).
@@ -239,7 +239,7 @@ sequenceDiagram
 | A1 · A4 | Người gửi gọi thẳng action (bỏ qua nút vô hiệu) | A4 từ chối bằng `check_violation`; action trả `forbidden`; không đổi bộ đếm nào *(BR-002)* |
 | A1 · A4 | Tài khoản đăng nhập chưa có hồ sơ Sunner | A4 không tìm thấy Sunner của người thích, từ chối; action trả `forbidden`, nút hoàn về trạng thái cũ và hiện thông báo lỗi ngắn (D003; giả định, § 5.2) |
 | A1 | Kudos bị xoá giữa lúc thả | khoá ngoại lỗi, action trả `not_found`, nút hoàn về trạng thái cũ và hiện thông báo lỗi ngắn *(DEC-001, D003)* |
-| A1 · A3 | Phiên hết hạn giữa lúc giao diện vẫn hiện "đã đăng nhập" | action trả `unauthenticated`, giao diện chuyển tới `/login`, nút hoàn về giá trị cũ *(FR-602, DEC-002)* |
+| A1 · A3 | Phiên hết hạn giữa lúc giao diện vẫn hiện "đã đăng nhập" | action trả `unauthenticated`, trang tải lại như khách, nút hoàn về giá trị cũ và hiện thông báo lỗi ngắn *(FR-602, DEC-002)* |
 | A1 · A4 · A5 | Thả đúng lúc nửa đêm Asia/Ho_Chi_Minh | ngày tính theo `now()` của DB lúc chèn; lượt thích thuộc ngày đó, không theo đồng hồ trình duyệt *(ALG-001, BR-003)* |
 | A2 · A5 | Rút tim sau khi ngày đặc biệt đã qua | trừ đúng trọng số đã lưu (2), không phải 1 *(BR-004)* |
 | A3 | Cùng một kudos có mặt ở Highlight và All Kudos | hai nút cùng trạng thái nhờ kho client chung theo mã kudos (F007 cấp, F006 gắn vào trang) *(FR-404)* |
@@ -252,12 +252,13 @@ sequenceDiagram
 
 | Component | Responsibility | Used in | File |
 |---|---|---|---|
-| `KudosHeartButton` | Client Component: nút tim + số tim, thả/rút lạc quan, vô hiệu cho người gửi, khách tới `/login` | A3 | `TBD (draft)` *(mới)* |
+| `KudosHeartButton` | Client Component: nút tim + số tim, thả/rút lạc quan, vô hiệu cho người gửi, khách tự mở phiên ẩn danh trước khi thả | A3 | `TBD (draft)` *(mới)* |
 | kho trạng thái tim theo mã kudos | giữ `liked` và `likeCount` dùng chung cho hai nút của cùng một kudos (FR-404); F007 cấp logic, F006 gắn provider vào vỏ trang | A3 | `TBD (draft)` *(mới; provider do F006 mount)* |
 | `likeKudos` / `unlikeKudos` | Server Action: kiểm phiên, ghi/xoá `kudos_likes`, trả `{ status, likeCount }` | A1, A2 | `TBD (draft)` *(mới)* |
 | `kudos_likes_before_insert` | hàm trigger `security definer`: chặn tự thích, gán `weight` (ALG-001) | A4 | `TBD (draft)` *(mới, trong migration)* |
 | `kudos_likes_after_change` | hàm trigger `security definer`: cập nhật `kudos.like_count` và `sunners.hearts_total` | A5 | `TBD (draft)` *(mới, trong migration)* |
-| `getCurrentUser` | người đã đăng nhập hay khách, chỉ từ claims đã xác minh | A1, A2 | `lib/supabase/current-user.ts:33-59` *(có sẵn, không đổi)* |
+| `getCurrentUser` | có phiên hay không, chỉ từ claims đã xác minh; `isAnonymous` (claim `is_anonymous`) cho phiên ẩn danh | A1, A2 | `lib/supabase/current-user.ts` *(có sẵn; thêm `isAnonymous`, plan 261014-1505)* |
+| `ensureGuestSession` / `startGuestSessionOnce` | Server Action mở phiên ẩn danh (`signInAnonymously`) khi chưa có phiên; bản bọc phía trình duyệt gộp các lần bấm đồng thời | A3 | `lib/supabase/ensure-guest-session.ts`, `lib/supabase/start-guest-session-once.ts` *(mới, plan 261014-1505)* |
 | `createClient` (server) | client Supabase gắn cookie phiên, để RLS thấy `auth.uid()` của người dùng | A1, A2 | `lib/supabase/server.ts:19-50` *(có sẵn, không đổi)* |
 
 ### 4.2 Data Model
@@ -411,7 +412,7 @@ Chính sách kiểm thử: `e2e-red-first` (thả/rút tim, chuyển hướng kh
 - **SC-003** *(A4, A5)* Có dòng `special_days` cho hôm nay: lượt thích của người khác lên kudos của A làm `sunners.hearts_total` của A +2 và `like_count` +1; rút tim trả đúng +2 về giá trị trước (covers BR-003, BR-004, BR-005, ALG-001, FR-405)
 - **SC-004** *(A5)* Không có ngày đặc biệt: +1 rồi −1; đổi hoặc xoá `special_days` sau khi thích rồi rút vẫn trừ đúng trọng số đã lưu (covers BR-004, FR-003)
 - **SC-005** *(A0, A4)* Vai trò `anon` không chèn được `kudos_likes`; `authenticated` chỉ thấy dòng của mình, chỉ chèn/xoá với `user_id` của mình, không `update`, không ghi `weight`, không ghi `kudos.like_count` hay `sunners.hearts_total` (covers FR-603, FR-604)
-- **SC-006** *(A3, A1)* Khách bấm tim trên thẻ: URL chuyển tới `/login`, không có dòng `kudos_likes` mới (covers FR-601, DEC-002)
+- **SC-006** *(A3, A1)* Khách chưa có phiên bấm tim trên thẻ: không chuyển tới `/login`; một phiên ẩn danh được mở, tim đỏ, số +1 và có một dòng `kudos_likes` của hồ sơ Sunner khách (covers FR-601, DEC-002)
 - **SC-007** *(A3)* Người gửi mở bảng: nút tim trên kudos của mình `disabled`, số tim vẫn hiện, bấm không đổi gì (covers FR-203, DEC-002)
 - **SC-008** *(A3, A1, A2)* Sunner khác bấm tim: xám → đỏ, số +1; bấm lại: đỏ → xám, số −1; tải lại trang vẫn giữ trạng thái và số (covers FR-201, FR-202, FR-401, FR-402, SM-001)
 - **SC-009** *(A3)* Khi action lỗi (chặn mạng hoặc kudos đã bị xoá): nút và số hoàn về giá trị trước khi bấm và thông báo lỗi ngắn hiện ra (covers FR-403, D003)
@@ -437,12 +438,12 @@ Chính sách kiểm thử: `e2e-red-first` (thả/rút tim, chuyển hướng kh
 
 #### US044 *(A1, A3)*
 
-**Independent Test:** Mở `/sun-kudos` như khách rồi bấm nút tim.
+**Independent Test:** Mở `/sun-kudos` như khách (chưa có cookie phiên) rồi bấm nút tim.
 
 **Acceptance Scenarios:**
 
-1. **Given** khách chưa đăng nhập, **When** bấm nút tim, **Then** được chuyển tới `/login` và không có lượt thích nào được ghi.
-2. **Given** phiên hết hạn trong lúc trang vẫn hiện như đã đăng nhập, **When** bấm tim, **Then** action trả `unauthenticated` và giao diện chuyển tới `/login`.
+1. **Given** khách chưa đăng nhập và chưa có phiên, **When** bấm nút tim, **Then** không chuyển tới `/login`; phiên ẩn danh được mở, tim đỏ, số tim +1 và lượt thích được ghi cho hồ sơ Sunner khách.
+2. **Given** phiên hết hạn trong lúc trang vẫn hiện như đã có phiên, **When** bấm tim, **Then** action trả `unauthenticated`, nút hoàn về, hiện thông báo lỗi ngắn và trang tải lại như khách.
 
 #### US045 *(A3, A4)*
 
@@ -497,12 +498,12 @@ Mã đã giao: `lib/kudos/kudos-heart-actions.ts` (Server Action `likeKudos`, `u
 #### Data Flow
 
 ```text
-Browser (member) -> A3 bấm tim -> Server Action likeKudos / unlikeKudos (A1/A2): getCurrentUser() == null -> { unauthenticated } -> /login
+Browser (có phiên) -> A3 bấm tim -> Server Action likeKudos / unlikeKudos (A1/A2): getCurrentUser() == null -> { unauthenticated } -> router.refresh() + thông báo lỗi
    -> createClient() (cookie, role authenticated) -> insert/delete kudos_likes (RLS: user_id = auth.uid())
    -> A4 BEFORE INSERT: sunner(user) == kudos.sender ? reject : NEW.weight = special_days[today ICT] ?? 1
    -> A5 AFTER INSERT/DELETE: kudos.like_count +-1 ; sunners[sender].hearts_total +-weight   (cùng giao dịch)
    -> action đọc kudos.like_count -> { status, likeCount } -> A3 khớp nút và số (lỗi: hoàn nút và số, hiện thông báo lỗi ngắn)
-Guest -> A3 -> /login (không gọi action)
+Guest (chưa có phiên) -> A3 -> startGuestSessionOnce() -> ensureGuestSession (signInAnonymously; trigger create_guest_sunner tạo hồ sơ Sunner khách) -> ok -> A1 như trên; lỗi -> thông báo lỗi ngắn, không gọi A1
 Operator (service_role) -> A6 insert/delete special_days -> chỉ ảnh hưởng lượt thích tạo sau đó
 ```
 

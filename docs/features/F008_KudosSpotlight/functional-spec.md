@@ -37,7 +37,7 @@ key entities, and DB writes for a Dev/QA/SA audience.
 | CAP-01 | Xem bảng Spotlight | Thấy tiêu đề, tổng số kudos, bảng tên người nhận bố cục cố định và dải kudos mới nhất; thấy trạng thái đang tải hoặc rỗng khi chưa có dữ liệu | US048, US053 | FR-001, FR-002, FR-101, FR-201, FR-202, FR-203, FR-206, FR-207, FR-208, FR-209, FR-409, FR-601 | BR-001, BR-002, BR-003, BR-004, DEC-001 | SCR006_SunKudosLiveBoard |
 | CAP-02 | Tìm một người nhận | Gõ tên vào ô tìm (tối đa 100 ký tự), thấy các nút khớp được tô sáng và các nút khác mờ đi | US051 | FR-205, FR-404, FR-405, FR-406 | BR-006, DEC-002 | N/A — nằm trên vùng Spotlight, đã tính ở CAP-01 |
 | CAP-03 | Di chuyển và phóng to bảng | Bật Pan/Zoom rồi kéo để dịch bảng, lăn chuột để phóng to hoặc thu nhỏ; tắt thì trang cuộn bình thường | US052 | FR-204, FR-403, FR-407, FR-408 | BR-007, SM-001 | N/A — nằm trên vùng Spotlight, đã tính ở CAP-01 |
-| CAP-04 | Xem và mở kudos từ một tên | Rê chuột để thấy tên và thời gian nhận; bấm để mở kudos (khách được đưa tới đăng nhập) | US049, US050 | FR-401, FR-402 | BR-005, BR-008 | N/A — nằm trên vùng Spotlight, đã tính ở CAP-01 |
+| CAP-04 | Xem và mở kudos từ một tên | Rê chuột để thấy tên và thời gian nhận; bấm để mở kudos (người chưa có phiên được đưa tới đăng nhập; khách có phiên ẩn danh mở kudos như Sunner) | US049, US050 | FR-401, FR-402 | BR-005, BR-008 | N/A — nằm trên vùng Spotlight, đã tính ở CAP-01 |
 
 ## 3. Open Decisions
 
@@ -79,7 +79,7 @@ Các quyết định lớn đã chốt trong clarifications.md (bố cục tất
 ### Interaction (4xx)
 
 - **FR-401** Rê chuột hoặc đưa tiêu điểm bàn phím vào một nút thì hiện chú thích gồm tên người nhận và thời gian nhận; rời đi hoặc nhấn Esc thì ẩn.
-- **FR-402** Bấm một nút mở kudos tương ứng; khách chưa đăng nhập được đưa tới trang đăng nhập; trang kudos chưa xây thì người đã đăng nhập thấy trang không tìm thấy mặc định.
+- **FR-402** Bấm một nút mở kudos tương ứng; người chưa có phiên được đưa tới trang đăng nhập (khách đã có phiên ẩn danh, sau khi bấm tim hoặc mở Viết Kudo, đi tới kudos như Sunner); trang kudos chưa xây thì người đã đăng nhập thấy trang không tìm thấy mặc định.
 - **FR-403** Khi Pan/Zoom bật, kéo chuột dịch bảng và lăn chuột phóng to hoặc thu nhỏ trong khoảng 0.5 đến 4 lần; khi tắt, kéo và lăn chuột không tác động lên bảng và trang cuộn bình thường.
 - **FR-404** Nhấn Enter hoặc bấm kính lúp thì các nút có tên khớp (không phân biệt hoa thường và dấu tiếng Việt, D003) được tô sáng, các nút còn lại mờ đi, và số nút khớp được báo cho người dùng trình đọc màn hình.
 - **FR-405** Chuỗi tìm 100 ký tự được chấp nhận; 101 ký tự bị từ chối kèm thông báo lỗi; để trống mà bấm tìm bị chặn kèm thông báo bắt buộc nhập (xem D004). Ô tìm không chặn việc gõ quá 100 ký tự; lỗi chỉ hiện khi bấm tìm.
@@ -101,7 +101,7 @@ Các quyết định lớn đã chốt trong clarifications.md (bố cục tất
 - Thời gian nhận hiển thị theo dạng `HH:mm - MM/DD/YYYY` theo múi giờ Asia/Ho_Chi_Minh (BR-005)
 - Chuỗi tìm tối đa 100 ký tự và không được để trống; khớp không phân biệt hoa thường và dấu (D003, đã chốt) (BR-006)
 - Kéo và lăn chuột chỉ tác động lên bảng khi Pan/Zoom đang bật; tắt thì trang cuộn bình thường (BR-007)
-- Đã đăng nhập thì bấm nút mở kudos tương ứng; khách thì được đưa tới trang đăng nhập (BR-008)
+- Có phiên (đã đăng nhập, hoặc khách có phiên ẩn danh) thì bấm nút mở kudos tương ứng; chưa có phiên thì được đưa tới trang đăng nhập (BR-008)
 - Vùng Spotlight ở đúng một trong ba trạng thái: đang tải, rỗng (kể cả khi không đọc được dữ liệu) hoặc bảng tương tác (DEC-001)
 - Tìm kiếm: chưa tìm thì mọi nút ở kiểu thường; tìm có kết quả thì nút khớp sáng và nút khác mờ; tìm không có kết quả thì báo "Không tìm thấy" và giữ nút ở kiểu thường (DEC-002)
 - Chế độ Pan/Zoom có ba trạng thái: tắt (mặc định), bật, và đang kéo; mỗi lần mở trang bắt đầu ở trạng thái tắt (SM-001)
@@ -154,7 +154,7 @@ Vùng này là một phần của màn hình Sun* Kudos - Live board, vỏ màn 
 
 **Acceptance Criteria:**
 - [ ] Sunner đã đăng nhập bấm một nút thì mở kudos tương ứng (trang chưa xây thì thấy trang không tìm thấy mặc định).
-- [ ] Khách bấm một nút thì được đưa tới trang đăng nhập.
+- [ ] Người chưa có phiên bấm một nút thì được đưa tới trang đăng nhập; khách có phiên ẩn danh thì mở kudos như Sunner.
 - [ ] Kéo bảng rồi nhả chuột trên một nút không mở kudos.
 
 ### US051 — Tìm tên người nhận
@@ -215,7 +215,7 @@ Vùng này là một phần của màn hình Sun* Kudos - Live board, vỏ màn 
 
 ### US050 — Error: Khách bấm một nút
 
-**Given** khách chưa đăng nhập, **When** bấm một nút, **Then** được đưa tới trang đăng nhập.
+**Given** người chưa có phiên (chưa đăng nhập, chưa thả tim hay mở Viết Kudo), **When** bấm một nút, **Then** được đưa tới trang đăng nhập.
 
 ### US051 — Happy Path
 
@@ -257,7 +257,7 @@ Vùng này là một phần của màn hình Sun* Kudos - Live board, vỏ màn 
 | Không đọc được dữ liệu | Hiện như rỗng, lỗi ghi ở máy chủ, vùng khác của trang vẫn hiện | "Hiện tại chưa có Kudos nào." |
 | Lăn chuột khi Pan/Zoom tắt | Trang cuộn, bảng không đổi | None — silent handling |
 | Kéo bảng rồi nhả chuột trên một nút | Không mở kudos | None — silent handling |
-| Khách bấm một nút | Được đưa tới trang đăng nhập | None — silent handling |
+| Người chưa có phiên bấm một nút | Được đưa tới trang đăng nhập | None — silent handling |
 | Người đã đăng nhập bấm khi trang kudos chưa xây | Thấy trang không tìm thấy mặc định | Trang không tìm thấy mặc định |
 | Hai tên dài nằm gần nhau và chồng chữ | Chấp nhận phần chồng còn lại; chú thích và phóng to bù lại | None — silent handling |
 | Thiết bị bật giảm chuyển động | Bảng không có hiệu ứng, dải kudos mới nhất đứng yên | None — silent handling |
@@ -279,7 +279,7 @@ Vùng này là một phần của màn hình Sun* Kudos - Live board, vỏ màn 
 - **FR-208** → Rỗng thì "0 KUDOS", thông báo rỗng, ô tìm và Pan/Zoom bị vô hiệu
 - **FR-209** → Lỗi đọc dữ liệu hiện như rỗng, vùng khác vẫn hiện
 - **FR-401** → Rê chuột hoặc Tab vào nút hiện tên và thời gian đúng múi giờ; Esc ẩn
-- **FR-402** → Đã đăng nhập mở kudos; khách tới trang đăng nhập
+- **FR-402** → Có phiên (kể cả ẩn danh) mở kudos; chưa có phiên tới trang đăng nhập
 - **FR-403** → Bật: kéo và lăn chuột đổi bảng trong 0.5–4 lần; tắt: trang cuộn
 - **FR-404** → Enter hoặc kính lúp tô sáng nút khớp, làm mờ nút khác, báo số kết quả
 - **FR-405** → 100 ký tự được, 101 bị từ chối, trống bị chặn

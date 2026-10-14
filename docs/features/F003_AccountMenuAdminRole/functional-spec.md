@@ -18,7 +18,7 @@ key entities, and DB writes for a Dev/QA/SA audience.
 ## 1. Overview
 
 **Problem:** Header trang chủ SAA 2025 cần một vùng bên phải cho tài khoản: khách chưa biết bấm đâu để đăng nhập, người đã đăng nhập cần chỗ vào hồ sơ và chỗ đăng xuất, còn quản trị viên cần lối vào trang quản trị mà hệ thống phải phân biệt được bằng vai trò.
-**Solution:** Vùng bên phải header đổi theo trạng thái. Khách thấy nút chữ "Đăng nhập" (EN: "Login") dẫn tới màn hình Login. Người đã đăng nhập thấy chuông thông báo (chỉ là giao diện) và nút tài khoản; bấm nút mở menu có Hồ sơ và Đăng xuất, thêm Trang quản trị nếu tài khoản là admin (EN: Profile / Sign out / Admin Dashboard). Vai trò lưu một nơi duy nhất là hồ sơ người dùng, mặc định `user`, người dùng không tự đổi được.
+**Solution:** Vùng bên phải header đổi theo trạng thái. Khách thấy nút chữ "Đăng nhập" (EN: "Login") dẫn tới màn hình Login; khách đã có phiên ẩn danh (sau khi bấm tim hoặc mở Viết Kudo, guests act as Anonymous) cũng vẫn thấy nút này vì chưa có tài khoản. Người đã đăng nhập thấy chuông thông báo (chỉ là giao diện) và nút tài khoản; bấm nút mở menu có Hồ sơ và Đăng xuất, thêm Trang quản trị nếu tài khoản là admin (EN: Profile / Sign out / Admin Dashboard). Vai trò lưu một nơi duy nhất là hồ sơ người dùng, mặc định `user`, người dùng không tự đổi được.
 **Scope:** Chuông thông báo dạng giao diện; nút tài khoản 40x40 và menu mở/đóng bằng chuột, bàn phím; nút "Đăng nhập" cho khách; đăng xuất (chỉ feature này sở hữu việc đăng xuất); hồ sơ kèm vai trò, tự tạo cho tài khoản mới; đọc vai trò ở server để quyết định hiện Trang quản trị.
 **Non-Scope:** Bảng thông báo và chấm đỏ chưa đọc (để cho feature thông báo sau); trang Hồ sơ và trang quản trị (menu chỉ có liên kết tới trang dự kiến, hiện báo 404); kiểm tra quyền bên trong trang quản trị khi trang đó được xây; giao diện hoặc danh sách trong cấu hình để cấp vai trò (người vận hành đặt bằng SQL); bộ chọn ngôn ngữ, nội dung trang chủ và phần còn lại của header (thuộc F002 và F001); việc chuyển hướng sau đăng nhập (thuộc F001).
 
@@ -26,7 +26,7 @@ key entities, and DB writes for a Dev/QA/SA audience.
 
 | Actor | Description | Primary goal |
 |-------|--------------|---------------|
-| Khách chưa đăng nhập | người mở trang chủ khi chưa có phiên | tìm được nút "Đăng nhập" để vào màn hình Login |
+| Khách chưa đăng nhập | người mở trang chủ khi chưa có tài khoản (chưa có phiên, hoặc có phiên ẩn danh) | tìm được nút "Đăng nhập" để vào màn hình Login |
 | Người dùng đã đăng nhập (vai trò user) | người có phiên hợp lệ, hồ sơ vai trò `user` | vào hồ sơ cá nhân hoặc đăng xuất |
 | Quản trị viên (vai trò admin) | người có phiên hợp lệ, hồ sơ vai trò `admin` | như người dùng thường, thêm lối vào trang quản trị |
 
@@ -57,7 +57,7 @@ None — no unresolved domain confirmations. Ba quyết định dưới đây đ
 
 ### Navigation (1xx)
 
-- **FR-101** Khách thấy nút "Đăng nhập" (EN: "Login") ở bên phải header, đặt đúng chỗ nút tài khoản; bấm thì tới màn hình Login (`/login`).
+- **FR-101** Khách thấy nút "Đăng nhập" (EN: "Login") ở bên phải header, đặt đúng chỗ nút tài khoản; bấm thì tới màn hình Login (`/login`). Phiên ẩn danh (khách đã bấm tim hoặc mở Viết Kudo) được coi là khách ở đây: vẫn thấy nút "Đăng nhập", không có chuông, không có nút tài khoản; vai trò admin không bao giờ được cấp cho phiên ẩn danh.
 - **FR-102** Chọn Hồ sơ trong menu thì tới trang Hồ sơ (`/profile`, trang dự kiến, hiện báo 404).
 - **FR-103** Chọn Trang quản trị trong menu thì tới trang quản trị (`/admin`, trang dự kiến, hiện báo 404).
 
@@ -134,6 +134,7 @@ journey
 - [ ] Chưa đăng nhập thì bên phải header có nút "Đăng nhập" và không có chuông, không có nút tài khoản.
 - [ ] Trong lúc đọc phiên, vùng này chỉ là khung giữ chỗ không có chữ, nên người đã đăng nhập không thấy "Đăng nhập" nhấp nháy.
 - [ ] Lỗi khi đọc phiên được xử lý như khách: vẫn thấy nút "Đăng nhập".
+- [ ] Khách có phiên ẩn danh vẫn thấy nút "Đăng nhập", không có chuông và không có nút tài khoản.
 - [ ] Bấm nút thì sang `/login`.
 
 ### US004 — Xem chuông thông báo

@@ -23,7 +23,7 @@
 
 | Method | Path | Code | Owner F### | Handler | Middleware |
 |--------|------|------|------------|---------|------------|
-| GET | /login | ROUTE004 | F001 | `app/login/page.tsx:15` LoginPage | proxy (updateSession; có phiên hợp lệ → 307 `/`; được miễn khỏi cổng prelaunch) |
+| GET | /login | ROUTE004 | F001 | `app/login/page.tsx:15` LoginPage | proxy (updateSession; có phiên hợp lệ của tài khoản → 307 `/`, phiên ẩn danh của khách không bị chuyển; được miễn khỏi cổng prelaunch) |
 | POST | /login [Next-Action: signInWithGoogle] | ROUTE005 | F001 | `app/login/actions.ts:29` signInWithGoogle (Server Action, truyền vào LoginScreen: `app/login/page.tsx:38`) | proxy (updateSession) |
 | POST | /login [Next-Action: setLocale] | ROUTE006 | F001, F002 | `lib/i18n/actions.ts:8` setLocale (Server Action, gọi từ bộ chọn ngôn ngữ: `app/login/page.tsx:39`) | proxy (updateSession) |
 
@@ -51,11 +51,12 @@
 | Method | Path | Code | Owner F### | Handler | Middleware |
 |--------|------|------|------------|---------|------------|
 | GET | /sun-kudos | ROUTE011 | F006 | `app/sun-kudos/page.tsx:7` SunKudosPage (kèm searchParams `hashtag`, `department`; vùng Spotlight F008, sidebar F009 và hộp thoại Viết Kudo F010 (mở từ thanh gửi kudos) nằm trong cùng route, không có route riêng) | proxy (updateSession; khi site đã mở khách không bị chuyển hướng; khi khoá, người không phải admin → 307 `/countdown`) |
-| POST | /sun-kudos [Next-Action: likeKudos] | ROUTE012 | F007 | `lib/kudos/kudos-heart-actions.ts:33` likeKudos (Server Action, gọi từ kho tim: `lib/kudos/kudos-heart-store.tsx:128`; khách → `unauthenticated`, phiên kiểm lại phía máy chủ) | proxy (updateSession) |
+| POST | /sun-kudos [Next-Action: likeKudos] | ROUTE012 | F007 | `lib/kudos/kudos-heart-actions.ts:33` likeKudos (Server Action, gọi từ kho tim: `lib/kudos/kudos-heart-store.tsx:128`; người chưa có phiên → `unauthenticated` (client mở phiên ẩn danh trước bằng ROUTE021); phiên kiểm lại phía máy chủ) | proxy (updateSession) |
 | POST | /sun-kudos [Next-Action: unlikeKudos] | ROUTE013 | F007 | `lib/kudos/kudos-heart-actions.ts:41` unlikeKudos (Server Action, gọi từ kho tim: `lib/kudos/kudos-heart-store.tsx:128`) | proxy (updateSession) |
 | POST | /sun-kudos [Next-Action: setLocale] | ROUTE014 | F001, F002, F004, F006 | `lib/i18n/actions.ts:8` setLocale (Server Action, gọi từ bộ chọn ngôn ngữ: `app/sun-kudos/_components/sun-kudos-content.tsx`) | proxy (updateSession) |
 | POST | /sun-kudos [Next-Action: sendKudos] | ROUTE019 | F010 | `lib/kudos/send-kudos-action.ts:45` sendKudos (Server Action, gọi từ hộp thoại Viết Kudo: `app/_components/write-kudos-behaviour/write-kudos-modal.tsx:45`; kiểm hình dạng và luật đầu vào rồi gọi RPC `create_kudos` bằng client cookie của người dùng; trả `ok` / `invalid` / `unauthenticated` / `noSunner` / `error`, không ném lỗi ra client) | proxy (updateSession) |
-| POST | /sun-kudos [Next-Action: searchSunners] | ROUTE020 | F010 | `lib/kudos/send-kudos-action.ts:104` searchSunners (Server Action, gọi từ ô Người nhận và gợi ý `@tên`: `app/_components/write-kudos-behaviour/use-sunner-search.ts:34`; khách hoặc từ khoá rỗng/quá 100 ký tự → `[]`; tối đa 10 kết quả) | proxy (updateSession) |
+| POST | /sun-kudos [Next-Action: searchSunners] | ROUTE020 | F010 | `lib/kudos/send-kudos-action.ts:104` searchSunners (Server Action, gọi từ ô Người nhận và gợi ý `@tên`: `app/_components/write-kudos-behaviour/use-sunner-search.ts:34`; người chưa có phiên hoặc từ khoá rỗng/quá 100 ký tự → `[]`; tối đa 10 kết quả; không bao giờ trả Sunner khách `is_guest`) | proxy (updateSession) |
+| POST | /sun-kudos [Next-Action: ensureGuestSession] | ROUTE021 | F007, F010 | `lib/supabase/ensure-guest-session.ts` ensureGuestSession (Server Action, không có đầu vào; gọi qua `startGuestSessionOnce` ở `lib/supabase/start-guest-session-once.ts` từ nút tim `app/_components/sun-kudos-behaviour/kudos-heart-button.tsx` và thanh gửi kudos `app/_components/write-kudos-behaviour/write-kudos-launcher.tsx` khi chưa có phiên; có claims → `ok` không đổi gì, không có phiên → `signInAnonymously()` đặt cookie phiên mới, lỗi → `error`; guests act as Anonymous) | proxy (updateSession) |
 
 ### File: app/api/kudos/route.ts (route `/api/kudos`)
 
@@ -114,8 +115,8 @@
 
 | Category | Count |
 |----------|-------|
-| Backend Routes | 20 |
+| Backend Routes | 21 |
 | Frontend Pages | 5 |
-| Total | 25 |
+| Total | 26 |
 
-> Ghi chú: Total = tổng hai danh mục theo mẫu; 5 trang frontend trùng với ROUTE001, ROUTE004, ROUTE008, ROUTE010 và ROUTE011, nên số endpoint HTTP phân biệt (method + path) là 20.
+> Ghi chú: Total = tổng hai danh mục theo mẫu; 5 trang frontend trùng với ROUTE001, ROUTE004, ROUTE008, ROUTE010 và ROUTE011, nên số endpoint HTTP phân biệt (method + path) là 21.

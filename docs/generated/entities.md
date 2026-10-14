@@ -53,6 +53,7 @@ erDiagram
         text avatar_url
         integer kudos_received_count
         integer hearts_total
+        boolean is_guest
         timestamptz created_at
     }
     MODEL007_Kudos {
@@ -232,28 +233,29 @@ erDiagram
 
 ### MODEL006_Sunner
 
-**Description**: Người trong bảng kudos (F006): người gửi, người nhận, chủ Secret Box; có thể liên kết một tài khoản `auth.users`. Đọc công khai **theo cột** (không có `email`, `user_id`, `hearts_total`); hàng của chính người xem (kèm `hearts_total`) lấy qua hàm `get_my_sunner()`. Hai bộ đếm (`kudos_received_count`, `hearts_total`) chỉ đổi qua trigger. Ghi chỉ `service_role` và các hàm `security definer`. Tài khoản đã xác nhận email được gắn hoặc tạo Sunner bởi hai trigger trên `auth.users` (xem Relationships).
+**Description**: Người trong bảng kudos (F006): người gửi, người nhận, chủ Secret Box; có thể liên kết một tài khoản `auth.users`. Từ 2026-10-14 (guests act as Anonymous) mỗi phiên ẩn danh của khách có một **Sunner khách** (`is_guest = true`, tên "Ẩn danh", không email, không avatar): luôn gửi kudos ẩn danh, không bao giờ là người nhận, không bao giờ được tìm thấy. Đọc công khai **theo cột** (gồm `is_guest`; không có `email`, `user_id`, `hearts_total`); hàng của chính người xem (kèm `hearts_total`) lấy qua hàm `get_my_sunner()`. Hai bộ đếm (`kudos_received_count`, `hearts_total`) chỉ đổi qua trigger. Ghi chỉ `service_role` và các hàm `security definer`. Tài khoản đã xác nhận email được gắn hoặc tạo Sunner bởi hai trigger trên `auth.users` (xem Relationships).
 
-**Source:** `supabase/migrations/20261012072146_create_kudos_board.sql:38-51` (bảng), `:53-54` (chỉ mục duy nhất), `:105,112` (RLS), `:127-128` (column grant gốc); `supabase/migrations/20261014004700_hide_sunner_hearts_total.sql:24-26` (thu `select` theo bảng rồi cấp lại không có `hearts_total`); `20261012072146_create_kudos_board.sql:206-225` (`get_my_sunner`); `supabase/migrations/20261013060400_restrict_sunner_avatars_and_index_department.sql:66-73` (CHECK avatar cục bộ, chỉ mục `department_code`); đọc: `lib/kudos/kudos-card-columns.ts`, `lib/kudos/get-my-sunner-per-request.ts`.
+**Source:** `supabase/migrations/20261012072146_create_kudos_board.sql:38-51` (bảng), `:53-54` (chỉ mục duy nhất), `:105,112` (RLS), `:127-128` (column grant gốc); `supabase/migrations/20261014004700_hide_sunner_hearts_total.sql:24-26` (thu `select` theo bảng rồi cấp lại không có `hearts_total`); `20261012072146_create_kudos_board.sql:206-225` (`get_my_sunner`); `supabase/migrations/20261013060400_restrict_sunner_avatars_and_index_department.sql:66-73` (CHECK avatar cục bộ, chỉ mục `department_code`); `supabase/migrations/20261014084206_guest_anonymous_sunners.sql` (cột `is_guest`, column grant thêm `is_guest`, trigger `create_guest_sunner`); đọc: `lib/kudos/kudos-card-columns.ts`, `lib/kudos/get-my-sunner-per-request.ts`.
 
 | Attribute | Type | Constraints | Description |
 |-----------|------|-------------|-------------|
 | id | uuid | PK, DEFAULT gen_random_uuid() | Định danh Sunner. |
-| user_id | uuid | NULL, FK → `auth.users.id` ON DELETE SET NULL, duy nhất khi không NULL (`sunners_user_id_key`) | Tài khoản đã liên kết; một tài khoản tối đa một Sunner (BR-011). Không cấp cho client. |
+| user_id | uuid | NULL, FK → `auth.users.id` ON DELETE SET NULL, duy nhất khi không NULL (`sunners_user_id_key`) | Tài khoản đã liên kết (tài khoản đăng nhập, hoặc người dùng ẩn danh của Sunner khách); một tài khoản tối đa một Sunner (BR-011). Không cấp cho client. |
 | full_name | text | NOT NULL, CHECK (1..200 ký tự sau btrim) | Tên hiển thị. |
 | email | text | NULL, CHECK (btrim(email) <> ''), duy nhất theo `lower(email)` khi không NULL (`sunners_email_lower_key`) | Khoá gắn tài khoản theo email. Không cấp cho client. |
 | department_code | text | NULL, FK → `departments.code` ON DELETE SET NULL ON UPDATE CASCADE; chỉ mục `sunners_department_code_idx` | Phòng ban; bộ lọc Department của All Kudos lọc theo cột này của người nhận. |
 | avatar_url | text | NULL, CHECK (≤ 2048 ký tự và khớp `^/[^/\\[:space:]][^\\[:space:]]*$`) | **Chỉ đường dẫn cục bộ dưới `/public`** (một `/` đầu, không `//`, không `\`, không khoảng trắng); NULL hiện chữ cái đầu. Không bao giờ sao chép từ `user_metadata`. Migration `20261013060400_restrict_sunner_avatars_and_index_department.sql` xoá giá trị https cũ và bỏ nhánh https của CHECK (clarifications 2026-10-13, M1). |
 | kudos_received_count | integer | NOT NULL, DEFAULT 0, CHECK (>= 0) | Số kudos nhận, trigger `kudos_sync_received_count` giữ; quyết định hạng Hero. |
 | hearts_total | integer | NOT NULL, DEFAULT 0, CHECK (>= 0) | Tổng tim kiếm được khi là người gửi (kể cả kudos ẩn danh), trigger của `kudos_likes` giữ (F007). **Không cấp `select` cho client** từ F010 review C2 (đọc được thì lộ người gửi ẩn danh qua so sánh trước/sau một lượt thích); chủ đọc qua `get_my_sunner()`. |
+| is_guest | boolean | NOT NULL, DEFAULT false; thuộc column grant của `anon`/`authenticated` | Sunner khách của một phiên ẩn danh (do `create_guest_sunner` tạo): `create_kudos` ép kudos của nó ẩn danh và từ chối nó làm người nhận; `searchSunners` lọc `is_guest = false`. Migration `20261014084206_guest_anonymous_sunners.sql`. |
 | created_at | timestamptz | NOT NULL, DEFAULT now() | Thời điểm tạo. |
 
 **Relationships**:
 - Many-to-One với MODEL005_Department (`department_code`); One-to-One tuỳ chọn với `auth.users` (`user_id`).
 - One-to-Many với MODEL007_Kudos hai chiều (`sender_id`, `receiver_id`) và với MODEL013_SecretBox (`owner_id`).
-- Gắn tài khoản: trigger `on_auth_user_created_link_sunner` (AFTER INSERT, chỉ khi `email_confirmed_at` khác NULL) và `on_auth_user_confirmed_link_sunner` (AFTER UPDATE OF `email_confirmed_at`, NULL → có giá trị) cùng gọi `link_or_create_sunner()` → `link_or_create_sunner_for_user(uuid, text, jsonb)`: gắn Sunner chưa gắn cùng `lower(email)`, không thì tạo Sunner mới (chỉ lấy tên, không lấy avatar); lỗi hạ xuống WARNING nên đăng ký không bao giờ thất bại; tài khoản chưa xác nhận không có Sunner (`supabase/migrations/20261012072146_create_kudos_board.sql:135-170,234-242`, `supabase/migrations/20261013060400_restrict_sunner_avatars_and_index_department.sql:84-110`).
+- Gắn tài khoản: trigger `on_auth_user_created_link_sunner` (AFTER INSERT, chỉ khi `email_confirmed_at` khác NULL) và `on_auth_user_confirmed_link_sunner` (AFTER UPDATE OF `email_confirmed_at`, NULL → có giá trị) cùng gọi `link_or_create_sunner()` → `link_or_create_sunner_for_user(uuid, text, jsonb)`: gắn Sunner chưa gắn cùng `lower(email)`, không thì tạo Sunner mới (chỉ lấy tên, không lấy avatar); lỗi hạ xuống WARNING nên đăng ký không bao giờ thất bại; tài khoản chưa xác nhận không có Sunner. Người dùng ẩn danh (không email) không đi qua hai trigger này: trigger riêng `on_auth_user_created_guest_sunner` (AFTER INSERT trên `auth.users`, `when (new.is_anonymous)`) gọi `create_guest_sunner()` tạo Sunner khách (`is_guest = true`, `full_name` "Ẩn danh", `user_id` = người dùng ẩn danh); lỗi cũng hạ xuống WARNING (xem`supabase/migrations/20261012072146_create_kudos_board.sql:135-170,234-242`, `supabase/migrations/20261013060400_restrict_sunner_avatars_and_index_department.sql:84-110`).
 
-**Discriminator Fields**: None.
+**Discriminator Fields**: `is_guest` (boolean) phân biệt Sunner khách với Sunner thường; không đổi cấu trúc bản ghi.
 
 ---
 
@@ -455,7 +457,7 @@ erDiagram
 | Rule | Field | Constraint | Error Message |
 |------|-------|------------|---------------|
 | Avatar chỉ cục bộ | sunners.avatar_url | CHECK ≤ 2048 ký tự và `^/[^/\\[:space:]][^\\[:space:]]*$`; phía đọc `safeAvatarUrl` kiểm lại và quy giá trị lạ về NULL | Lỗi Postgres 23514 khi ghi giá trị khác; ở phía đọc không có thông báo, hiện chữ cái đầu |
-| Email, tài khoản và tổng tim không lộ | sunners.email, sunners.user_id, sunners.hearts_total | Không nằm trong column grant của `anon`/`authenticated`; `select *` bị từ chối | Lỗi Postgres 42501 (permission denied) |
+| Email, tài khoản và tổng tim không lộ | sunners.email, sunners.user_id, sunners.hearts_total | Không nằm trong column grant của `anon`/`authenticated` (grant gồm `is_guest`); `select *` bị từ chối | Lỗi Postgres 42501 (permission denied) |
 | Một tài khoản một Sunner | sunners.user_id | Chỉ mục duy nhất một phần (`user_id is not null`) | Lỗi Postgres 23505 |
 | Email Sunner duy nhất | sunners.email | Chỉ mục duy nhất theo `lower(email)` khi không NULL | Lỗi Postgres 23505 |
 | Bộ đếm không âm | sunners.kudos_received_count, sunners.hearts_total, kudos.like_count | NOT NULL, DEFAULT 0, CHECK (>= 0); client không có quyền ghi; trigger dùng `greatest(.., 0)` | Lỗi Postgres 23514 |

@@ -18,15 +18,15 @@ key entities, and DB writes for a Dev/QA/SA audience.
 ## 1. Overview
 
 **Problem:** Thẻ kudos trên bảng Sun* Kudos hiện chỉ là nội dung để đọc; Sunner chưa có cách tỏ lòng ghi nhận bằng một cái "tim", còn người gửi kudos chưa được tính điểm khi lời cảm ơn của mình được đồng nghiệp tán thưởng. Carousel Highlight lại sắp theo số tim nên cần một nguồn số tim đáng tin cậy.
-**Solution:** Mỗi thẻ kudos (ở Highlight và All Kudos) có một nút tim. Sunner đã đăng nhập thả tim hoặc rút tim ở kudos của người khác và thấy kết quả ngay; khách bấm tim thì được đưa tới trang đăng nhập; người gửi thấy nút tim của kudos mình bị vô hiệu. Mỗi lượt thích cộng tim cho NGƯỜI GỬI kudos (1 tim, hoặc 2 tim vào ngày đặc biệt do vận hành khai báo) và bỏ thích thu hồi đúng số tim đã cộng. Các quy tắc (một lượt mỗi người mỗi kudos, người gửi không tự thích, số tim) do cơ sở dữ liệu giữ, không dựa vào giao diện.
-**Scope:** Nút tim và số tim trên thẻ kudos; thả và rút tim với phản hồi ngay trên giao diện; khách được đưa tới đăng nhập; nút vô hiệu cho người gửi; thông báo lỗi ngắn khi thả hoặc rút thất bại; cộng và thu hồi tim cho người gửi kèm trọng số theo ngày đặc biệt; danh sách ngày đặc biệt do vận hành khai báo (dữ liệu seed, chưa có giao diện quản trị).
+**Solution:** Mỗi thẻ kudos (ở Highlight và All Kudos) có một nút tim. Sunner đã đăng nhập thả tim hoặc rút tim ở kudos của người khác và thấy kết quả ngay; khách (chưa đăng nhập) bấm tim thì hệ thống tự mở một phiên ẩn danh rồi thả tim như bình thường, không bị đưa tới trang đăng nhập (khách hoạt động như "Anonymous"); người gửi thấy nút tim của kudos mình bị vô hiệu. Mỗi lượt thích cộng tim cho NGƯỜI GỬI kudos (1 tim, hoặc 2 tim vào ngày đặc biệt do vận hành khai báo) và bỏ thích thu hồi đúng số tim đã cộng. Các quy tắc (một lượt mỗi người mỗi kudos, người gửi không tự thích, số tim) do cơ sở dữ liệu giữ, không dựa vào giao diện.
+**Scope:** Nút tim và số tim trên thẻ kudos; thả và rút tim với phản hồi ngay trên giao diện; khách tự có phiên ẩn danh ở lần bấm tim đầu tiên và thả tim được; nút vô hiệu cho người gửi; thông báo lỗi ngắn khi thả hoặc rút thất bại; cộng và thu hồi tim cho người gửi kèm trọng số theo ngày đặc biệt; danh sách ngày đặc biệt do vận hành khai báo (dữ liệu seed, chưa có giao diện quản trị).
 **Non-Scope:** Thẻ kudos, carousel Highlight, danh sách All Kudos, bộ lọc, vỏ trang, bảng Sunner và kudos (thuộc F006; feature này chỉ sở hữu vùng nút tim); khối thống kê "Số tim bạn nhận được" ở sidebar (thuộc F009, chỉ đọc lại tổng tim); trang quản trị ngày đặc biệt; xem ai đã thích kudos nào; cập nhật số tim theo thời gian thực cho người đang xem khác; thông báo cho người gửi khi có tim; gửi và xoá kudos; chuỗi chuyển hướng quay về trang cũ sau khi đăng nhập.
 
 **Actors**
 
 | Actor | Description | Primary goal |
 |-------|--------------|---------------|
-| Khách | người chưa đăng nhập, đang xem bảng kudos | xem số tim của các kudos; khi muốn thả tim thì được dẫn tới đăng nhập |
+| Khách | người chưa đăng nhập, đang xem bảng kudos; lần bấm tim đầu tiên mở cho họ một phiên ẩn danh (hồ sơ Sunner khách "Ẩn danh"), từ đó là khách có phiên | xem số tim của các kudos; thả và rút tim như Sunner, không cần đăng nhập |
 | Sunner đã đăng nhập | người xem đã có phiên, không phải người gửi của kudos đang xem | thả hoặc rút tim cho kudos của người khác |
 | Người gửi kudos | một Sunner đã gửi kudos; xem chính kudos của mình | được ghi nhận khi kudos của mình được tán thưởng, và không tự thả tim cho mình |
 | Người vận hành | người có khoá ghi cơ sở dữ liệu, không phải người dùng cuối | khai báo ngày đặc biệt để lượt thích vào ngày đó được tính gấp đôi |
@@ -35,7 +35,7 @@ key entities, and DB writes for a Dev/QA/SA audience.
 
 | ID | Capability | What the user can do | User Stories | Requirements | Business Rules | Screens |
 |----|------------|------------------------|-----------------|---------------|-------------------|---------|
-| CAP-01 | Thả và rút tim ở kudos của người khác | Bấm nút tim trên thẻ để thả hoặc rút tim và thấy số tim, màu tim đổi ngay; khách bấm thì được đưa tới đăng nhập; người gửi thấy nút vô hiệu ở kudos của mình | US042, US043, US044, US045 | FR-001, FR-201, FR-202, FR-203, FR-401, FR-402, FR-403, FR-404, FR-601, FR-602, FR-603 | BR-001, BR-002, BR-006, DEC-001, DEC-002, SM-001 | SCR006_SunKudosLiveBoard |
+| CAP-01 | Thả và rút tim ở kudos của người khác | Bấm nút tim trên thẻ để thả hoặc rút tim và thấy số tim, màu tim đổi ngay; khách bấm thì có phiên ẩn danh rồi thả tim, không sang đăng nhập; người gửi thấy nút vô hiệu ở kudos của mình | US042, US043, US044, US045 | FR-001, FR-201, FR-202, FR-203, FR-401, FR-402, FR-403, FR-404, FR-601, FR-602, FR-603 | BR-001, BR-002, BR-006, DEC-001, DEC-002, SM-001 | SCR006_SunKudosLiveBoard |
 | CAP-02 | Cộng và thu hồi tim cho người gửi kudos | Người gửi được cộng 1 tim cho mỗi lượt thích, 2 tim nếu vào ngày đặc biệt, và bị thu hồi đúng số đó khi lượt thích bị rút; vận hành khai báo ngày đặc biệt | US046, US047 | FR-002, FR-003, FR-405, FR-604 | BR-003, BR-004, BR-005 | N/A — chạy ở tầng dữ liệu, màn hình duy nhất của feature đã tính ở CAP-01 |
 
 ## 3. Open Decisions
@@ -73,8 +73,8 @@ Cả bốn điểm dưới đây đã chốt ở clarifications.md (lượt "spe
 
 ### Security (6xx)
 
-- **FR-601** Khách bấm nút tim thì được đưa tới trang đăng nhập và không có lượt thích nào được ghi.
-- **FR-602** Máy chủ tự kiểm lại phiên đăng nhập ở mỗi lần thả hoặc rút tim; ẩn hay vô hiệu nút chỉ là tiện ích giao diện, không phải rào chắn.
+- **FR-601** Khách (chưa có phiên) bấm nút tim thì hệ thống mở một phiên ẩn danh (một lần, dùng chung cho các lần bấm đồng thời) rồi mới thả tim; không bị đưa tới trang đăng nhập. Nếu không mở được phiên ẩn danh thì không có lượt thích nào được ghi, nút trở về như trước và hiện thông báo lỗi ngắn.
+- **FR-602** Máy chủ tự kiểm lại phiên (tài khoản hoặc phiên ẩn danh) ở mỗi lần thả hoặc rút tim; ẩn hay vô hiệu nút chỉ là tiện ích giao diện, không phải rào chắn.
 - **FR-603** Không ai xem được ai đã thích kudos nào; mỗi người chỉ biết mình đã thích gì, còn người khác chỉ thấy tổng số tim.
 - **FR-604** Trình duyệt không ghi được trực tiếp lên bộ đếm tim hay lên số tim của một lượt thích, nên gọi thẳng vào hệ thống cũng không tự cộng tim được.
 
@@ -86,7 +86,7 @@ Cả bốn điểm dưới đây đã chốt ở clarifications.md (lượt "spe
 - Bỏ thích thu hồi đúng số tim lượt thích đó đã cộng khi thả, kể cả khi ngày đặc biệt đã qua hay danh sách ngày đặc biệt đã đổi (BR-004)
 - Số tim hiện trên thẻ là số lượt thích đang có, mỗi lượt tính 1 dù thả vào ngày đặc biệt; chỉ tim của người gửi mới có trọng số (BR-005)
 - Thả khi đã thả, hay rút khi chưa thả, đều không đổi gì và không báo lỗi (BR-006)
-- Nút tim: khách thấy tim xám bấm được để sang đăng nhập; người đã đăng nhập chưa thích thấy tim xám, đã thích thấy tim đỏ; người gửi thấy tim xám bị vô hiệu; số tim luôn hiện (DEC-002)
+- Nút tim: khách thấy tim xám bấm được (bấm thì có phiên ẩn danh rồi thả tim, không sang đăng nhập); người đã đăng nhập chưa thích thấy tim xám, đã thích thấy tim đỏ; người gửi thấy tim xám bị vô hiệu; số tim luôn hiện (DEC-002)
 - Máy chủ nhận yêu cầu thả tim: không có phiên thì báo cần đăng nhập và không ghi; là người gửi thì từ chối; đã thích sẵn thì giữ nguyên; kudos không còn thì từ chối; còn lại thì ghi một lượt thích (DEC-001)
 - Một lượt thích của một người trên một kudos chỉ ở một trong hai trạng thái, chưa thích hoặc đã thích; thả chuyển sang đã thích, rút chuyển về chưa thích (SM-001)
 
@@ -94,13 +94,13 @@ Cả bốn điểm dưới đây đã chốt ở clarifications.md (lượt "spe
 
 | Screen Name | SCR### | What User Sees | What User Can Do |
 |-------------|--------|-----------------|-------------------|
-| Sun* Kudos - Live board, vùng nút tim trên thẻ kudos (Highlight và All Kudos); vỏ màn hình thuộc kudos-board-browse | SCR006_SunKudosLiveBoard | biểu tượng tim kèm số tim ở thanh thao tác của thẻ; tim xám hoặc đỏ theo trạng thái của người xem; với người gửi, nút tim mờ và không bấm được | bấm tim để thả hoặc rút (Sunner đã đăng nhập, không phải người gửi); bấm tim để sang trang đăng nhập (khách); người gửi không bấm được nút của kudos mình |
+| Sun* Kudos - Live board, vùng nút tim trên thẻ kudos (Highlight và All Kudos); vỏ màn hình thuộc kudos-board-browse | SCR006_SunKudosLiveBoard | biểu tượng tim kèm số tim ở thanh thao tác của thẻ; tim xám hoặc đỏ theo trạng thái của người xem; với người gửi, nút tim mờ và không bấm được | bấm tim để thả hoặc rút (Sunner đã đăng nhập, không phải người gửi); bấm tim để tự có phiên ẩn danh rồi thả tim (khách); người gửi không bấm được nút của kudos mình |
 
 ### User Journey
 
 1. Khách mở bảng Sun* Kudos và thấy các thẻ kudos cùng số tim của từng thẻ.
-2. Khách bấm vào tim của một thẻ — được đưa tới trang đăng nhập, không có tim nào được thả.
-3. Sunner đăng nhập rồi quay lại bảng, thấy các thẻ kudos của người khác có tim xám và bấm được.
+2. Khách bấm vào tim của một thẻ — hệ thống mở phiên ẩn danh rồi thả tim: tim đỏ, số tim tăng 1, không sang trang đăng nhập.
+3. Sunner đã đăng nhập mở bảng, thấy các thẻ kudos của người khác có tim xám và bấm được.
 4. Sunner bấm tim của một thẻ — tim chuyển đỏ và số tim tăng 1 ngay; người gửi kudos đó được cộng tim (1, hoặc 2 nếu hôm nay là ngày đặc biệt).
 5. Sunner đổi ý và bấm lại — tim chuyển xám, số tim giảm 1, người gửi bị thu hồi đúng số tim đã cộng.
 6. Người gửi kudos mở bảng — thấy nút tim trên kudos của chính mình bị vô hiệu, không thả tim được cho mình.
@@ -129,15 +129,15 @@ Cả bốn điểm dưới đây đã chốt ở clarifications.md (lượt "spe
 - [ ] Tải lại trang vẫn thấy tim xám và số tim mới
 - [ ] Rút khi chưa thả không báo lỗi và không đổi số tim
 
-### US044 — Khách bấm tim được đưa tới đăng nhập
+### US044 — Khách bấm tim thì thả được tim, không cần đăng nhập
 
 **Actor:** Khách
-**Goal:** thả tim nhưng phải đăng nhập trước
-**Business value:** giữ chỉ người đã đăng nhập mới tạo tương tác, đồng thời dẫn khách vào luồng đăng nhập.
+**Goal:** thả tim ngay mà không phải đăng nhập
+**Business value:** bỏ rào đăng nhập cho tương tác nhẹ nhất (khách hoạt động như "Anonymous"), vẫn tính một lượt tim cho mỗi phiên khách.
 
 **Acceptance Criteria:**
-- [ ] Khách bấm nút tim thì được đưa tới trang đăng nhập
-- [ ] Không có lượt thích nào được ghi và số tim không đổi
+- [ ] Khách bấm nút tim thì không bị đưa tới trang đăng nhập; tim chuyển đỏ và số tim tăng 1
+- [ ] Lượt thích được ghi cho hồ sơ Sunner khách của phiên ẩn danh vừa mở; tải lại trang (cùng trình duyệt) vẫn thấy tim đỏ
 - [ ] Khách vẫn thấy số tim của mọi thẻ
 
 ### US045 — Người gửi không thả tim cho kudos của chính mình
@@ -191,11 +191,11 @@ Cả bốn điểm dưới đây đã chốt ở clarifications.md (lượt "spe
 
 ### US044 — Happy Path
 
-**Given** khách chưa đăng nhập đang xem bảng kudos, **When** bấm tim của một thẻ, **Then** được đưa tới trang đăng nhập và số tim của thẻ không đổi.
+**Given** khách chưa đăng nhập đang xem bảng kudos, **When** bấm tim của một thẻ, **Then** hệ thống mở phiên ẩn danh, tim chuyển đỏ và số tim tăng 1; không sang trang đăng nhập.
 
 ### US044 — Error: Phiên hết hạn giữa chừng
 
-**Given** Sunner đã đăng nhập nhưng phiên đã hết hạn trong lúc trang còn mở, **When** bấm tim, **Then** máy chủ không chấp nhận lượt thích, người dùng được đưa tới trang đăng nhập và tim trở về trạng thái trước khi bấm.
+**Given** người dùng có phiên (tài khoản hoặc ẩn danh) nhưng phiên đã hết hạn trong lúc trang còn mở, **When** bấm tim, **Then** máy chủ không chấp nhận lượt thích, tim trở về trạng thái trước khi bấm, hiện thông báo lỗi ngắn và trang tải lại như khách; lần bấm kế tiếp mở phiên ẩn danh mới.
 
 ### US045 — Happy Path
 
@@ -231,7 +231,9 @@ Cả bốn điểm dưới đây đã chốt ở clarifications.md (lượt "spe
 | Người gửi cố thả tim cho kudos của mình bằng cách gọi thẳng | bị từ chối; không bộ đếm nào đổi | "None — nút đã vô hiệu; yêu cầu gọi thẳng không có thông báo trên giao diện" |
 | Tài khoản đã đăng nhập nhưng chưa có hồ sơ Sunner | không thả được; nút trở về trạng thái trước khi bấm | "Không cập nhật được tim. Vui lòng thử lại." (D003, chữ tạm) |
 | Kudos bị xoá đúng lúc đang thả tim | lượt thích bị từ chối; nút trở về trạng thái trước khi bấm | "Không cập nhật được tim. Vui lòng thử lại." (D003, chữ tạm) |
-| Phiên hết hạn lúc bấm | máy chủ không chấp nhận; chuyển tới trang đăng nhập | "None — chuyển thẳng tới trang đăng nhập" |
+| Phiên hết hạn lúc bấm | máy chủ không chấp nhận; nút trở về như trước, trang tải lại như khách | "Không cập nhật được tim. Vui lòng thử lại." (D003, chữ tạm) |
+| Khách bấm tim mà không mở được phiên ẩn danh (mất mạng, bị giới hạn lượt) | không có lượt thích nào được ghi | "Không cập nhật được tim. Vui lòng thử lại." (D003, chữ tạm) |
+| Khách bấm hai tim gần như cùng lúc khi chưa có phiên | chỉ một phiên ẩn danh được mở, cả hai lượt dùng chung phiên đó | "None — silent handling" |
 | Thả đúng khoảng nửa đêm giờ Việt Nam | ngày đặc biệt tính theo giờ máy chủ lúc ghi lượt thích, không theo đồng hồ người xem | "None — silent handling" |
 | Cùng một kudos có mặt ở Highlight và All Kudos | hai nút tim đổi cùng nhau | "None — silent handling" |
 | Rút tim sau khi ngày đặc biệt đã qua hoặc đã bị xoá khỏi danh sách | trừ đúng số tim đã lưu cùng lượt thích | "None — silent handling" |
@@ -250,8 +252,8 @@ Cả bốn điểm dưới đây đã chốt ở clarifications.md (lượt "spe
 - **FR-403** → khi lỗi, nút và số trở về như trước khi bấm và có thông báo lỗi ngắn
 - **FR-404** → cùng một kudos ở Highlight và All Kudos thì hai nút luôn khớp nhau
 - **FR-405** → tổng tim người gửi +1 (ngày thường) hoặc +2 (ngày đặc biệt) khi thả; bỏ thích trừ đúng số đó
-- **FR-601** → khách bấm tim thì sang trang đăng nhập và không có lượt thích nào được ghi
-- **FR-602** → phiên hết hạn lúc bấm thì không ghi lượt thích và chuyển tới trang đăng nhập
+- **FR-601** → khách bấm tim thì không sang trang đăng nhập; có phiên ẩn danh, tim đỏ, số +1; không mở được phiên thì không ghi gì và có thông báo lỗi ngắn
+- **FR-602** → phiên hết hạn lúc bấm thì không ghi lượt thích, nút trở về như trước và có thông báo lỗi ngắn
 - **FR-603** → không có cách nào xem danh sách người đã thích một kudos
 - **FR-604** → gọi thẳng vào hệ thống để cộng tim hay chọn số tim đều bị từ chối
 
@@ -263,13 +265,15 @@ Cả bốn điểm dưới đây đã chốt ở clarifications.md (lượt "spe
 | RISK-02 | risk | Số tim trên thẻ đếm lượt thích (mỗi lượt 1) còn tổng tim của người gửi có trọng số (1 hoặc 2), nên vào ngày đặc biệt hai con số có thể khác nhau; spec MoMorph thì ghi "người nhận" khi bỏ thích trong khi quyết định chốt là người gửi | người xem có thể nhầm số tim trên thẻ với "Số tim bạn nhận được" ở sidebar | confirmed (clarifications.md: người gửi nhận tim; số tim trên thẻ là số lượt thích) |
 | RISK-03 | risk | Trước khi F006 xác nhận cách hai nút của cùng một kudos dùng chung trạng thái, hai nút có thể lệch nhau trong lúc chờ phản hồi | số tim hiển thị tạm thời không nhất quán trong một thẻ | đã chốt (D004): một kho trạng thái dùng chung, F006 gắn vào trang |
 | RISK-04 | risk | Kudos ẩn danh (F010) có `sender: null` trên thẻ nên trình duyệt không biết ai là người gửi và `isSender` luôn là false; người gửi thật vẫn thấy nút tim bật trên kudos ẩn danh của chính mình | Bấm thì cơ sở dữ liệu từ chối (chặn tự thích) và giao diện hiện thông báo lỗi ngắn; không có dữ liệu sai | [EXPECTED] hoãn có chủ ý (clarifications 2026-10-14, F010) |
+| RISK-05 | risk | Khách tự thả tim cho kudos của chính mình bằng phiên ẩn danh mới: kudos của khách luôn ẩn danh nên không biết ai gửi, và mỗi phiên ẩn danh là một hồ sơ Sunner khác nên chặn tự thích (cùng hồ sơ Sunner) không bắt được; người gửi thật cũng có thể xoá cookie, mở phiên khách mới và thả tim cho kudos của mình, được cộng tim | tổng tim của người gửi có thể bị tăng ảo | [ACCEPTED] người dùng chấp nhận rủi ro (clarifications 2026-10-14, guests act as Anonymous) |
+| RISK-06 | risk | Chưa có giới hạn tốc độ hay captcha cho phiên ẩn danh: mỗi phiên mới thả được tim mới. Chỉ có trần của Supabase (mặc định 30 lượt đăng nhập ẩn danh mỗi giờ mỗi IP; local nâng lên 1000) | có thể bị dùng để tăng tim hàng loạt | [ACCEPTED] chốt không giới hạn lúc này; làm giới hạn tốc độ và captcha trước khi chạy thật; triển khai thật phải bật anonymous sign-ins và chọn mức giới hạn trên dự án Supabase |
 
 ## 12. Dependencies
 
 | Dependency | Type | Why this feature needs it | Evidence |
 |------------|------|-----------------------------|----------|
 | F006_KudosBoardBrowse (provisional) | feature | sở hữu thẻ kudos, danh sách, bảng kudos (kèm cột số tim) và bảng Sunner (người gửi, kèm cột tổng tim, cả hai do F006 tạo); gắn kho trạng thái tim vào trang; nút tim đặt trong thẻ và nhận `likedByMe`, `isSender` từ đó | FR-201, FR-203, FR-404 |
-| F001 / F003 (đăng nhập và nhận biết người đã đăng nhập) | feature | biết người xem là khách hay Sunner đã đăng nhập, và kiểm lại phiên ở máy chủ | FR-601, FR-602 |
+| F001 / F003 (đăng nhập và nhận biết người đã đăng nhập) | feature | biết người xem có phiên hay không (kể cả phiên ẩn danh), và kiểm lại phiên ở máy chủ; phiên ẩn danh của khách do Server Action `ensureGuestSession` mở (plan 261014-1505-guest-anonymous-access) | FR-601, FR-602 |
 | Dịch vụ cơ sở dữ liệu Supabase | infrastructure | lưu lượt thích và ngày đặc biệt; quyền truy cập từng dòng và bộ đếm tự cập nhật giữ các quy tắc ở mức dữ liệu | FR-001, FR-003, FR-604, BR-002 |
 | Danh sách ngày đặc biệt (seed) | data | quyết định lượt thích nào được tính 2 tim | FR-002, BR-003 |
 

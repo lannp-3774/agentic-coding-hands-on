@@ -19,8 +19,8 @@ key entities, and DB writes for a Dev/QA/SA audience.
 
 ## 1. Overview
 
-**Problem:** Trang Sun* Kudos - Live board cần một cột bên phải để Sunner thấy thành tích kudos của chính mình (kudos nhận/gửi, tim, Secret Box) và để mọi người thấy ai vừa nhận quà; khách chưa đăng nhập không có số liệu cá nhân nên cần được mời đăng nhập thay vì thấy khối trống.
-**Solution:** Cột bên phải có hai khối. Khối thống kê cá nhân (D.1): người đã đăng nhập thấy năm con số của mình và nút "Mở Secret Box" (chưa làm gì), khách thấy lời nhắc đăng nhập. Khối danh sách "10 SUNNER NHẬN QUÀ MỚI NHẤT" (D.3): ai cũng thấy 10 hộp quà đã mở gần nhất, bấm vào một hàng thì tới hồ sơ Sunner (khách thì tới đăng nhập).
+**Problem:** Trang Sun* Kudos - Live board cần một cột bên phải để Sunner thấy thành tích kudos của chính mình (kudos nhận/gửi, tim, Secret Box) và để mọi người thấy ai vừa nhận quà; người chưa có phiên không có số liệu cá nhân nên cần được mời đăng nhập thay vì thấy khối trống; khách đã có phiên ẩn danh (sau khi bấm tim hoặc mở Viết Kudo, guests act as Anonymous) thấy số liệu của chính phiên khách đó.
+**Solution:** Cột bên phải có hai khối. Khối thống kê cá nhân (D.1): người đã đăng nhập, hoặc khách có phiên ẩn danh, thấy năm con số của mình và nút "Mở Secret Box" (chưa làm gì); người chưa có phiên thấy lời nhắc đăng nhập. Khối danh sách "10 SUNNER NHẬN QUÀ MỚI NHẤT" (D.3): ai cũng thấy 10 hộp quà đã mở gần nhất, bấm vào một hàng thì tới hồ sơ Sunner (người chưa có phiên thì tới đăng nhập).
 **Scope:** Khối D.1 và D.3 của cột bên phải, bảng Secret Box được seed làm nguồn số liệu và danh sách quà, các trạng thái chờ, rỗng và không xác định được số liệu.
 **Non-Scope:** Mở Secret Box thật và hộp thoại của nó; danh sách khuyến mãi trong đặc tả D (không có thiết kế); xem trước hồ sơ khi rê chuột; danh hiệu Hero và sao ở sidebar; cập nhật số liệu trực tiếp khi đang xem; trang hồ sơ `/profiles/[id]` (chỉ có liên kết tới trang dự kiến); vỏ trang, bố cục hai cột, thẻ kudos và bảng Sunner/kudos (thuộc Kudos Board Browse); luật tính tim (thuộc Kudos Hearts).
 
@@ -28,15 +28,15 @@ key entities, and DB writes for a Dev/QA/SA audience.
 
 | Actor | Description | Primary goal |
 |-------|--------------|---------------|
-| Khách chưa đăng nhập | người mở `/sun-kudos` khi chưa có phiên | biết cần đăng nhập để xem thống kê của mình, và vẫn xem được ai vừa nhận quà |
+| Khách chưa đăng nhập | người mở `/sun-kudos` khi chưa có tài khoản: chưa có phiên (thấy lời nhắc đăng nhập), hoặc đã có phiên ẩn danh (thấy số liệu của hồ sơ Sunner khách) | biết cần đăng nhập để xem thống kê của mình (khi chưa có phiên), xem số liệu của phiên khách, và vẫn xem được ai vừa nhận quà |
 | Sunner đã đăng nhập | người có phiên hợp lệ và hồ sơ Sunner | nắm số kudos, tim và Secret Box của mình, xem ai vừa nhận quà, mở hồ sơ người đó |
 
 ## 2. Functional Capabilities
 
 | ID | Capability | What the user can do | User Stories | Requirements | Business Rules | Screens |
 |----|------------|------------------------|-----------------|---------------|-------------------|---------|
-| CAP-01 | Thống kê cá nhân (D.1) | Sunner đã đăng nhập xem số Kudos nhận và gửi, số tim, số Secret Box đã mở và chưa mở của mình; khách thấy lời nhắc đăng nhập thay cho khối này | US054, US055 | FR-001, FR-101, FR-201, FR-202, FR-203, FR-204, FR-205, FR-206, FR-207, FR-208, FR-209, FR-214, FR-601, FR-602 | BR-001, BR-002, BR-004, DEC-001 | SCR006_SunKudosLiveBoard |
-| CAP-02 | Danh sách Sunner nhận quà (D.3) | Ai cũng xem 10 hộp quà đã mở gần nhất và bấm một hàng để tới hồ sơ người nhận (khách tới đăng nhập) | US056, US057 | FR-102, FR-210, FR-211, FR-212, FR-213, FR-215 | BR-003, DEC-002 | N/A — nằm trên vùng sidebar của màn hình Sun* Kudos Live board, đã tính ở CAP-01 |
+| CAP-01 | Thống kê cá nhân (D.1) | Sunner đã đăng nhập xem số Kudos nhận và gửi, số tim, số Secret Box đã mở và chưa mở của mình; người chưa có phiên thấy lời nhắc đăng nhập thay cho khối này; khách có phiên ẩn danh thấy số liệu của chính phiên khách (kudos đã gửi, tim, Secret Box) | US054, US055 | FR-001, FR-101, FR-201, FR-202, FR-203, FR-204, FR-205, FR-206, FR-207, FR-208, FR-209, FR-214, FR-601, FR-602 | BR-001, BR-002, BR-004, DEC-001 | SCR006_SunKudosLiveBoard |
+| CAP-02 | Danh sách Sunner nhận quà (D.3) | Ai cũng xem 10 hộp quà đã mở gần nhất và bấm một hàng để tới hồ sơ người nhận (người chưa có phiên tới đăng nhập) | US056, US057 | FR-102, FR-210, FR-211, FR-212, FR-213, FR-215 | BR-003, DEC-002 | N/A — nằm trên vùng sidebar của màn hình Sun* Kudos Live board, đã tính ở CAP-01 |
 
 ## 3. Open Decisions
 
@@ -57,7 +57,7 @@ Cả ba mục dưới đây đã chốt ở clarifications.md (lượt "spec gap
 ### Navigation (1xx)
 
 - **FR-101** Sidebar nằm ở cột bên phải của `/sun-kudos` cạnh danh sách All Kudos, cuộn độc lập với trang; khối thống kê đứng trên, danh sách quà đứng dưới.
-- **FR-102** Bấm một hàng trong danh sách quà: người đã đăng nhập tới `/profiles/[id]` của Sunner đó (trang dự kiến, hiện báo 404), khách tới `/login`.
+- **FR-102** Bấm một hàng trong danh sách quà: người có phiên (đã đăng nhập, hoặc khách có phiên ẩn danh) tới `/profiles/[id]` của Sunner đó (trang dự kiến, hiện báo 404), người chưa có phiên tới `/login`.
 
 ### Sidebar (2xx)
 
@@ -67,7 +67,7 @@ Cả ba mục dưới đây đã chốt ở clarifications.md (lượt "spec gap
 - **FR-204** "Số tim bạn nhận được" là tổng tim người dùng đã kiếm với tư cách người gửi kudos (theo luật tim của Kudos Hearts), không phải tim trên các kudos họ nhận. Chỉ chính chủ thấy con số này; không ai đọc được tổng tim của người khác (F010 review C2).
 - **FR-205** "Số Secret Box bạn đã mở" và "chưa mở" là số hộp của chính người dùng có và không có thời điểm mở.
 - **FR-206** Nút "Mở Secret Box" hiển thị đúng thiết kế nhưng chưa làm gì: không hộp thoại, không đổi số liệu.
-- **FR-207** Khách thấy lời nhắc đăng nhập gồm một dòng chữ và nút "Đăng nhập" tới `/login` thay cho cả khối thống kê, kể cả nút "Mở Secret Box" (D001).
+- **FR-207** Người chưa có phiên (khách chưa bấm tim hay mở Viết Kudo) thấy lời nhắc đăng nhập gồm một dòng chữ và nút "Đăng nhập" tới `/login` thay cho cả khối thống kê, kể cả nút "Mở Secret Box" (D001).
 - **FR-208** Trong lúc đọc phiên và số liệu, khối thống kê là khung giữ chỗ kích thước cố định, không chữ, nên người đã đăng nhập không thấy lời nhắc đăng nhập nhấp nháy.
 - **FR-209** Người đã đăng nhập mà không xác định được số liệu (lỗi đọc, chưa có hồ sơ Sunner) thì năm giá trị hiện "—" và nút vẫn hiện; giá trị bằng 0 thật hiện "0".
 - **FR-210** Danh sách quà có tiêu đề "10 SUNNER NHẬN QUÀ MỚI NHẤT"; mỗi hàng gồm avatar tròn, tên Sunner in đậm và dòng "Nhận được 1 <tên quà>".
@@ -79,7 +79,7 @@ Cả ba mục dưới đây đã chốt ở clarifications.md (lượt "spec gap
 
 ### Security (6xx)
 
-- **FR-601** Thống kê cá nhân chỉ của chính người đang đăng nhập; máy chủ xác định người dùng từ phiên, không nhận mã người dùng từ trình duyệt hay đường dẫn; hàng Sunner của người xem được tra bằng một hàm của cơ sở dữ liệu chỉ trả hàng của chính người gọi, email và mã tài khoản của Sunner không mở cho trình duyệt.
+- **FR-601** Thống kê cá nhân chỉ của chính người đang có phiên (tài khoản, hoặc hồ sơ Sunner khách của phiên ẩn danh); máy chủ xác định người dùng từ phiên, không nhận mã người dùng từ trình duyệt hay đường dẫn; hàng Sunner của người xem được tra bằng một hàm của cơ sở dữ liệu chỉ trả hàng của chính người gọi, email và mã tài khoản của Sunner không mở cho trình duyệt.
 - **FR-602** Trình duyệt không ghi được dữ liệu Secret Box; hộp chưa mở của người khác không đọc được, hộp đã mở của mọi người đọc công khai.
 
 ## 5. Business Rules
@@ -87,25 +87,25 @@ Cả ba mục dưới đây đã chốt ở clarifications.md (lượt "spec gap
 - Một hộp "đã mở" khi có thời điểm mở, "chưa mở" khi thời điểm mở trống; số hộp và danh sách quà đều suy từ đây, không có số đếm lưu riêng (BR-001)
 - "Số tim bạn nhận được" lấy từ tổng tim người gửi do Kudos Hearts giữ, sidebar không tự cộng lại từ lượt thích (BR-002)
 - Danh sách quà gồm 10 hộp đã mở gần nhất, mỗi hộp một hàng, hộp chưa mở không bao giờ vào danh sách (BR-003)
-- Thống kê cá nhân chỉ tính cho người đang đăng nhập và quyết ở máy chủ; ẩn với khách là giao diện, quyền đọc dữ liệu riêng do cơ sở dữ liệu chặn (BR-004)
-- Khối thống kê: đang đọc thì giữ chỗ không chữ; khách thì lời nhắc đăng nhập; đã đăng nhập đủ số liệu thì năm giá trị và nút; không xác định được số liệu thì "—" (DEC-001)
-- Danh sách quà: đang đọc thì giữ chỗ không chữ; rỗng thì "Chưa có dữ liệu"; có hàng thì liên kết tới hồ sơ nếu đã đăng nhập, tới đăng nhập nếu là khách (DEC-002)
+- Thống kê cá nhân chỉ tính cho người đang có phiên (kể cả phiên ẩn danh) và quyết ở máy chủ; ẩn với người chưa có phiên là giao diện, quyền đọc dữ liệu riêng do cơ sở dữ liệu chặn (BR-004)
+- Khối thống kê: đang đọc thì giữ chỗ không chữ; chưa có phiên thì lời nhắc đăng nhập; có phiên (kể cả ẩn danh) đủ số liệu thì năm giá trị và nút; không xác định được số liệu thì "—" (DEC-001)
+- Danh sách quà: đang đọc thì giữ chỗ không chữ; rỗng thì "Chưa có dữ liệu"; có hàng thì liên kết tới hồ sơ nếu có phiên (kể cả ẩn danh), tới đăng nhập nếu chưa có phiên (DEC-002)
 
 ## 6. Screens
 
 | Screen Name | SCR### | What User Sees | What User Can Do |
 |-------------|--------|-----------------|-------------------|
-| Sun* Kudos - Live board — vùng sidebar bên phải (D) | SCR006_SunKudosLiveBoard | khối thống kê cá nhân (năm số liệu và nút "Mở Secret Box", hoặc lời nhắc đăng nhập cho khách) rồi danh sách "10 SUNNER NHẬN QUÀ MỚI NHẤT" | khách bấm lời nhắc để tới đăng nhập; mọi người bấm một hàng quà (đã đăng nhập tới hồ sơ, khách tới đăng nhập); bấm "Mở Secret Box" chưa có tác dụng |
+| Sun* Kudos - Live board — vùng sidebar bên phải (D) | SCR006_SunKudosLiveBoard | khối thống kê cá nhân (năm số liệu và nút "Mở Secret Box", hoặc lời nhắc đăng nhập cho người chưa có phiên) rồi danh sách "10 SUNNER NHẬN QUÀ MỚI NHẤT" | người chưa có phiên bấm lời nhắc để tới đăng nhập; mọi người bấm một hàng quà (có phiên tới hồ sơ, chưa có phiên tới đăng nhập); bấm "Mở Secret Box" chưa có tác dụng |
 
 Đây là một vùng của màn hình `/sun-kudos`, không phải màn hình riêng; vỏ màn hình thuộc Kudos Board Browse.
 
 ### User Journey
 
 1. Người xem mở `/sun-kudos` và thấy cột bên phải cạnh danh sách All Kudos; trong lúc dữ liệu đang đọc, hai khối là khung giữ chỗ.
-2. Khách thấy lời nhắc đăng nhập ở khối trên; bấm vào thì sang màn hình đăng nhập.
+2. Khách chưa có phiên thấy lời nhắc đăng nhập ở khối trên; bấm vào thì sang màn hình đăng nhập. Sau khi khách bấm tim hoặc mở Viết Kudo (phiên ẩn danh được mở), khối này đổi thành số liệu của chính phiên khách đó.
 3. Sunner đã đăng nhập thấy số kudos nhận, kudos gửi, tim và Secret Box đã mở/chưa mở của mình; bấm "Mở Secret Box" thì chưa có gì xảy ra.
 4. Cả hai thấy danh sách 10 Sunner nhận quà mới nhất ở khối dưới; cột cuộn riêng khi dài.
-5. Sunner đã đăng nhập bấm một hàng và tới hồ sơ người đó (hiện báo 404 vì trang chưa xây); khách bấm thì tới màn hình đăng nhập.
+5. Sunner đã đăng nhập bấm một hàng và tới hồ sơ người đó (hiện báo 404 vì trang chưa xây); người chưa có phiên bấm thì tới màn hình đăng nhập.
 
 ## 7. User Stories
 
@@ -128,8 +128,9 @@ Cả ba mục dưới đây đã chốt ở clarifications.md (lượt "spec gap
 **Business value:** Khách không thấy khối trống hay số liệu giả, và được dẫn vào luồng đăng nhập.
 
 **Acceptance Criteria:**
-- [ ] Khách thấy lời nhắc đăng nhập (dòng chữ và nút "Đăng nhập" tới `/login`) thay cho khối thống kê.
-- [ ] Khách không thấy năm giá trị và không thấy nút "Mở Secret Box".
+- [ ] Người chưa có phiên thấy lời nhắc đăng nhập (dòng chữ và nút "Đăng nhập" tới `/login`) thay cho khối thống kê.
+- [ ] Người chưa có phiên không thấy năm giá trị và không thấy nút "Mở Secret Box".
+- [ ] Khách đã có phiên ẩn danh (sau khi bấm tim hoặc mở Viết Kudo) không thấy lời nhắc này mà thấy năm giá trị của chính phiên khách, kể cả "Kudos bạn đã gửi" tính các kudos ẩn danh khách đã gửi.
 - [ ] Người đã đăng nhập không bao giờ thấy lời nhắc này nhấp nháy trong lúc trang đang đọc phiên.
 
 ### US056 — Xem 10 Sunner nhận quà mới nhất
@@ -152,7 +153,7 @@ Cả ba mục dưới đây đã chốt ở clarifications.md (lượt "spec gap
 
 **Acceptance Criteria:**
 - [ ] Đã đăng nhập: bấm một hàng thì tới `/profiles/[id]` của Sunner đó; trang chưa xây nên hiện báo 404 và phiên vẫn còn.
-- [ ] Khách: bấm một hàng thì tới `/login`.
+- [ ] Người chưa có phiên: bấm một hàng thì tới `/login`; khách có phiên ẩn danh: tới `/profiles/[id]` như người đã đăng nhập.
 
 ## 8. Scenarios
 
@@ -166,7 +167,7 @@ Cả ba mục dưới đây đã chốt ở clarifications.md (lượt "spec gap
 
 ### US055 — Happy Path
 
-**Given** khách chưa đăng nhập, **When** mở `/sun-kudos`, **Then** khối thống kê được thay bằng lời nhắc đăng nhập; bấm nút "Đăng nhập" thì tới `/login`.
+**Given** khách chưa đăng nhập và chưa có phiên, **When** mở `/sun-kudos`, **Then** khối thống kê được thay bằng lời nhắc đăng nhập; bấm nút "Đăng nhập" thì tới `/login`. **Given** khách vừa gửi một kudos (phiên ẩn danh), **When** mở lại `/sun-kudos`, **Then** khối thống kê hiện năm giá trị của hồ sơ Sunner khách, "Kudos bạn đã gửi" bằng 1.
 
 ### US055 — Error: phiên hết hạn
 
@@ -186,13 +187,13 @@ Cả ba mục dưới đây đã chốt ở clarifications.md (lượt "spec gap
 
 ### US057 — Error: khách bấm hàng quà
 
-**Given** khách chưa đăng nhập, **When** bấm một hàng trong danh sách quà, **Then** trình duyệt tới `/login`.
+**Given** người chưa có phiên, **When** bấm một hàng trong danh sách quà, **Then** trình duyệt tới `/login`.
 
 ## 9. Edge Cases
 
 | Scenario | What Happens | User-Facing Message |
 |----------|--------------|----------------------|
-| Khách mở trang | khối thống kê được thay bằng lời nhắc đăng nhập, không chạy truy vấn thống kê nào | "Đăng nhập để xem thống kê Kudos của bạn" và nút "Đăng nhập" (chữ tạm, D001) |
+| Khách chưa có phiên mở trang | khối thống kê được thay bằng lời nhắc đăng nhập, không chạy truy vấn thống kê nào | "Đăng nhập để xem thống kê Kudos của bạn" và nút "Đăng nhập" (chữ tạm, D001) |
 | Người đã đăng nhập chưa có hồ sơ Sunner hoặc việc đọc số liệu lỗi | năm giá trị hiện "—", nút vẫn hiện, lỗi chỉ ghi nhật ký ở máy chủ | "—" thay cho từng số |
 | Người dùng chưa có kudos hay Secret Box nào | năm giá trị đều là 0 thật | "0" cho từng số |
 | Chưa có hộp quà nào được mở | danh sách quà rỗng | "Chưa có dữ liệu" |
@@ -206,14 +207,14 @@ Cả ba mục dưới đây đã chốt ở clarifications.md (lượt "spec gap
 
 - **FR-001** → seed có hộp đã mở và chưa mở, mỗi hộp có chủ và tên quà.
 - **FR-101** → sidebar nằm bên phải danh sách All Kudos, khối thống kê trên danh sách quà, cuộn riêng.
-- **FR-102** → bấm hàng quà: đã đăng nhập tới `/profiles/[id]`, khách tới `/login`.
+- **FR-102** → bấm hàng quà: có phiên (kể cả ẩn danh) tới `/profiles/[id]`, chưa có phiên tới `/login`.
 - **FR-201** → năm giá trị và nút đúng thứ tự, có đường kẻ giữa tim và Secret Box.
 - **FR-202** → số kudos nhận khớp số kudos mà người dùng là người nhận.
 - **FR-203** → số kudos gửi khớp số kudos mà người dùng là người gửi, kể cả kudos ẩn danh; gửi thêm một kudos ẩn danh thì số này tăng 1.
 - **FR-204** → số tim bằng tổng tim người gửi, không đổi khi người dùng nhận thêm kudos.
 - **FR-205** → hai số Secret Box cộng lại bằng tổng số hộp của người dùng.
 - **FR-206** → bấm "Mở Secret Box": không hộp thoại, không đổi số, không điều hướng.
-- **FR-207** → khách chỉ thấy lời nhắc đăng nhập, không thấy số hay nút.
+- **FR-207** → người chưa có phiên chỉ thấy lời nhắc đăng nhập, không thấy số hay nút; khách có phiên ẩn danh thấy số của mình.
 - **FR-208** → người đã đăng nhập tải trang không thấy lời nhắc đăng nhập nhấp nháy.
 - **FR-209** → mất dữ liệu thì thấy "—", số 0 thật thì thấy "0".
 - **FR-210** → mỗi hàng quà có avatar, tên đậm và "Nhận được 1 <tên quà>".
@@ -239,8 +240,8 @@ Cả ba mục dưới đây đã chốt ở clarifications.md (lượt "spec gap
 | F006_KudosBoardBrowse | feature | vỏ trang và cột bên phải, bảng Sunner (tên, avatar, kudos nhận, tổng tim), hàm tra Sunner của người xem, bảng kudos, thành phần avatar dùng chung | FR-101, FR-202, FR-210 |
 | F010_KudosWrite | feature | hàm `get_my_sent_kudos_count()` đếm kudos đã gửi của chính người xem (kể cả ẩn danh), thay cho việc đếm theo `kudos.sender_id` vốn không còn đọc được từ trình duyệt | FR-203 |
 | F007_KudosHearts | feature | tổng tim người gửi kiếm được cho "Số tim bạn nhận được" (cột do F006 tạo, F007 bảo trì) | FR-204, BR-002 |
-| F001_LoginWithGoogle | feature | màn hình `/login` là đích của khách | FR-102, FR-207 |
-| F003_AccountMenuAdminRole | feature | đọc người dùng hiện tại từ phiên để phân biệt khách và người đã đăng nhập | FR-207, FR-601 |
+| F001_LoginWithGoogle | feature | màn hình `/login` là đích của người chưa có phiên | FR-102, FR-207 |
+| F003_AccountMenuAdminRole | feature | đọc người dùng hiện tại từ phiên để phân biệt người chưa có phiên với người có phiên (tài khoản hoặc ẩn danh) | FR-207, FR-601 |
 | F005_CountdownPrelaunch | feature | cổng trước giờ ra mắt chặn `/sun-kudos` như mọi trang | FR-101 |
 | Dữ liệu Secret Box seed | data | nguồn số liệu D.1 và danh sách D.3; không có luồng nào tạo hay mở hộp trong phạm vi này | FR-001, FR-205, FR-211 |
 | Trang hồ sơ `/profiles/[id]` | feature | đích của hàng quà; chưa xây nên báo 404 | FR-102 |
