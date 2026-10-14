@@ -17,17 +17,23 @@ const POST_LOGIN_PATH = "/";
 
 type PendingCookie = { name: string; value: string; options: CookieOptions };
 type PendingWrites = { cookies: PendingCookie[]; headers: Record<string, string> };
-/** A verified session: both set, or both null (guest). */
-type VerifiedSession = { userId: string | null; client: SupabaseClient | null };
+/**
+ * A verified session: `userId` and `client` both set, or both null (guest).
+ * `isAnonymous`: a guest acting as Anonymous (verified claim `is_anonymous`),
+ * which keeps /login reachable and is never admin.
+ */
+type VerifiedSession = { userId: string | null; client: SupabaseClient | null; isAnonymous: boolean };
 
-const GUEST: VerifiedSession = { userId: null, client: null };
+const GUEST: VerifiedSession = { userId: null, client: null, isAnonymous: false };
 
 /**
  * Refreshes the Supabase session for this request, then applies, in order:
  *   1. `/auth/callback` -> untouched (as when it was outside the matcher);
- *   2. GET|HEAD /login + valid claims -> 307 / (BR-005, DEC-001, unchanged);
+ *   2. GET|HEAD /login + valid claims of an account (not an anonymous guest)
+ *      -> 307 / (BR-005, DEC-001);
  *   3. the F005 prelaunch gate (A2, A4; DEC-001, DEC-002) on every other
- *      GET|HEAD: while locked, everyone but an admin -> 307 /countdown;
+ *      GET|HEAD: while locked, everyone but an admin (never an anonymous
+ *      guest) -> 307 /countdown;
  *      /countdown itself is always served (DEC-002). A missing or unreadable
  *      moment means open (BR-002), so guests are never redirected then.
  * Everything else continues with the refreshed cookies attached.
@@ -116,7 +122,7 @@ async function verifySession(
     }
     const sub: unknown = data?.claims?.sub;
     if (typeof sub !== "string" || sub === "") return GUEST;
-    return { userId: sub, client: supabase };
+    return { userId: sub, client: supabase, isAnonymous: data?.claims?.is_anonymous === true };
   } catch (cause) {
     const message = cause instanceof Error ? cause.message : String(cause);
     console.error(
@@ -129,7 +135,8 @@ async function verifySession(
 function loginRedirectTarget(request: NextRequest, session: VerifiedSession): string | null {
   if (!isGetOrHead(request.method)) return null;
 
-  if (session.userId && request.nextUrl.pathname === LOGIN_PATH) return POST_LOGIN_PATH;
+  // An anonymous guest has no account yet: /login stays reachable so it can sign in.
+  if (session.userId && !session.isAnonymous && request.nextUrl.pathname === LOGIN_PATH) return POST_LOGIN_PATH;
 
   return null;
 }
@@ -154,7 +161,7 @@ async function prelaunchGateTarget(
   if (decision.kind === "next") return null;
 
   if (!session.userId || !session.client) return COUNTDOWN_PATH;
-  const role = await readGateUserRole(session.client, session.userId);
+  const role = await readGateUserRole(session.client, session.userId, session.isAnonymous);
   return role === "admin" ? null : COUNTDOWN_PATH;
 }
 

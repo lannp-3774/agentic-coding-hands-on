@@ -36,9 +36,10 @@ const ERROR_CODES: readonly WriteKudosErrorCode[] = [
 ];
 
 /**
- * Sends one kudos as the signed-in user's Sunner (A1). Results:
+ * Sends one kudos as the signed-in user's Sunner (A1); an anonymous guest sends as
+ * its guest Sunner, always anonymously (create_kudos forces it). Results:
  * `ok` + the new id; `invalid` + field errors (client-side rules, or the DB's
- * 22023 field error); `unauthenticated` (guest); `noSunner` (account not linked
+ * 22023 field error); `unauthenticated` (no session); `noSunner` (account not linked
  * to a Sunner, P0002); `error` for anything else, including malformed input.
  * The caller refreshes the board on `ok`.
  */
@@ -98,8 +99,10 @@ function toFieldErrors(message: string): WriteKudosFieldErrors | null {
 /**
  * Recipient search and @mention suggestions (B, D; clarifications ID-8..10): Sunners
  * whose `full_name` contains the trimmed query, case-insensitively (`ilike`, with
- * `\`, `%` and `_` escaped), sorted by name, at most 10. Blank or over-long queries
- * and guests get `[]`, as does any failure. Reads only the granted sunner columns.
+ * `\`, `%` and `_` escaped), sorted by name, at most 10. Guest Sunners (`is_guest`,
+ * the "Ẩn danh" of each anonymous guest) are never offered: they cannot receive kudos.
+ * Any session may search, an anonymous guest's included; blank or over-long queries and
+ * visitors without a session get `[]`, as does any failure. Reads only granted columns.
  */
 export async function searchSunners(query: string): Promise<SunnerOption[]> {
   const q = typeof query === "string" ? query.trim() : "";
@@ -114,6 +117,7 @@ export async function searchSunners(query: string): Promise<SunnerOption[]> {
       .from("sunners")
       .select("id,full_name,department_code,avatar_url")
       .ilike("full_name", `%${escapeLikePattern(q)}%`)
+      .eq("is_guest", false)
       .order("full_name")
       .order("id")
       .limit(SEARCH_LIMIT);

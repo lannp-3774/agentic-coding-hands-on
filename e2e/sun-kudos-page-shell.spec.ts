@@ -65,9 +65,10 @@ test.describe('Sun* Kudos — page shell', () => {
     await expect(region(page, 'ALL KUDOS')).toBeVisible();
   });
 
-  // D013 kept the A.1 send pill inert until F010 (Viết Kudo): it now opens the modal for a
-  // signed-in Sunner and sends a guest to /login (write-kudos-modal.spec.ts covers the modal).
-  test('"Tìm kiếm profile Sunner" pill is inert; for a guest the A.1 send pill goes to /login (SC-002, D013, F010)', async ({ page }) => {
+  // D013 kept the A.1 send pill inert until F010 (Viết Kudo): it now opens the modal for everyone.
+  // A guest's click creates an anonymous session (guests act as Anonymous, 2026-10-14), so that
+  // flow lives in sun-kudos-serial-guest-write-kudos.spec.ts; write-kudos-modal.spec.ts covers the modal.
+  test('"Tìm kiếm profile Sunner" pill is inert; the A.1 send pill is shown (SC-002, D013, F010)', async ({ page }) => {
     await page.goto('/sun-kudos', { waitUntil: 'networkidle' });
     const send = page.getByRole('button', { name: SEND_PLACEHOLDER, exact: true });
     const searchProfile = page.getByRole('button', { name: 'Tìm kiếm profile Sunner', exact: true });
@@ -77,9 +78,6 @@ test.describe('Sun* Kudos — page shell', () => {
     await searchProfile.click();
     await expect(page).toHaveURL(URL);
     await expect(page.getByRole('dialog')).toHaveCount(0);
-
-    await send.click();
-    await expect(page).toHaveURL(/\/login(\?|$)/);
   });
 
   test('at 375px the page is one column: sidebar under All Kudos, one carousel card (SC-002, D022)', async ({ page }) => {

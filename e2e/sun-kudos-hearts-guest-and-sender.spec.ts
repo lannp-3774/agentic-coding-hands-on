@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
-import { KUDOS_BY_N, SEED_LIKE_ROWS, TEST_ACCOUNTS } from './support/kudos-board-seed';
-import { countRows, signInBrowser } from './support/kudos-board-db';
+import { KUDOS_BY_N, TEST_ACCOUNTS } from './support/kudos-board-seed';
+import { signInBrowser } from './support/kudos-board-db';
 
 /**
  * F007 SC-006, SC-007 · FR-201, FR-203, FR-601, DEC-002. No writes: safe in parallel.
@@ -18,18 +18,15 @@ const slideHeart = (page: Page, index: number) =>
     .locator('[aria-roledescription="slide"]').nth(index).locator('button[aria-pressed]');
 
 test.describe('Sun* Kudos — hearts for guests and senders', () => {
-  test('guest sees an enabled gray heart with the count; clicking goes to /login, nothing written (SC-006)', async ({ page }) => {
+  // Guests act as Anonymous (2026-10-14): a guest's click now likes instead of going to /login.
+  // It writes rows, so it lives in sun-kudos-serial-guest-hearts-and-header.spec.ts.
+  test('guest sees an enabled gray heart with the count (SC-006)', async ({ page }) => {
     await page.goto('/sun-kudos', { waitUntil: 'networkidle' });
     const heart = feedHeart(page, 60);
 
     await expect(heart).toBeEnabled();
     await expect(heart).toHaveAttribute('aria-pressed', 'false');
     await expect(heart).toHaveText(countText(KUDOS_BY_N(60).likeCount));
-
-    await heart.click();
-
-    await expect(page).toHaveURL('http://localhost:3000/login');
-    expect(await countRows('kudos_likes')).toBe(SEED_LIKE_ROWS);
   });
 
   test("sender's own kudos: heart disabled, count shown, click changes nothing (SC-007, FR-203)", async ({ page, context }) => {

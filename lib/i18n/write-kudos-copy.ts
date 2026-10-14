@@ -6,7 +6,8 @@ export type { WriteKudosCopy } from "./write-kudos-copy-types";
 // "Viết Kudo" modal copy (F010). Source: MoMorph frame ihQ26W78P2 (Figma 520:11602:
 // title, field labels and placeholders, Danh hiệu helper lines, the @-mention hint,
 // "Tiêu chuẩn cộng đồng", "Tối đa 5", Hủy / Gửi) plus clarifications (error texts,
-// "Người gửi ẩn danh"). VN is verbatim from Figma; the EN values are translations.
+// "Người gửi ẩn danh"; the guest hint and toast of plan 261014-1505-guest-anonymous-access).
+// VN is verbatim from Figma; the EN values are translations.
 // "Hashtag" and "Image" are Figma labels and stay unchanged in EN. Remove buttons
 // start with "Xóa" (ó + a): the selector contract's /^X(oá|óa)\b/ only matches that
 // spelling, because JS `\b` treats "á" as a non-word character.
@@ -62,6 +63,7 @@ export const writeKudosCopy = {
       nameLabel: "Tên hiển thị ẩn danh",
       namePlaceholder: "Người gửi ẩn danh",
       defaultAlias: "Người gửi ẩn danh",
+      lockedHint: "Bạn chưa đăng nhập nên Kudos sẽ được gửi ẩn danh.",
     },
     actions: { cancel: "Hủy", submit: "Gửi", sending: "Đang gửi…" },
     errors: {
@@ -78,6 +80,7 @@ export const writeKudosCopy = {
       sent: "Gửi Kudos thành công!",
       failed: "Gửi Kudos không thành công. Vui lòng thử lại.",
       noSunner: "Tài khoản của bạn chưa được liên kết với hồ sơ Sunner.",
+      guestSessionFailed: "Không mở được khung viết Kudos. Vui lòng thử lại.",
     },
   },
   en: {
@@ -130,6 +133,7 @@ export const writeKudosCopy = {
       nameLabel: "Anonymous display name",
       namePlaceholder: "Anonymous sender",
       defaultAlias: "Anonymous sender",
+      lockedHint: "You are not logged in, so your Kudos will be sent anonymously.",
     },
     actions: { cancel: "Cancel", submit: "Send", sending: "Sending…" },
     errors: {
@@ -146,6 +150,7 @@ export const writeKudosCopy = {
       sent: "Kudos sent!",
       failed: "Your Kudos could not be sent. Please try again.",
       noSunner: "Your account is not linked to a Sunner profile yet.",
+      guestSessionFailed: "The Kudos form could not be opened. Please try again.",
     },
   },
 } satisfies Record<Locale, WriteKudosCopy>;

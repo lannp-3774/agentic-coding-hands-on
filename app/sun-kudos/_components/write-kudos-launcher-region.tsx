@@ -24,17 +24,19 @@ async function readHashtagOptions(): Promise<WriteKudosHashtagOption[]> {
 }
 
 /**
- * Send bar button of /sun-kudos (A.1). Reads the viewer and, for a signed-in user, the
- * hashtag list, so it renders inside its own <Suspense> with the inert button as fallback.
+ * Send bar button of /sun-kudos (A.1). Reads the viewer and the hashtag list (for everyone:
+ * a guest's click opens the modal too, and the list is the per-request read the filter bar
+ * shares), so it renders inside its own <Suspense> with the inert button as fallback.
+ * Anyone but a logged-in account (no session, or an anonymous guest) sends anonymously.
  * Request-time read.
  */
 export async function WriteKudosLauncherRegion({ viewer, locale, label }: WriteKudosLauncherRegionProps) {
-  const { signedIn, viewerSunnerId } = await viewer;
-  const hashtagOptions = signedIn ? await readHashtagOptions() : [];
+  const [{ signedIn, isAnonymous, viewerSunnerId }, hashtagOptions] = await Promise.all([viewer, readHashtagOptions()]);
   return (
     <WriteKudosLauncher
       label={label}
       signedIn={signedIn}
+      anonymousOnly={!signedIn || isAnonymous}
       viewerSunnerId={viewerSunnerId}
       hashtagOptions={hashtagOptions}
       copy={writeKudosCopy[locale]}

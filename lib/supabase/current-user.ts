@@ -10,6 +10,12 @@ export type CurrentUser = {
   id: string;
   email: string | null;
   role: UserRole;
+  /**
+   * A guest acting as Anonymous (Supabase anonymous sign-in, verified claim
+   * `is_anonymous`): it may write kudos and hearts, but UI that means
+   * "logged-in account" (header account menu) treats it as a guest. Never admin.
+   */
+  isAnonymous: boolean;
 };
 
 type ServerClient = Awaited<ReturnType<typeof createClient>>;
@@ -23,7 +29,8 @@ type ServerClient = Awaited<ReturnType<typeof createClient>>;
  * the user's own session (never `user_metadata`, which the user can write).
  *
  * Fails closed: no claims, an auth error or a throw => `null` (guest); a
- * failed, empty or unexpected role lookup => `"user"`, never `"admin"`.
+ * failed, empty or unexpected role lookup => `"user"`, never `"admin"`; an
+ * anonymous session => `"user"` without a lookup, whatever `profiles.role` says.
  * Showing or hiding admin UI from this is UX only — every admin route or
  * action must call this itself and deny unless `role === "admin"` (BR-004).
  *
@@ -46,10 +53,13 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
     if (typeof sub !== "string" || sub === "") return null;
 
     const email: unknown = data?.claims.email;
+    // Only the literal `true` counts: anything else is an account (and its role is read).
+    const isAnonymous = data?.claims.is_anonymous === true;
     return {
       id: sub,
       email: typeof email === "string" && email !== "" ? email : null,
-      role: await readRole(supabase, sub),
+      role: isAnonymous ? "user" : await readRole(supabase, sub),
+      isAnonymous,
     };
   } catch (cause) {
     unstable_rethrow(cause);

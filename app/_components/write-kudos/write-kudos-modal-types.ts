@@ -51,6 +51,8 @@ export type WriteKudosModalLabels = {
   /** Accessible name of the optional alias textbox; must mention "ẩn danh". */
   anonymousNameLabel: string;
   anonymousNamePlaceholder: string;
+  /** Under the checkbox while `anonymous.locked` (a guest must send anonymously). */
+  anonymousLockedHint: string;
   cancel: string;
   send: string;
   errors: Record<WriteKudosErrorCode, string>;
@@ -129,6 +131,8 @@ export type WriteKudosImagesProps = {
 
 export type WriteKudosAnonymousProps = {
   checked: boolean;
+  /** A guest (not logged in): the checkbox stays checked and disabled, with the hint. */
+  locked: boolean;
   onCheckedChange: (checked: boolean) => void;
   /** Alias text; the textbox only exists while `checked`. */
   name: string;

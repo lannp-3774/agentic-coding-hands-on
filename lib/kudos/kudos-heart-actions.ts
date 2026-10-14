@@ -8,7 +8,9 @@ import { createClient } from "@/lib/supabase/server";
  * Outcome of a like/unlike (F007 A1/A2). `ok` carries the state to reconcile
  * with: `liked` is the caller's intent (now true in the DB) and `likeCount` is
  * re-read from `kudos.like_count`. Every other status means "nothing changed
- * for you": the client reverts; `unauthenticated` sends the viewer to /login.
+ * for you": the client reverts; `unauthenticated` (no session: the client
+ * starts a guest session before liking, so only a lost session lands here)
+ * re-renders the page as a guest.
  */
 export type HeartActionResult =
   | { status: "ok"; liked: boolean; likeCount: number }
@@ -45,7 +47,8 @@ export async function unlikeKudos(kudosId: string): Promise<HeartActionResult> {
 /**
  * Public POST endpoint, so nothing from the client is trusted: the id is
  * shape-checked, the user comes from verified claims (`getCurrentUser`, fails
- * closed to guest), and the write uses the user's own cookie client so RLS
+ * closed to guest; an anonymous guest likes through its guest Sunner like any
+ * account), and the write uses the user's own cookie client so RLS
  * (`user_id = auth.uid()`) and the triggers decide everything else — weight,
  * self-like, counters. Never throws to the client; logs codes only.
  */

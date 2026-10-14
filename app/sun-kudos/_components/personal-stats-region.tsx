@@ -5,9 +5,10 @@ import { getKudosPersonalStats } from "@/lib/kudos/get-kudos-personal-stats";
 import { toStatValues } from "@/lib/kudos/sidebar-mapping";
 
 /**
- * D.1 for F009 A1 (FR-201..205, FR-209). Guest -> login prompt; signed in ->
- * the five numbers, or "—" for each when they cannot be read. The getter never
- * throws and takes the identity from the session only (FR-601).
+ * D.1 for F009 A1 (FR-201..205, FR-209). No session -> login prompt; a session,
+ * an anonymous guest's included (its own guest Sunner's counts) -> the five
+ * numbers, or "—" for each when they cannot be read. The getter never throws
+ * and takes the identity from the session only (FR-601).
  *
  * Request-time read: render inside `<Suspense>` (see KudosSidebar).
  */

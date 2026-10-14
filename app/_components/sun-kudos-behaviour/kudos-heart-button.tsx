@@ -2,10 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useKudosHeart } from "@/lib/kudos/kudos-heart-store";
+import { startGuestSessionOnce } from "@/lib/supabase/start-guest-session-once";
 import { KudosHeartView } from "../sun-kudos/card/kudos-heart-view";
 import { useKudosToast } from "./kudos-toast";
-
-const LOGIN_HREF = "/login";
 
 export type KudosHeartButtonProps = {
   kudosId: string;
@@ -14,15 +13,19 @@ export type KudosHeartButtonProps = {
   initialLiked: boolean;
   /** The viewer sent this kudos: the button is disabled (FR-203). */
   isSender: boolean;
-  /** No session: a click goes to /login without calling the action (FR-601). */
+  /**
+   * A session exists (an account or an anonymous guest). Without one, the first click starts
+   * the anonymous guest session, then likes: guests act as Anonymous, never sent to /login.
+   */
   signedIn: boolean;
   labels: { heart: string; failed: string };
 };
 
 /**
  * Heart of one kudos card (F007 A3, DEC-002). Optimistic state and the like/unlike
- * actions live in the page store; this wrapper adds the navigation and error toast.
- * A click while a request is pending is ignored by the store, so the button stays enabled.
+ * actions live in the page store; this wrapper adds the guest session start and the error
+ * toast. A click while a request is pending is ignored by the store, so the button stays
+ * enabled; clicks while the guest session starts share that one request.
  */
 export function KudosHeartButton({ kudosId, initialCount, initialLiked, isSender, signedIn, labels }: KudosHeartButtonProps) {
   const router = useRouter();
@@ -31,13 +34,15 @@ export function KudosHeartButton({ kudosId, initialCount, initialLiked, isSender
 
   async function handleClick() {
     if (isSender) return;
-    if (!signedIn) {
-      router.push(LOGIN_HREF);
+    if (!signedIn && (await startGuestSessionOnce()).status !== "ok") {
+      showToast("error", labels.failed);
       return;
     }
     const result = await toggle();
-    if (result.status === "unauthenticated") router.push(LOGIN_HREF);
-    else if (result.status === "forbidden" || result.status === "error") showToast("error", labels.failed);
+    if (result.status === "ok" || result.status === "ignored") return;
+    // The session is gone (expired or revoked): re-render as a guest, whose next click starts one.
+    if (result.status === "unauthenticated") router.refresh();
+    showToast("error", labels.failed);
   }
 
   return (

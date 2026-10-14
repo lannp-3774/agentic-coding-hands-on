@@ -20,8 +20,16 @@ const ROLE_READ_TIMEOUT_MS = 2_000;
  * or any value other than the exact string `admin` -> `"user"`, logged with
  * `[profiles]` at error level, no retry. The caller then redirects to
  * `/countdown`.
+ *
+ * `isAnonymous` is the verified claim `is_anonymous === true`: a guest acting
+ * as Anonymous is never admin, whatever `profiles.role` says (no lookup).
  */
-export async function readGateUserRole(client: SupabaseClient, userId: string): Promise<UserRole> {
+export async function readGateUserRole(
+  client: SupabaseClient,
+  userId: string,
+  isAnonymous: boolean,
+): Promise<UserRole> {
+  if (isAnonymous) return "user";
   try {
     const { data, error } = await client
       .from("profiles")

@@ -20,7 +20,7 @@ type RegionProps = { locale: Locale };
  * and a signed-in user never sees a "Login" flash (FR-205).
  */
 
-/** Signed-in only: the notification bell (UI only, FR-201/FR-202). Guests get nothing. */
+/** Signed-in only: the notification bell (UI only, FR-201/FR-202). Guests (anonymous ones too) get nothing. */
 export function AccountBellRegion({ locale }: RegionProps) {
   return (
     // No placeholder: the header's right group is right-aligned, so the bell
@@ -31,7 +31,10 @@ export function AccountBellRegion({ locale }: RegionProps) {
   );
 }
 
-/** Guest: "Login" link to /login. Signed in: account button + menu (FR-101, FR-201, FR-203). */
+/**
+ * Guest: "Login" link to /login. Signed in: account button + menu (FR-101, FR-201, FR-203).
+ * An anonymous guest (guests act as Anonymous) has no account yet, so it keeps the Login link.
+ */
 export function AccountRegion({ locale }: RegionProps) {
   return (
     // Same 96x40 footprint as the resolved content, never the guest link.
@@ -43,14 +46,14 @@ export function AccountRegion({ locale }: RegionProps) {
 
 async function SignedInBell({ locale }: RegionProps) {
   const user = await getCurrentUser();
-  if (!user) return null;
+  if (!user || user.isAnonymous) return null;
   return <NotificationBell label={getDictionary(locale).accountMenu.notifications} />;
 }
 
 async function AccountControl({ locale }: RegionProps) {
   const user = await getCurrentUser();
   const copy = getDictionary(locale).accountMenu;
-  if (!user) return <GuestLoginLink label={copy.login} />;
+  if (!user || user.isAnonymous) return <GuestLoginLink label={copy.login} />;
 
   return (
     <AccountMenu

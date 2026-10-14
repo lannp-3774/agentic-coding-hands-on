@@ -57,6 +57,7 @@ export function toWriteKudosLabels(copy: WriteKudosCopy): WriteKudosModalLabels 
     anonymousLabel: copy.anonymous.checkbox,
     anonymousNameLabel: copy.anonymous.nameLabel,
     anonymousNamePlaceholder: copy.anonymous.namePlaceholder,
+    anonymousLockedHint: copy.anonymous.lockedHint,
     cancel: copy.actions.cancel,
     send: copy.actions.submit,
     errors,

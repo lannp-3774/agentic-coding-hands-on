@@ -40,6 +40,7 @@ export const WRITE_KUDOS_SAMPLE_LABELS: WriteKudosModalLabels = {
   anonymousLabel: "Gửi lời cám ơn và ghi nhận ẩn danh",
   anonymousNameLabel: "Tên hiển thị khi gửi ẩn danh",
   anonymousNamePlaceholder: "Người gửi ẩn danh",
+  anonymousLockedHint: "Bạn chưa đăng nhập nên Kudos sẽ được gửi ẩn danh.",
   cancel: "Hủy",
   send: "Gửi",
   errors: {

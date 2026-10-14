@@ -40,6 +40,8 @@ type Options = {
   hashtagOptions: WriteKudosHashtagOption[];
   viewerSunnerId: string | null;
   linkPrompt: string;
+  /** A guest (not logged in): the kudos is always anonymous (the alias stays optional). */
+  anonymousLocked: boolean;
 };
 
 /**
@@ -47,7 +49,7 @@ type Options = {
  * Danh hiệu, content and 1-5 hashtags are valid (clarifications ID-48/56); each field
  * shows its error once touched (blur), or at once when it is too long.
  */
-export function useWriteKudosForm({ hashtagOptions, viewerSunnerId, linkPrompt }: Options): WriteKudosForm {
+export function useWriteKudosForm({ hashtagOptions, viewerSunnerId, linkPrompt, anonymousLocked }: Options): WriteKudosForm {
   const recipient = useRecipientField(viewerSunnerId);
   const body = useBodyEditor(linkPrompt);
   const images = useKudosImageUploads();
@@ -56,7 +58,8 @@ export function useWriteKudosForm({ hashtagOptions, viewerSunnerId, linkPrompt }
   const [hashtags, setHashtags] = useState<WriteKudosHashtagOption[]>([]);
   const [hashtagsTouched, setHashtagsTouched] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [isAnonymous, setIsAnonymous] = useState(false);
+  const [anonymousChosen, setAnonymousChosen] = useState(false);
+  const isAnonymous = anonymousLocked || anonymousChosen;
   const [anonymousName, setAnonymousName] = useState("");
   const [serverErrors, setServerErrors] = useState<WriteKudosFieldErrors>({});
 
@@ -140,7 +143,8 @@ export function useWriteKudosForm({ hashtagOptions, viewerSunnerId, linkPrompt }
       images: images.viewProps,
       anonymous: {
         checked: isAnonymous,
-        onCheckedChange: setIsAnonymous,
+        locked: anonymousLocked,
+        onCheckedChange: setAnonymousChosen,
         name: anonymousName,
         onNameChange: setAnonymousName,
         onNameBlur: () => undefined,

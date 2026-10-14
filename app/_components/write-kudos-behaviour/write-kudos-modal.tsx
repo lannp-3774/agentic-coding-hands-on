@@ -18,6 +18,8 @@ export type WriteKudosModalProps = {
   hashtagOptions: WriteKudosHashtagOption[];
   /** The viewer's own Sunner (never offered as recipient), or null. */
   viewerSunnerId: string | null;
+  /** A guest (not logged in): anonymous is forced on and cannot be turned off. */
+  anonymousLocked: boolean;
   onClose: () => void;
 };
 
@@ -27,13 +29,13 @@ export type WriteKudosModalProps = {
  * it closes, shows the success toast and refreshes the board so the new kudos appears first. While
  * Gửi is in flight, Hủy and Escape do nothing.
  */
-export function WriteKudosModal({ copy, hashtagOptions, viewerSunnerId, onClose }: WriteKudosModalProps) {
+export function WriteKudosModal({ copy, hashtagOptions, viewerSunnerId, anonymousLocked, onClose }: WriteKudosModalProps) {
   const router = useRouter();
   const showToast = useKudosToast();
   const containerRef = useRef<HTMLDivElement>(null);
   const onKeyDown = useModalBehaviour(containerRef);
   const [submitting, setSubmitting] = useState(false);
-  const form = useWriteKudosForm({ hashtagOptions, viewerSunnerId, linkPrompt: copy.toolbar.linkPrompt });
+  const form = useWriteKudosForm({ hashtagOptions, viewerSunnerId, linkPrompt: copy.toolbar.linkPrompt, anonymousLocked });
 
   const submit = async () => {
     const input = form.readySubmission;

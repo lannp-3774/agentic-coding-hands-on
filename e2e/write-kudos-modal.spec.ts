@@ -15,14 +15,8 @@ import {
  * each required field shows "Không được để trống" once touched (blur).
  */
 test.describe('Viết Kudo modal — form', () => {
-  test('guest clicking the send bar goes to /login and no dialog opens (ID-1)', async ({ page }) => {
-    await page.goto('/sun-kudos', { waitUntil: 'networkidle' });
-
-    await sendBar(page).click();
-
-    await expect(page).toHaveURL('http://localhost:3000/login');
-    await expect(modal(page)).toHaveCount(0);
-  });
+  // ID-1 superseded (guests act as Anonymous, 2026-10-14): a guest's send bar opens the dialog
+  // and creates an anonymous session, so that flow lives in sun-kudos-serial-guest-write-kudos.spec.ts.
 
   test.describe('signed in', () => {
     test.beforeEach(async ({ context }) => {

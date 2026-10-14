@@ -67,6 +67,8 @@ export type WriteKudosCopy = {
     namePlaceholder: string;
     /** Card alias when the anonymous name is empty. */
     defaultAlias: string;
+    /** Under the checkbox when a guest (not logged in) must send anonymously. */
+    lockedHint: string;
   };
   actions: { cancel: string; submit: string; sending: string };
   /** Field errors by code; `tooLong` takes `{max}`. */
@@ -75,5 +77,7 @@ export type WriteKudosCopy = {
     sent: string;
     failed: string;
     noSunner: string;
+    /** A guest's anonymous session could not be started, so the dialog did not open. */
+    guestSessionFailed: string;
   };
 };

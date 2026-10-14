@@ -26,8 +26,12 @@ import { KudosSidebar } from "./kudos-sidebar";
 import { SpotlightSection } from "./spotlight-section";
 import { WriteKudosLauncherRegion } from "./write-kudos-launcher-region";
 
-/** Who is looking at the board: link targets (guest -> /login) and the sender flag. */
-export type KudosViewer = { signedIn: boolean; viewerSunnerId: string | null };
+/**
+ * Who is looking at the board: link targets (no session -> /login) and the sender flag.
+ * `signedIn`: a session exists, an anonymous guest's included (guests act as Anonymous);
+ * `isAnonymous`: that session is an anonymous guest, not a logged-in account.
+ */
+export type KudosViewer = { signedIn: boolean; isAnonymous: boolean; viewerSunnerId: string | null };
 
 export type SunKudosSearchParams = Record<string, string | string[] | undefined>;
 
@@ -38,7 +42,7 @@ const FEED_HEADING_ID = "all-kudos-heading";
 /** Session + own Sunner, both fail closed (guest / no sender flag). Never rejects. */
 async function readViewer(): Promise<KudosViewer> {
   const [user, viewerSunnerId] = await Promise.all([getCurrentUser(), getViewerSunnerId()]);
-  return { signedIn: user !== null, viewerSunnerId };
+  return { signedIn: user !== null, isAnonymous: user?.isAnonymous === true, viewerSunnerId };
 }
 
 /**
