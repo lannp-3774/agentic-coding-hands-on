@@ -23,6 +23,8 @@ export type SunKudosCopy = {
     copyLink: string;
     viewDetail: string;
     heart: string;
+    /** Sender line of an anonymous kudos when the sender typed no alias. */
+    anonymousSender: string;
     heroLabels: Record<HeroTier, string>;
     /** Tooltip for 1, 2 and 3 stars (0 stars has none). */
     starTooltips: [string, string, string];

@@ -13,10 +13,13 @@ const PERSON_COLUMNS = "id,full_name,department_code,avatar_url,kudos_received_c
  * receiver embed is `!inner` so the department filter narrows the kudos rows;
  * `receiver_id` is NOT NULL, so it never drops a row on its own. `my_like`
  * holds the viewer's own like only (RLS: owner rows; guests get `[]`).
+ * The sender comes through `public_sender_id` (F010): `sender_id` is not
+ * client-readable, and for an anonymous kudos the column is NULL, so the
+ * `sender` embed is null; `is_anonymous` / `anonymous_name` drive the alias.
  */
 export const KUDOS_CARD_COLUMNS =
-  "id,seq:seq::text,title,body,like_count,created_at," +
-  `sender:sunners!sender_id(${PERSON_COLUMNS}),` +
+  "id,seq:seq::text,title,body,like_count,created_at,is_anonymous,anonymous_name," +
+  `sender:sunners!public_sender_id(${PERSON_COLUMNS}),` +
   `receiver:sunners!receiver_id!inner(${PERSON_COLUMNS}),` +
   "hashtags:kudos_hashtags(hashtag:hashtags(slug,label,sort_order))," +
   "images:kudos_images(image_path,sort_order)," +

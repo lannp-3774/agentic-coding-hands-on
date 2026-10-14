@@ -43,6 +43,7 @@ export const sunKudosBoardCopy = {
       copyLink: "Copy Link",
       viewDetail: "Xem chi tiết",
       heart: "Thả tim",
+      anonymousSender: "Người gửi ẩn danh",
       heroLabels,
       starTooltips: [
         "Sunner đã nhận được 10 Kudos và bắt đầu lan tỏa năng lượng ấm áp đến mọi người xung quanh.",
@@ -81,6 +82,7 @@ export const sunKudosBoardCopy = {
       copyLink: "Copy Link",
       viewDetail: "View details",
       heart: "Like",
+      anonymousSender: "Anonymous sender",
       heroLabels,
       starTooltips: [
         "This Sunner has received 10 Kudos and is starting to spread warm energy to everyone around.",

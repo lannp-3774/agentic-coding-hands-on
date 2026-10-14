@@ -19,7 +19,8 @@ export function toKudosCardLinks(card: KudosCard, { signedIn, filters }: KudosCa
   const tagHref = (slug: string) => buildFilterHref(filters, { hashtag: slug });
   return {
     detailHref: kudosDetailHref(card.id, signedIn),
-    senderHref: profileHref(card.sender.id, signedIn),
+    // Anonymous cards have no sender: the card view renders no link for them.
+    senderHref: card.sender ? profileHref(card.sender.id, signedIn) : "",
     receiverHref: profileHref(card.receiver.id, signedIn),
     titleHref: card.titleTagSlug ? tagHref(card.titleTagSlug) : null,
     hashtagHrefs: card.hashtags.map((tag) => tagHref(tag.slug)),

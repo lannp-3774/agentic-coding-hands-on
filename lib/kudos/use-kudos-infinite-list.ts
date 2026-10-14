@@ -73,8 +73,9 @@ function isKudosPage(value: unknown): value is KudosPage {
       isRecord(card) &&
       typeof card.id === "string" &&
       typeof card.seq === "string" &&
-      isRecord(card.sender) &&
-      typeof card.sender.id === "string" &&
+      // F010: an anonymous card has no sender; every card carries its parsed body.
+      (card.sender === null || (isRecord(card.sender) && typeof card.sender.id === "string")) &&
+      Array.isArray(card.bodyBlocks) &&
       isRecord(card.receiver),
   );
 }

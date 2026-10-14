@@ -2,6 +2,8 @@
 // per concept, imported with `import type` by server loaders, the API route
 // and the client lists. Pure types: no runtime, no `next/*`, no Supabase.
 
+import type { KudosBlock } from "./write-kudos-types";
+
 /** Hero rank by kudos received (F006 BR-003). */
 export type HeroTier = "new" | "rising" | "super" | "legend";
 
@@ -30,13 +32,19 @@ export type KudosCard = {
   title: string | null;
   /** Slug of the hashtag whose label equals `title`; null = plain text. */
   titleTagSlug: string | null;
+  /** Markdown-subset source as written (F010). */
   body: string;
+  /** `body` parsed by `parseKudosMarkdown` server-side; views render only this. */
+  bodyBlocks: KudosBlock[];
   /** `HH:mm - MM/DD/YYYY` in Asia/Ho_Chi_Minh, built server-side (BR-008). */
   timeLabel: string;
   likeCount: number;
   likedByMe: boolean;
   isSender: boolean;
-  sender: KudosPerson;
+  /** Null for an anonymous kudos: the sender is never sent to the browser (F010). */
+  sender: KudosPerson | null;
+  /** Anonymous kudos only: the alias the sender typed; null = show the default copy. */
+  senderAlias: string | null;
   receiver: KudosPerson;
   hashtags: KudosHashtag[];
   /** Local gallery paths only (`isAllowedImagePath`), at most CARD_IMAGES_MAX. */

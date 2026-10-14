@@ -2,12 +2,15 @@ import { heroTierOf } from "./hero-tier";
 import type { KudosCard, KudosHashtag, KudosPage, KudosPerson } from "./kudos-card-types";
 import { CARD_IMAGES_MAX } from "./kudos-constants";
 import { HASHTAG_SLUG_PATTERN } from "./kudos-filters";
+import { parseKudosMarkdown } from "./kudos-markdown";
 import { formatKudosTime } from "./kudos-time";
 import { isAllowedImagePath, safeAvatarUrl } from "./safe-media-path";
 
 // Pure mapping from `KUDOS_CARD_COLUMNS` rows to cards (F006 ALG-002, BR-003,
 // BR-007, BR-008; F007 FR-202 `likedByMe`). Untyped PostgREST rows are checked
 // by guards first; malformed rows are dropped and counted in one log line.
+// F010: an anonymous row has no sender embed (public_sender_id is NULL) and maps
+// to `sender: null` + `senderAlias`; the body is parsed into `bodyBlocks` here.
 
 type PersonRow = {
   id: string;
@@ -27,7 +30,10 @@ export type KudosRow = {
   body: string;
   like_count: number;
   created_at: string;
-  sender: PersonRow;
+  is_anonymous: boolean;
+  anonymous_name: string | null;
+  /** Null exactly when `is_anonymous` (embed through `public_sender_id`). */
+  sender: PersonRow | null;
   receiver: PersonRow;
   hashtags: { hashtag: HashtagRow }[];
   images: ImageRow[];
@@ -70,7 +76,8 @@ export function isKudosRow(v: unknown): v is KudosRow {
   return isRecord(v) && isUuid(v.id) && isSeq(v.seq) && isNullableString(v.title) &&
     isString(v.body) && isCount(v.like_count) &&
     isString(v.created_at) && !Number.isNaN(Date.parse(v.created_at)) &&
-    isPersonRow(v.sender) && isPersonRow(v.receiver) &&
+    typeof v.is_anonymous === "boolean" && isNullableString(v.anonymous_name) &&
+    (v.is_anonymous ? v.sender === null : isPersonRow(v.sender)) && isPersonRow(v.receiver) &&
     Array.isArray(v.hashtags) && v.hashtags.every(isTagLink) &&
     Array.isArray(v.images) && v.images.every(isImageRow) &&
     Array.isArray(v.my_like);
@@ -122,6 +129,8 @@ function toImages(images: readonly ImageRow[]): string[] {
  * One row to one card. `isSender` is always false here: it depends on the
  * viewer and is set by `withViewerFlags` (server for page 1, client for API
  * pages). `likedByMe` is true when the RLS-scoped `my_like` embed has a row.
+ * An anonymous kudos has `sender: null` and `senderAlias` = the trimmed alias,
+ * or null for the default copy; a named kudos always has `senderAlias: null`.
  */
 export function toKudosCard(row: KudosRow, slugByLabel: SlugByLabel): KudosCard {
   const title = row.title?.trim() ? row.title : null;
@@ -131,11 +140,13 @@ export function toKudosCard(row: KudosRow, slugByLabel: SlugByLabel): KudosCard 
     title,
     titleTagSlug: title === null ? null : (slugByLabel.get(title.trim()) ?? null),
     body: row.body,
+    bodyBlocks: parseKudosMarkdown(row.body),
     timeLabel: formatKudosTime(row.created_at),
     likeCount: row.like_count,
     likedByMe: row.my_like.length > 0,
     isSender: false,
-    sender: toPerson(row.sender),
+    sender: row.sender === null ? null : toPerson(row.sender),
+    senderAlias: row.is_anonymous ? row.anonymous_name?.trim() || null : null,
     receiver: toPerson(row.receiver),
     hashtags: toHashtags(row.hashtags),
     images: toImages(row.images),

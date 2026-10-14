@@ -10,6 +10,7 @@ import { KudosToastProvider } from "@/app/_components/sun-kudos-behaviour/kudos-
 import { KudosBanner } from "@/app/_components/sun-kudos/banner/kudos-banner";
 import { KudosSectionHeading } from "@/app/_components/sun-kudos/banner/kudos-section-heading";
 import { KudosSendBar } from "@/app/_components/sun-kudos/banner/kudos-send-bar";
+import { KudosSendButton } from "@/app/_components/sun-kudos/banner/kudos-send-button";
 import { FeedSkeleton, FilterBarSkeleton, HighlightSkeleton } from "@/app/_components/sun-kudos/board/board-skeletons";
 import { SunKudosBoardLayout } from "@/app/_components/sun-kudos/board/sun-kudos-board-layout";
 import { setLocale } from "@/lib/i18n/actions";
@@ -23,6 +24,7 @@ import { KudosFilterOptionsLoader } from "./kudos-filter-options-loader";
 import { KudosHighlightLoader } from "./kudos-highlight-loader";
 import { KudosSidebar } from "./kudos-sidebar";
 import { SpotlightSection } from "./spotlight-section";
+import { WriteKudosLauncherRegion } from "./write-kudos-launcher-region";
 
 /** Who is looking at the board: link targets (guest -> /login) and the sender flag. */
 export type KudosViewer = { signedIn: boolean; viewerSunnerId: string | null };
@@ -75,6 +77,15 @@ export async function SunKudosContent({ searchParams }: { searchParams: Promise<
                   <KudosSendBar
                     placeholder={sunKudos.banner.sendPlaceholder}
                     searchProfileLabel={sunKudos.banner.searchProfile}
+                    sendButton={
+                      <Suspense fallback={<KudosSendButton label={sunKudos.banner.sendPlaceholder} />}>
+                        <WriteKudosLauncherRegion
+                          viewer={viewer}
+                          locale={locale}
+                          label={sunKudos.banner.sendPlaceholder}
+                        />
+                      </Suspense>
+                    }
                   />
                 </>
               }

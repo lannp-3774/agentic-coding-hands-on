@@ -10,8 +10,10 @@ import { anonClient, signedInClient } from './support/kudos-board-db';
  * `sunners.user_id` are not granted; get_my_sunner() is authenticated-only and returns the
  * caller's own row without email/user_id. Seed values come from the seed contract.
  */
-const SUNNER_COLUMNS = 'id, full_name, department_code, avatar_url, kudos_received_count, hearts_total';
-const KUDOS_COLUMNS = 'id, seq, sender_id, receiver_id, title, body, like_count, created_at';
+// hearts_total is not granted (write-kudos review C2); the owner reads it through get_my_sunner().
+const SUNNER_COLUMNS = 'id, full_name, department_code, avatar_url, kudos_received_count, created_at';
+// Write-kudos contract: sender_id is no longer client-readable; public_sender_id exposes the sender (NULL if anonymous).
+const KUDOS_COLUMNS = 'id, seq, public_sender_id, receiver_id, title, body, like_count, created_at';
 
 test.describe('@supabase kudos board schema and RLS — reads', () => {
   test('anon reads departments and hashtags exactly as seeded', async () => {
@@ -34,6 +36,7 @@ test.describe('@supabase kudos board schema and RLS — reads', () => {
     expect(rows).toHaveLength(KUDOS_TOTAL);
     expect(rows.map((r) => r.id)).toEqual(KUDOS.map((r) => r.id));
     expect(rows.map((r) => r.like_count)).toEqual(KUDOS.map((r) => r.likeCount));
+    expect(rows.map((r) => r.public_sender_id)).toEqual(KUDOS.map((r) => r.senderId)); // seed kudos are all named
     expect(rows[59].title).toBeNull();
     expect(rows[48].title).toBe(KUDOS_BY_N(49).title);
     const time = rows.find((r) => r.id === KUDOS_BY_N(55).id)!.created_at as string;

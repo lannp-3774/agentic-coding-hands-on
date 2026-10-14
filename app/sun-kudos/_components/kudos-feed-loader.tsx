@@ -30,7 +30,9 @@ export async function KudosFeedLoader({ filters, viewer, copy }: KudosFeedLoader
   };
   return (
     <KudosFeedList
-      key={filterKey(filters)}
+      // The newest card is part of the key: after a kudos is sent, router.refresh() brings a new
+      // first card, which remounts the list so page 1 shows it (the list keeps its own pages otherwise).
+      key={`${filterKey(filters)}:${result.data.items[0].id}`}
       initial={initial}
       filters={filters}
       viewerSunnerId={viewerSunnerId}

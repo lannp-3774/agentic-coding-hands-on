@@ -6,16 +6,24 @@ import { ArrowUpRightIcon } from "../../site/site-icons";
 import { PenIcon, SendIcon } from "./card-icons";
 import { KudosCardGallery } from "./kudos-card-gallery";
 import { KudosCardHashtags } from "./kudos-card-hashtags";
+import { KudosAnonymousSenderBlock } from "./kudos-anonymous-sender-block";
 import { KudosPersonBlock } from "./kudos-person-block";
+import { KudosRichBody } from "./kudos-rich-body";
 
 export type KudosCardVariant = "highlight" | "feed";
+
+/** Card labels plus the anonymous-sender default (integration adds it to `SunKudosCopy["card"]`). */
+export type KudosCardCopy = SunKudosCopy["card"] & { anonymousSender?: string };
+
+// Shown when the copy has no `anonymousSender` yet and the sender typed no alias.
+const DEFAULT_ANONYMOUS_SENDER = "Người gửi ẩn danh";
 
 export type KudosCardViewProps = {
   /** highlight: 3-line body, "Xem chi tiết", no gallery. feed: 5-line body, gallery, no "Xem chi tiết". */
   variant: KudosCardVariant;
   card: KudosCard;
   links: KudosCardLinks;
-  copy: SunKudosCopy["card"];
+  copy: KudosCardCopy;
   /** Rendered inside the actions row (left): the stateful heart button. */
   heartSlot: ReactNode;
   /** Rendered inside the actions row (right): the stateful Copy Link button. */
@@ -23,6 +31,9 @@ export type KudosCardViewProps = {
 };
 
 const FOCUS = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00101A]";
+// The feed's stretched link is empty, so its focus ring is drawn on the ::after that covers the card.
+const FOCUS_STRETCH =
+  "focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-[#00101A]";
 // One stretched link per card (::after covers the article); every other control is relative z-10.
 const STRETCH = "after:absolute after:inset-0";
 
@@ -40,12 +51,16 @@ export function KudosCardView({ variant, card, links, copy, heartSlot, copyLinkS
     <article className={`relative flex w-full flex-col gap-4 bg-[#FFF8E1] text-[#00101A] ${ROOT[variant]}`}>
       {/* mm:I3127:21871;256:4857 */}
       <div className="flex items-start justify-between gap-6">
-        <KudosPersonBlock
-          person={card.sender}
-          href={links.senderHref}
-          heroLabel={heroLabels[card.sender.tier]}
-          starTooltips={copy.starTooltips}
-        />
+        {card.sender ? (
+          <KudosPersonBlock
+            person={card.sender}
+            href={links.senderHref}
+            heroLabel={heroLabels[card.sender.tier]}
+            starTooltips={copy.starTooltips}
+          />
+        ) : (
+          <KudosAnonymousSenderBlock alias={card.senderAlias ?? copy.anonymousSender ?? DEFAULT_ANONYMOUS_SENDER} />
+        )}
         {/* mm:I3127:21871;256:5161 */}
         <div aria-hidden="true" className="flex shrink-0 py-4">
           {/* mm:I3127:21871;256:5147 */}
@@ -89,16 +104,14 @@ export function KudosCardView({ variant, card, links, copy, heartSlot, copyLinkS
         {/* mm:I3127:21871;662:11382 */}
         <div className="rounded-xl border border-[#FFEA9E] bg-[#FFEA9E]/40 px-6 py-4">
           {/* mm:I3127:21871;256:5156 */}
+          {/* Body links must be real <a>, so the feed's stretched detail link is a sibling, not the wrapper. */}
           {isFeed ? (
-            <Link
-              href={links.detailHref}
-              className={`line-clamp-5 text-justify text-xl leading-8 font-bold whitespace-pre-line ${STRETCH} ${FOCUS}`}
-            >
-              {card.body}
-            </Link>
-          ) : (
-            <p className="line-clamp-3 text-justify text-xl leading-8 font-bold whitespace-pre-line">{card.body}</p>
-          )}
+            <Link href={links.detailHref} aria-label={copy.viewDetail} className={`${STRETCH} ${FOCUS_STRETCH}`} />
+          ) : null}
+          <KudosRichBody
+            blocks={card.bodyBlocks}
+            className={`${isFeed ? "line-clamp-5" : "line-clamp-3"} text-justify text-xl leading-8 font-bold whitespace-pre-line`}
+          />
         </div>
         {isFeed ? <KudosCardGallery images={card.images} /> : null}
         <KudosCardHashtags hashtags={card.hashtags} hrefs={links.hashtagHrefs} />

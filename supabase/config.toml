@@ -108,7 +108,8 @@ file_size_limit = "50MiB"
 # Uncomment to configure local storage buckets
 [storage.buckets.images]
 public = false
-file_size_limit = "50MiB"
+# Kudos images (F010): same 5 MiB limit as migration create_kudos_images_storage and POST /api/kudos/images.
+file_size_limit = "5MiB"
 allowed_mime_types = ["image/png", "image/jpeg"]
 objects_path = "./images"
 

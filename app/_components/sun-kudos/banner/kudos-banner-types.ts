@@ -14,6 +14,11 @@ export type KudosSendBarProps = {
   placeholder: string;
   /** Label of the "search Sunner profile" pill (Figma 2940:13450). */
   searchProfileLabel: string;
+  /**
+   * Replaces the inert send pill (A.1). A client launcher passes a
+   * `KudosSendButton` with `onClick` so the banner itself stays a server component.
+   */
+  sendButton?: ReactNode;
 };
 
 export type KudosSectionHeadingProps = {

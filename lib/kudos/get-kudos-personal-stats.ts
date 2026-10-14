@@ -28,25 +28,30 @@ export async function getKudosPersonalStats(): Promise<PersonalStatsResult> {
     if (!sunner) return unavailable("no Sunner row for the signed-in user");
 
     // Owner-only boxes are visible through the user's own session (secret_boxes_select_own).
+    // `kudos.sender_id` is not client-readable (F010): the security-definer
+    // get_my_sent_kudos_count() counts the caller's own sent kudos, anonymous ones included.
     const supabase = await createClient();
     const count = { count: "exact", head: true } as const;
     const [sent, opened, unopened] = await Promise.all([
-      supabase.from("kudos").select("id", count).eq("sender_id", sunner.id),
+      supabase.rpc("get_my_sent_kudos_count"),
       supabase.from("secret_boxes").select("id", count).eq("owner_id", sunner.id).not("opened_at", "is", null),
       supabase.from("secret_boxes").select("id", count).eq("owner_id", sunner.id).is("opened_at", null),
     ]);
     const failed = [sent, opened, unopened].find((r) => r.error);
     if (failed?.error) return unavailable(`count failed: ${failed.error.code || "?"} ${failed.error.message}`);
-    if (sent.count === null || opened.count === null || unopened.count === null) {
+    const sentCount: unknown = sent.data;
+    if (!isCount(sentCount) || opened.count === null || unopened.count === null) {
       return unavailable("count missing from response");
     }
 
-    return { status: "ok", stats: toPersonalStats(sunner, sent.count, opened.count, unopened.count) };
+    return { status: "ok", stats: toPersonalStats(sunner, sentCount, opened.count, unopened.count) };
   } catch (cause) {
     unstable_rethrow(cause);
     return unavailable(`threw: ${cause instanceof Error ? cause.message : String(cause)}`);
   }
 }
+
+const isCount = (v: unknown): v is number => Number.isInteger(v) && (v as number) >= 0;
 
 function unavailable(reason: string): PersonalStatsResult {
   console.error(`[kudos-sidebar] personal stats ${reason}`);
