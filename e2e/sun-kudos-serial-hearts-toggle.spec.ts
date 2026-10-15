@@ -50,6 +50,8 @@ test.describe('Sun* Kudos — like / unlike (serial)', () => {
     await feedHeart(page, 60).click();
     await expect(feedHeart(page, 60)).toHaveAttribute('aria-pressed', 'false');
     await expect(feedHeart(page, 60)).toHaveText(countText(base));
+    // The heart flips optimistically: wait for the unlike to commit before reloading (as for the like).
+    await expect.poll(() => readLikeCount(KUDOS_BY_N(60).id)).toBe(base);
     await page.reload({ waitUntil: 'networkidle' });
     await expect(feedHeart(page, 60)).toHaveAttribute('aria-pressed', 'false');
     await expect(feedHeart(page, 60)).toHaveText(countText(base));
@@ -82,5 +84,8 @@ test.describe('Sun* Kudos — like / unlike (serial)', () => {
     await expect(feedHeart(page, 52)).toHaveAttribute('aria-pressed', 'true');
     await expect(slideHeart(page, 3)).toHaveAttribute('aria-pressed', 'true');
     await expect(slideHeart(page, 3)).toHaveText(countText(shared.likeCount + 1));
+    // Optimistic UI passes before the like commits: wait for it, or afterEach's cleanup can run
+    // first and the late insert leaks a like into the next run's seeded counts.
+    await expect.poll(() => readLikeCount(shared.id)).toBe(shared.likeCount + 1);
   });
 });
