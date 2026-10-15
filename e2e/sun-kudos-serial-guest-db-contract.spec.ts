@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { KUDOS_BY_N, TEST_ACCOUNTS } from './support/kudos-board-seed';
-import { deleteLikesBy, readLikeCount, signedInClient } from './support/kudos-board-db';
+import { anonClient, deleteLikesBy, readLikeCount, signedInClient } from './support/kudos-board-db';
 import { lockGateFor, redirectPath, restorePrelaunchSeed } from './support/prelaunch-setting';
 import {
   createKudos, deleteKudos, expectCreateKudosRejected, kudosIdsCreatedSince, readKudosRow,
@@ -105,6 +105,25 @@ test.describe('@supabase guest-as-Anonymous DB contract (serial)', () => {
     expect(unliked.error, 'an anonymous session can unlike').toBeNull();
     expect(unliked.data).toHaveLength(1);
     expect(await readLikeCount(K60.id)).toBe(base);
+  });
+
+  test('kudos_sent_by_me answers only about the caller: own anonymous kudos yes, others no, anon denied', async () => {
+    const g = await guest();
+    const { data: ownId, error } = await createKudos(g.client);
+    expect(error).toBeNull();
+    const asked = [ownId as string, K60.id];
+
+    const mine = await g.client.rpc('kudos_sent_by_me', { p_kudos_ids: asked });
+    expect(mine.error).toBeNull();
+    expect(mine.data, "the guest's own anonymous kudos only").toEqual([ownId]);
+
+    const { client: other } = await signedInClient(TEST_ACCOUNTS.SENDER);
+    const theirs = await other.rpc('kudos_sent_by_me', { p_kudos_ids: [ownId as string] });
+    expect(theirs.error).toBeNull();
+    expect(theirs.data, 'another account never learns who sent an anonymous kudos').toEqual([]);
+
+    const anon = await anonClient().rpc('kudos_sent_by_me', { p_kudos_ids: asked });
+    expect(anon.error?.code, 'not executable without a session').toBe('42501');
   });
 
   test('an anonymous user is never admin: even with profiles.role = admin the locked gate redirects', async ({ request }) => {

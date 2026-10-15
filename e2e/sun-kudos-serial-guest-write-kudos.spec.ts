@@ -80,6 +80,25 @@ test.describe('Sun* Kudos — a guest writes a kudos (serial)', () => {
     await expectAnonymousFirstCard(page, row, alias);
   });
 
+  // F007 FR-203 / BR-002: the DB refuses a self-like, so the guest's own (always anonymous) kudos
+  // must not offer a heart — before the fix it stayed enabled and every click failed with a toast.
+  test("guest: the heart on the guest's own anonymous kudos is disabled, also after a reload", async ({ page }) => {
+    await openModalAsGuest(page);
+    await fillValidKudos(page, VALID_KUDOS);
+    await submitAndExpectSuccess(page);
+    const row = await expectGuestKudosRow(null);
+
+    const ownHeart = () => firstFeedCard(page).locator('button[aria-pressed]');
+    await expect(firstFeedCard(page)).toContainText(vnTimeLabel(row.created_at as string));
+    await expect(ownHeart(), 'own kudos: heart disabled right after sending').toBeDisabled();
+
+    await page.reload({ waitUntil: 'networkidle' });
+    await expect(firstFeedCard(page)).toContainText(vnTimeLabel(row.created_at as string));
+    await expect(ownHeart(), 'own kudos: heart disabled after a reload').toBeDisabled();
+    const otherHeart = page.getByRole('region', { name: 'ALL KUDOS', exact: true }).getByRole('article').nth(1).locator('button[aria-pressed]');
+    await expect(otherHeart, "someone else's kudos: the guest's heart stays enabled").toBeEnabled();
+  });
+
   test("guest sidebar: after one kudos the guest sees their own stats, sent = 1", async ({ page }) => {
     await openModalAsGuest(page);
     await fillValidKudos(page, VALID_KUDOS);

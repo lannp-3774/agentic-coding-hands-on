@@ -7,6 +7,7 @@ import { toKudosPage } from "./kudos-card-mapping";
 import { KUDOS_PAGE_SIZE } from "./kudos-constants";
 import { applyKudosFilters, KUDOS_CURSOR_PATTERN } from "./kudos-filters";
 import { getHashtagRowsPerRequest } from "./get-hashtag-rows-per-request";
+import { readKudosSentByMe } from "./read-kudos-sent-by-me";
 
 /** How one filtered kudos read is ordered and cut. */
 export type KudosReadShape = {
@@ -25,7 +26,8 @@ const errorMessage = (cause: unknown) => (cause instanceof Error ? cause.message
  *
  * Reads with the request's server client: role `anon` for guests,
  * `authenticated` with a session (the `my_like` embed then holds the viewer's
- * own like). Never throws: a failed query or a throw is logged once with
+ * own like, `sentByMe` the viewer's own kudos: `readKudosSentByMe`). Both are
+ * per viewer, so this read must never be cached across requests. Never throws: a failed query or a throw is logged once with
  * `[kudos]` and returns `{status: "error"}`. A failed hashtag lookup only
  * turns title tags into plain text. The hashtag list is read once per page
  * render (`getHashtagRowsPerRequest`), shared with the other loaders.
@@ -34,7 +36,7 @@ const errorMessage = (cause: unknown) => (cause instanceof Error ? cause.message
 export async function readKudos<T>(
   filters: KudosFilters,
   shape: KudosReadShape,
-  map: (rows: unknown, hashtagRows: unknown) => T,
+  map: (rows: unknown, hashtagRows: unknown, sentByMe: ReadonlySet<string>) => T,
 ): Promise<KudosRead<T>> {
   // Outside the try: Next's prerender bail-out must never be swallowed.
   await connection();
@@ -53,7 +55,8 @@ export async function readKudos<T>(
       return { status: "error" };
     }
     if (hashtags.status === "error") console.error(`[kudos] hashtag lookup failed: ${hashtags.reason}`);
-    return { status: "ok", data: map(kudos.data, hashtags.status === "ok" ? hashtags.rows : []) };
+    const sentByMe = await readKudosSentByMe(supabase, kudos.data);
+    return { status: "ok", data: map(kudos.data, hashtags.status === "ok" ? hashtags.rows : [], sentByMe) };
   } catch (cause) {
     unstable_rethrow(cause);
     console.error(`[kudos] query threw: ${errorMessage(cause)}`);
@@ -75,7 +78,7 @@ export async function getKudosPage(
     console.error("[kudos] refused a malformed cursor");
     return { status: "error" };
   }
-  return readKudos(filters, { order: "newest", cursor, limit: KUDOS_PAGE_SIZE + 1 }, (rows, hashtagRows) =>
-    toKudosPage(rows, hashtagRows, KUDOS_PAGE_SIZE),
+  return readKudos(filters, { order: "newest", cursor, limit: KUDOS_PAGE_SIZE + 1 }, (rows, hashtagRows, sentByMe) =>
+    toKudosPage(rows, hashtagRows, KUDOS_PAGE_SIZE, sentByMe),
   );
 }

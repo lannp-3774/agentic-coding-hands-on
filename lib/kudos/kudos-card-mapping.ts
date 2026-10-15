@@ -107,6 +107,9 @@ function toPerson(row: PersonRow): KudosPerson {
   };
 }
 
+/** No kudos sent by the viewer (guests, failed reads, or callers that do not ask). */
+export const NONE: ReadonlySet<string> = new Set();
+
 const bySortOrder = (a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order;
 
 function toHashtags(links: KudosRow["hashtags"]): KudosHashtag[] {
@@ -126,13 +129,13 @@ function toImages(images: readonly ImageRow[]): string[] {
 }
 
 /**
- * One row to one card. `isSender` is always false here: it depends on the
- * viewer and is set by `withViewerFlags` (server for page 1, client for API
- * pages). `likedByMe` is true when the RLS-scoped `my_like` embed has a row.
+ * One row to one card. `isSender` is true when the viewer sent it (`sentByMe`,
+ * from `kudos_sent_by_me()`, the only source for an anonymous kudos);
+ * `withViewerFlags` adds the named-sender match. `likedByMe` is true when the RLS-scoped `my_like` embed has a row.
  * An anonymous kudos has `sender: null` and `senderAlias` = the trimmed alias,
  * or null for the default copy; a named kudos always has `senderAlias: null`.
  */
-export function toKudosCard(row: KudosRow, slugByLabel: SlugByLabel): KudosCard {
+export function toKudosCard(row: KudosRow, slugByLabel: SlugByLabel, sentByMe: ReadonlySet<string> = NONE): KudosCard {
   const title = row.title?.trim() ? row.title : null;
   return {
     id: row.id,
@@ -144,7 +147,7 @@ export function toKudosCard(row: KudosRow, slugByLabel: SlugByLabel): KudosCard 
     timeLabel: formatKudosTime(row.created_at),
     likeCount: row.like_count,
     likedByMe: row.my_like.length > 0,
-    isSender: false,
+    isSender: sentByMe.has(row.id),
     sender: row.sender === null ? null : toPerson(row.sender),
     senderAlias: row.is_anonymous ? row.anonymous_name?.trim() || null : null,
     receiver: toPerson(row.receiver),
@@ -154,9 +157,9 @@ export function toKudosCard(row: KudosRow, slugByLabel: SlugByLabel): KudosCard 
 }
 
 /** Untyped kudos rows + hashtag rows to cards, order kept, malformed rows dropped. */
-export function toKudosCards(rows: unknown, hashtagRows: unknown): KudosCard[] {
+export function toKudosCards(rows: unknown, hashtagRows: unknown, sentByMe: ReadonlySet<string> = NONE): KudosCard[] {
   const slugByLabel = toSlugByLabel(keepValid(hashtagRows, isHashtagRow, "hashtag"));
-  return keepValid(rows, isKudosRow, "kudos").map((row) => toKudosCard(row, slugByLabel));
+  return keepValid(rows, isKudosRow, "kudos").map((row) => toKudosCard(row, slugByLabel, sentByMe));
 }
 
 const seqOf = (row: unknown): string | null => (isRecord(row) && isSeq(row.seq) ? row.seq : null);
@@ -166,10 +169,15 @@ const seqOf = (row: unknown): string | null => (isRecord(row) && isSeq(row.seq) 
  * row only proves another page exists. The cursor is taken from the raw rows,
  * so a dropped malformed row never ends the feed early.
  */
-export function toKudosPage(rows: unknown, hashtagRows: unknown, pageSize: number): KudosPage {
+export function toKudosPage(
+  rows: unknown,
+  hashtagRows: unknown,
+  pageSize: number,
+  sentByMe: ReadonlySet<string> = NONE,
+): KudosPage {
   const list: unknown[] = Array.isArray(rows) ? rows : [];
   const pageRows = list.slice(0, pageSize);
-  const items = toKudosCards(pageRows, hashtagRows);
+  const items = toKudosCards(pageRows, hashtagRows, sentByMe);
   const lastSeq = seqOf(pageRows[pageRows.length - 1]) ?? items[items.length - 1]?.seq ?? null;
   return { items, nextCursor: list.length > pageSize ? lastSeq : null };
 }

@@ -5,9 +5,10 @@ import { KUDOS_CURSOR_PATTERN, parseKudosFiltersStrict } from "@/lib/kudos/kudos
 // GET /api/kudos?cursor=<seq>[&hashtag=<slug>][&department=<code>]
 // All Kudos page 2+ for infinite scroll (F006 A5, BR-005, BR-006). A Route
 // Handler, not a Server Action: actions queue one at a time and cannot be
-// aborted. Body: `KudosPage` `{items, nextCursor}`; `isSender` is false in
-// every item (the client applies `withViewerFlags`), `likedByMe` is the
-// caller's own like read under RLS with the request's session cookie.
+// aborted. Body: `KudosPage` `{items, nextCursor}`; `isSender` marks the
+// caller's own kudos, anonymous ones included (`kudos_sent_by_me()`, the client
+// still applies `withViewerFlags`), `likedByMe` is the caller's own like; both
+// are read with the request's session cookie (no-store, per caller).
 //
 // Rendering (Next 16, cacheComponents): reading `request.nextUrl` already makes
 // a GET handler run at request time (getting-started/route-handlers, "With

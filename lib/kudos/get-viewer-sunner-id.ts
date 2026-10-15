@@ -19,7 +19,8 @@ function sunnerIdOf(data: unknown): string | null {
  * once per page render, shared with the personal stats (`getMySunnerPerRequest`).
  *
  * Fails closed: no session, no linked Sunner, an error or a throw => null,
- * so no card is marked `isSender` (the DB still refuses self-likes).
+ * so no named card is marked `isSender` here (`kudos_sent_by_me()` in the read
+ * still marks the viewer's own kudos; the DB refuses self-likes regardless).
  * Request-time only (call inside `<Suspense>`).
  */
 export async function getViewerSunnerId(): Promise<string | null> {
