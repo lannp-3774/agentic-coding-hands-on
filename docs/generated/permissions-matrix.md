@@ -739,11 +739,11 @@ Hàm `security definer`, `search_path = ''`: người gửi là Sunner có `user
 ### PERM021_KudosSenderIdNotClientReadable: `kudos.sender_id` không mở cho client; người gửi công khai qua `public_sender_id`
 
 **Type**: field-permission
-**Enforced At**: `supabase/migrations/20261014004500_create_kudos_write.sql:34-66` (cột sinh, quyền cột), `:183-200` (`get_my_sent_kudos_count`)
+**Enforced At**: `supabase/migrations/20261014004500_create_kudos_write.sql:34-66` (cột sinh, quyền cột), `:183-200` (`get_my_sent_kudos_count`); `supabase/migrations/20261015020000_kudos_sent_by_me.sql:21-33` (`kudos_sent_by_me`)
 
 #### Description
 
-Cùng mẫu PERM016. `select` cấp theo cột cho `anon`, `authenticated`: `id, seq, receiver_id, title, body, like_count, created_at, is_anonymous, anonymous_name, public_sender_id` — không có `sender_id`, nên chọn, lọc, nhúng qua cột này và `select *` bị từ chối (`42501`). `public_sender_id` là cột sinh (`case when is_anonymous then null else sender_id end`, FK `sunners`), đường duy nhất để trình duyệt nhúng người gửi; kudos ẩn danh có giá trị rỗng. `sender_id` vẫn là sự thật ở DB cho trigger tim và luật chặn tự thích. Số "Kudos đã gửi" của chính mình đọc qua `get_my_sent_kudos_count()` (`security definer`, theo `auth.uid()`, chỉ `authenticated`, 0 khi không có Sunner). Kẽ hở chấp nhận: cột đếm tim công khai có thể giúp suy ra người gửi (clarifications 2026-10-14).
+Cùng mẫu PERM016. `select` cấp theo cột cho `anon`, `authenticated`: `id, seq, receiver_id, title, body, like_count, created_at, is_anonymous, anonymous_name, public_sender_id` — không có `sender_id`, nên chọn, lọc, nhúng qua cột này và `select *` bị từ chối (`42501`). `public_sender_id` là cột sinh (`case when is_anonymous then null else sender_id end`, FK `sunners`), đường duy nhất để trình duyệt nhúng người gửi; kudos ẩn danh có giá trị rỗng. `sender_id` vẫn là sự thật ở DB cho trigger tim và luật chặn tự thích. Số "Kudos đã gửi" của chính mình đọc qua `get_my_sent_kudos_count()` (`security definer`, theo `auth.uid()`, chỉ `authenticated`, 0 khi không có Sunner). Kudos ẩn danh nào là của mình thì người gửi biết qua `kudos_sent_by_me(uuid[])` (`security definer`, theo `auth.uid()`, tối đa 100 mã đầu vào, chỉ `authenticated` gồm phiên ẩn danh, chỉ trả mã kudos của chính người gọi) nên nút tim của kudos đó vô hiệu (F007 FR-203). Kẽ hở chấp nhận: cột đếm tim công khai có thể giúp suy ra người gửi (clarifications 2026-10-14).
 
 #### Related Routes
 
@@ -757,7 +757,7 @@ Cùng mẫu PERM016. `select` cấp theo cột cho `anon`, `authenticated`: `id,
 
 | Role | Allow | Conditions |
 |------|-------|------------|
-| anon / authenticated | ✓ (select theo cột) | Không có `sender_id`; kudos ẩn danh có `public_sender_id` rỗng; người đăng nhập đếm số đã gửi của mình qua RPC. |
+| anon / authenticated | ✓ (select theo cột) | Không có `sender_id`; kudos ẩn danh có `public_sender_id` rỗng; người đăng nhập đếm số đã gửi của mình và biết kudos nào là của mình (kể cả ẩn danh) qua RPC `get_my_sent_kudos_count()`, `kudos_sent_by_me()`. |
 | service_role | ✓ | Bỏ qua quyền cột; seed và vận hành. |
 
 ---

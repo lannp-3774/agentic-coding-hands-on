@@ -290,7 +290,7 @@ Tất cả đã chốt ở clarifications.md (lượt 2026-10-13 và lượt rev
 | Khách tự tìm hồ sơ Sunner khách để làm người nhận (qua ô tìm, hoặc gọi thẳng `sendKudos`/`create_kudos` với mã của hồ sơ khách) | ô tìm không trả hồ sơ khách; gọi thẳng thì bị từ chối như người nhận không tồn tại (`recipient: required`) | lỗi trường Người nhận |
 | Khách gọi thẳng `create_kudos` với `p_is_anonymous = false` | cơ sở dữ liệu ép ẩn danh: kudos vẫn ẩn danh | None — silent handling |
 | Nội dung có HTML, `javascript:` hoặc ký hiệu Markdown không đóng | hiện nguyên là chữ | None — silent handling |
-| Người gửi tự thích kudos ẩn danh của mình | nút tim bật (trình duyệt không biết ai là người gửi); DB từ chối, thông báo lỗi ngắn của F007 hiện | thông báo lỗi tim của F007 |
+| Người gửi tự thích kudos ẩn danh của mình | nút tim vô hiệu: máy chủ đánh dấu kudos của chính người xem qua `kudos_sent_by_me()` (cả khi tải lại và ở trang nạp thêm); hàm lỗi thì nút bật và DB vẫn từ chối | None — nút vô hiệu |
 | Khách đọc `/rest/v1/kudos` với `select=sender_id` hoặc `select=*` | bị từ chối (quyền cột) | None — truy cập bị từ chối ở máy chủ |
 | Ai đó mở `/api/kudos/images/<uuid>.png` của ảnh chưa gắn | 404, kể cả với chủ ảnh (chủ chỉ thấy ảnh nhỏ cục bộ khi soạn) | None |
 
@@ -333,7 +333,7 @@ Tất cả đã chốt ở clarifications.md (lượt 2026-10-13 và lượt rev
 | ID | Type | Description | Impact | Status |
 |----|------|--------------|--------|--------|
 | RISK-01 | risk | Đã xử lý (review round 2, C2): `sunners.hearts_total` không còn đọc được từ trình duyệt, nên so sánh tổng tim quanh một lượt thích không chỉ ra người gửi kudos ẩn danh. Tim vẫn cộng cho người gửi (kể cả kudos ẩn danh); số tim trên thẻ (`kudos.like_count`) vẫn công khai | Thay cho quyết định cũ "chấp nhận kẽ hở đếm tim" | [CONFIRMED] đã chốt (clarifications 2026-10-14, "review round 2", C2) |
-| RISK-02 | risk | Người gửi vẫn thấy nút tim bật trên kudos ẩn danh của chính mình vì trình duyệt không biết ai là người gửi; DB từ chối, giao diện hiện thông báo lỗi ngắn | Trải nghiệm thừa nhưng không sai dữ liệu | [EXPECTED] hoãn (clarifications) |
+| RISK-02 | risk | Người gửi thấy nút tim bật trên kudos ẩn danh của chính mình vì trình duyệt không biết ai là người gửi; DB từ chối, giao diện hiện thông báo lỗi ngắn | Đã sửa 2026-10-15: `kudos_sent_by_me()` đánh dấu `isSender`, nút tim vô hiệu (F007 FR-203) | [CONFIRMED] đã sửa 2026-10-15 (sửa lỗi) |
 | RISK-03 | risk | Tên ẩn danh có thể giả giống tên người thật | Giả mạo bằng chữ | [EXPECTED] quyết định sản phẩm, chưa chặn |
 | RISK-04 | risk | Chưa có giới hạn tốc độ gửi và tải ảnh; ảnh tải lên mà không gửi chỉ được xoá khi đóng hộp thoại (cố gắng hết sức), chưa có tác vụ dọn ảnh mồ côi | Kho ảnh có thể phình; lạm dụng gửi | [EXPECTED] hoãn (clarifications) |
 | RISK-05 | risk | Migration kho ảnh ghi đè (upsert) cấu hình bucket `images` nếu bucket cùng tên đã có trên dự án hosted: đổi sang riêng tư, giới hạn 5 MiB, chỉ jpeg/png | Có thể đổi hành vi của bucket đang dùng cho việc khác | [EXPECTED] đã được người duyệt migration chấp nhận (2026-10-14) |
